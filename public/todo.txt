@@ -1,0 +1,9 @@
+Display resized images as thumbnails. Use custom resizing url
+See about using background image paths instead of actual images
+
+
+Saved Searches
+Messages
+Requests
+Operations
+Settings

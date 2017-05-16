@@ -1,0 +1,12 @@
+{
+	"type": "Email",
+	"host": "smtp.gmail.com",
+	"port": "587",
+	"ssl": false,
+	"username": "email@gmail.com",
+	"password": "gmail_password",
+	"defaultFromAddress": "noreply@gmail.com",
+	"internalOnly": true,
+	"productionOnly": true,
+	"base64": true
+}

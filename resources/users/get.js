@@ -1,0 +1,2 @@
+hide('passwordToken');
+hide('verificationToken');

@@ -1,0 +1,188 @@
+<form method="post" this-model="companies" enctype="application/x-www-form-urlencoded" this-handle-submit
+      this-type="page" this-load-js="new-company">
+    <style scoped>
+        .panel-heading a {
+            font-weight: bold!important;
+        }
+        .panel-body {
+            color: #000000;
+        }
+        .form-control {
+            margin-top: 10px;
+        }
+        td .form-control {
+            margin:0;
+        }
+        label {
+            font-size: large;
+            font-weight: normal;
+            margin-bottom: 20px;
+        }
+        input {
+            font-weight: normal;
+        }
+        textarea {
+            width: 100%;
+        }
+        th>a {
+            margin-top: 20px;
+        }
+    </style>
+    <div class="row">
+        <div class="col-xs-12 page-header">
+            <h2>
+                <button type="submit" class="btn btn-success btn-lg pull-right">
+                    <i class="glyphicon glyphicon-ok"></i>
+                    Save
+                </button>
+                New Company
+            </h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="panel-group" id="accordion">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#accordion" href="#id">
+                                IDENTIFICATION
+                            </a>
+                        </h3>
+                    </div>
+                    <div id="id" class="panel-collapse collapse in">
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label class="col-xs-12">
+                                    What is the name of your company?
+                                    <input required="required" type="text"
+                                           name="name" placeholder="Type here ..." class="form-control input-lg" />
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-xs-12">
+                                    Do you have a motto?
+                                    <input required="required" type="text" name="motto"
+                                           placeholder="Type here ..." class="form-control input-lg" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#accordion" href="#contact">
+                                CONTACT INFORMATION
+                            </a>
+                        </h3>
+                    </div>
+                    <div id="contact" class="panel-collapse collapse">
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label class="col-xs-4">
+                                    Phone #1
+                                    <input required="required" type="text"
+                                           name="contact[Phone #1]" class="form-control input-lg" />
+                                </label>
+                                <label class="col-xs-4">
+                                    Phone #2
+                                    <input required="required" type="text"
+                                           name="contact[Phone #2]" class="form-control input-lg" />
+                                </label>
+                                <label class="col-xs-4">
+                                    Email
+                                    <input required="required" type="email"
+                                           name="contact[email]" class="form-control input-lg" />
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-xs-4">
+                                    LGA
+                                    <input required="required"
+                                           type="text" name="lga" class="form-control input-lg" />
+                                </label>
+                                <label class="col-xs-4">
+                                    City
+                                    <input required="required" type="text"
+                                           name="city" class="form-control input-lg" />
+                                </label>
+                                <label class="col-xs-4">
+                                    State
+                                    <input required="required" type="text"
+                                           name="state" class="form-control input-lg" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#accordion" href="#services">
+                                SERVICES
+                            </a>
+                        </h3>
+                    </div>
+                    <div id="services" class="panel-collapse collapse">
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Title</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th>
+                                                <span>#1</span>
+                                                <br />
+                                                <a href="#" class="btn btn-danger remove hidden btn-xs">
+                                                    &times;
+                                                </a>
+                                            </th>
+                                            <td>
+                                                <input required="required" type="text"
+                                                       name="services[title][]"
+                                                       maxlength="100" class="form-control" />
+                                            </td>
+                                            <td>
+                                                <textarea required="required"
+                                                          name="services[description][]"
+                                                          class="form-control"
+                                                          maxlength="300" rows="4"></textarea>
+                                            </td>
+                                        </tr>
+                                        <tr id="add-service">
+                                            <td colspan="3">
+                                                <a href="#" class="btn btn-link">
+                                                    Add More
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">
+                            <a data-toggle="collapse" data-parent="#accordion" href="#pictures">
+                                PICTURES
+                            </a>
+                        </h3>
+                    </div>
+                    <div id="pictures" class="panel-collapse collapse">
+                        <div class="panel-body">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <!--<link rel="icon" href="../../favicon.ico">-->
+
+        <title>EventPlus</title>
+
+        <!-- Bootstrap core CSS -->
+        <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+
+        <!-- Custom styles for this template -->
+        <link href="assets/css/cover.css" rel="stylesheet">
+
+        <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+        <script src="assets/js/ie10-viewport-bug-workaround.js"></script>
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+          <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+          <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <style>
+            body {
+                background: url(assets/images/gallery/12.jpg) no-repeat;
+                background-attachment: fixed;
+                background-size: cover;
+                text-shadow: none;
+                text-align: left;
+            }
+            /*
+             * Vertically center modals
+             */
+            .modal.in {
+                display: flex !important;
+                height: 100%;
+                color: #000000;
+            }
+            .modal.in a:not(.btn) {
+                color: #000000;
+            }
+            .modal.in .modal-dialog {
+                margin: auto;
+                padding:0;
+            }
+            #background {
+                position: absolute;
+                width:100%;
+                height: 100%;
+                background-color: #000000;
+                opacity: .6;
+                z-index: 0;
+            }
+            .inner.cover {
+                position: relative;
+                text-align: center;
+            }
+            .form-control {
+                margin-top: 10px;
+            }
+            form button {
+                padding:12px!important;
+            }
+            .remove-margins {
+                margin: 0!important;
+            }
+            img[alt="loading"] {
+                height: 30px;
+            }
+            #login-help .modal-body>div {
+                height: 60px;
+            }
+            #login-help .modal-body>div>i {
+                font-size: 40px;
+                margin-right: 10px;
+                float: left;
+            }
+            #login-help .modal-body>div>div {
+                float: left;
+            }
+            #login-help .modal-body>div>div a {
+                /*color: #3c763d!important;*/
+                font-weight: bold;
+            }
+            .masthead-nav li.btn a {
+                color: #000000;
+            }
+            .modal ul >li {
+                text-align: left;
+            }
+            .input-group-addon {
+                cursor: pointer;
+            }
+            .masthead .inner {
+                position: relative;
+            }
+            .masthead-brand {
+                margin-bottom: 30px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="site-wrapper">
+            <div id="background"></div>
+            <div class="site-wrapper-inner" this-app-container>
+                <div class="cover-container" this-type="layout" this-id="main" this-loaded>
+                    <div class="masthead clearfix">
+                        <div class="inner text-center">
+                            {: The app name :}
+                            <h3 class="masthead-brand">EventPlus</h3>
+                            <ul class="nav masthead-nav">
+                                <li class="active"><a href="#" this-goto="home">Home</a></li>
+                                <li><a href="#" this-goto="features">Features</a></li>
+                                <li class="btn btn-default hidden login"><a href="#" data-toggle="modal" data-target="#login">Login</a></li>
+                                <li class="btn btn-default hidden account"><a href="./user/">Account</a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div this-content>
+                        <div class="inner cover" this-id="home" this-type="page">
+                            <h1 class="cover-heading">Cover your page.</h1>
+                            <p class="lead">Cover is a one-page template for building simple and beautiful home pages. Download, edit the text, and add your own fullscreen background photo to make it your own.</p>
+                            <p class="lead">
+                                <a href="index.html#" class="btn btn-lg btn-default">Learn more</a>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="modal" id="login">
+                        <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button class="close" data-dismiss="modal">&times;</button>
+                                    <h3 class="remove-margins">
+                                        Login
+                                    </h3>
+                                </div>
+                                <div class="modal-body">
+                                    <a href="({app.config.baseURL})auth/google?redirectURL=({location.origin})/user/" 
+                                       class="btn btn-lg btn-block btn-danger">
+                                        Login with Google
+                                    </a>
+                                    <a href="#login-email-password" data-toggle="modal"
+                                       data-dismiss="modal"
+                                       class="btn btn-lg btn-block btn-primary">
+                                        Login with Email/Password
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal" id="login-email-password">
+                        <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button class="close" data-dismiss="modal">&times;</button>
+                                    <h3 class="remove-margins">
+                                        Login
+                                    </h3>
+                                </div>
+                                <div class="modal-body">
+                                    <form class="form-horizontal" this-handle-submit method="post"
+                                          action="users/login" enctype="application/x-www-form-urlencoded">
+                                        <div class="form-group">
+                                            <div class="col-xs-12">
+                                                <input required="required" type="email" placeholder="Email Address"
+                                                       name="username" class="form-control input-lg input-block-level" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12">
+                                                <input required="required" type="password" placeholder="Password"
+                                                       name="password" class="form-control input-lg input-block-level" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12 text-center">
+                                                <button type="submit" class="btn btn-danger btn-block btn-lg">Login</button>
+                                                <img alt="loading" src="assets/images/loading.gif" class="hidden" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12 text-center">
+                                                <p>
+                                                    <a href="#" data-toggle="modal" data-target="#login-help"
+                                                       data-dismiss="modal">Help</a>
+                                                </p>
+                                                <p>
+                                                    <a href="#" data-toggle="modal" data-target="#signup"
+                                                       data-dismiss="modal">Sign Up</a>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer hidden">
+                                    <div class="alert text-center"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal" id="login-help">
+                        <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button class="close" data-dismiss="modal">&times;</button>
+                                    <h3 class="remove-margins">Login Help</h3>
+                                </div>
+                                <div class="modal-body">
+                                    <div>
+                                        <i class="glyphicon glyphicon-envelope text-danger"></i>
+                                        <div>
+                                            Didn't receive verification email?
+                                            <br />
+                                            <a href="#" data-toggle="modal" data-dismiss="modal"
+                                               data-target="#resend-verification-email">Resend</a>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <i class="glyphicon glyphicon-lock text-danger"></i>
+                                        <div>
+                                            Forgotten password?
+                                            <br />
+                                            <a href="#" data-toggle="modal" data-dismiss="modal"
+                                               data-target="#reset-password">Reset Password</a>
+                                        </div>
+                                    </div>
+                                    <p>
+                                        <a href="#login-email-password" data-toggle="modal"
+                                           data-dismiss="modal">
+                                            <i class="glyphicon glyphicon-arrow-left"></i> Go back
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal" id="resend-verification-email">
+                        <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button class="close" data-dismiss="modal">&times;</button>
+                                    <h3 class="remove-margins">Resend Verification Email</h3>
+                                </div>
+                                <div class="modal-body">
+                                    <form class="form-horizontal" this-handle-submit method="post"
+                                          action="resend-verification-email" enctype="application/x-www-form-urlencoded">
+                                        <div class="form-group">
+                                            <div class="col-xs-12">
+                                                <input required="required" type="email" placeholder="Email Address"
+                                                       name="email" class="form-control input-lg input-block-level" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12 text-center">
+                                                <button type="submit" class="btn btn-danger btn-block btn-lg">Resend</button>
+                                                <img alt="loading" src="assets/images/loading.gif" class="hidden" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12 text-center">
+                                                <a href="#login-email-password" data-toggle="modal"
+                                                   data-dismiss="modal" class="text-muted">cancel</a>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer hidden">
+                                    <div class="alert text-center"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal" id="reset-password">
+                        <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button class="close" data-dismiss="modal">&times;</button>
+                                    <h3 class="remove-margins">Reset Password</h3>
+                                </div>
+                                <div class="modal-body">
+                                    <form class="form-horizontal" this-handle-submit method="post"
+                                          action="send-reset-password-email" enctype="application/x-www-form-urlencoded">
+                                        <div class="form-group">
+                                            <div class="col-xs-12">
+                                                <input required="required" type="email" placeholder="Email Address"
+                                                       name="email" class="form-control input-lg input-block-level" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12 text-center">
+                                                <button type="submit" class="btn btn-danger btn-block btn-lg">Send Reset Link</button>
+                                                <img alt="loading" src="assets/images/loading.gif" class="hidden" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12 text-center">
+                                                <a href="#login-email-password" data-toggle="modal"
+                                                   data-dismiss="modal" class="text-muted">cancel</a>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer hidden">
+                                    <div class="alert text-center"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal" id="reset-password-2">
+                        <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button class="close" data-dismiss="modal">&times;</button>
+                                    <h3 class="remove-margins">Reset Password</h3>
+                                </div>
+                                <div class="modal-body">
+                                    <form class="form-horizontal" this-handle-submit method="post"
+                                          action="reset-password" enctype="application/x-www-form-urlencoded">
+                                        <input type="hidden" name="token" />
+                                        <div class="form-group">
+                                            <div class="col-xs-12">
+                                                <input required="required" type="password" placeholder="Password"
+                                                       name="password" class="form-control input-lg input-block-level" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12">
+                                                <input required="required" type="password" placeholder="Repeat Password"
+                                                       name="confirm" class="form-control input-lg input-block-level" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12 text-center">
+                                                <button type="submit" class="btn btn-danger btn-block btn-lg">Reset Password</button>
+                                                <img alt="loading" src="assets/images/loading.gif" class="hidden" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12 text-center">
+                                                <a href="#login-email-password" class="text-muted" data-toggle="modal"
+                                                   data-dismiss="modal">cancel</a>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer hidden">
+                                    <div class="alert text-center"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal" id="signup">
+                        <div class="modal-dialog modal-sm">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button class="close" data-dismiss="modal">&times;</button>
+                                    <h3 class="remove-margins">Sign Up</h3>
+                                </div>
+                                <div class="modal-body">
+                                    <form class="form-horizontal" this-handle-submit method="post"
+                                          action="users/" enctype="application/x-www-form-urlencoded">
+                                        <div class="form-group">
+                                            <div class="col-xs-12">
+                                                <input required="required" type="email" placeholder="Email Address"
+                                                       name="username" class="form-control input-lg input-block-level" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12">
+                                                <div class="input-group">
+                                                    <input required="required" type="password" placeholder="Password"
+                                                           name="password" class="form-control input-lg input-block-level"
+                                                           style="margin-top: 0"/>
+                                                    <div class="input-group-addon">show</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12 text-center">
+                                                <button type="submit" class="btn btn-danger btn-block btn-lg">Sign Up</button>
+                                                <img alt="loading" src="assets/images/loading.gif" class="hidden" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-xs-12 text-center">
+                                                <a href="#login-email-password" class="text-muted" data-toggle="modal"
+                                                   data-dismiss="modal">cancel</a>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer hidden">
+                                    <div class="alert text-center"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mastfoot">
+                        <div class="inner text-center">
+                            <p>Cover template for <a href="http://getbootstrap.com">Bootstrap</a>, by <a href="https://twitter.com/mdo">@mdo</a>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bootstrap core JavaScript
+        ================================================== -->
+        <!-- Placed at the end of the document so the pages load faster -->
+        <script src="assets/js/jquery.min.js"></script>
+        <script src="assets/js/bootstrap.min.js"></script>
+        <script src="/dpd.js"></script>
+        <script src="assets/js/this.js"></script>
+        <script src="assets/js/guest.js"></script>
+    </body>
+</html>

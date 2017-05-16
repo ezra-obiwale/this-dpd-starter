@@ -1,0 +1,77 @@
+{
+	"type": "UserCollection",
+	"properties": {
+		"verified": {
+			"name": "verified",
+			"type": "boolean",
+			"typeLabel": "boolean",
+			"required": false,
+			"id": "verified",
+			"order": 0
+		},
+		"verificationToken": {
+			"name": "verificationToken",
+			"type": "string",
+			"typeLabel": "string",
+			"required": false,
+			"id": "verificationToken",
+			"order": 1
+		},
+		"passwordToken": {
+			"name": "passwordToken",
+			"type": "string",
+			"typeLabel": "string",
+			"required": false,
+			"id": "passwordToken",
+			"order": 2
+		},
+		"isAdmin": {
+			"name": "isAdmin",
+			"type": "boolean",
+			"typeLabel": "boolean",
+			"required": false,
+			"id": "isAdmin",
+			"order": 3
+		},
+		"lastLogin": {
+			"name": "lastLogin",
+			"type": "number",
+			"typeLabel": "number",
+			"required": false,
+			"id": "lastLogin",
+			"order": 4
+		},
+		"socialAccount": {
+			"name": "socialAccount",
+			"type": "string",
+			"typeLabel": "string",
+			"required": false,
+			"id": "socialAccount",
+			"order": 5
+		},
+		"socialAccountId": {
+			"name": "socialAccountId",
+			"type": "string",
+			"typeLabel": "string",
+			"required": false,
+			"id": "socialAccountId",
+			"order": 6
+		},
+		"profile": {
+			"name": "profile",
+			"type": "object",
+			"typeLabel": "object",
+			"required": false,
+			"id": "profile",
+			"order": 7
+		},
+		"name": {
+			"name": "name",
+			"type": "string",
+			"typeLabel": "string",
+			"required": false,
+			"id": "name",
+			"order": 8
+		}
+	}
+}

@@ -1,0 +1,42 @@
+{
+    "name": "this-dpd-starter",
+    "version": "1.0.0",
+    "description": "A starter bootstrap for thisJS and deployd",
+    "main": "index.js",
+    "dependencies": {
+        "deployd": "^0.8.9",
+        "dpd-dashboard": "^0.0.1",
+        "dpd-email": "^0.3.0",
+        "dpd-event-callback": "0.0.2",
+		"dpd-feeder": "^0.1.2",
+        "dpd-fileupload": "^0.0.17",
+        "dpd-passport": "^0.3.6",
+        "dpd-template": "^0.0.5",
+        "forever": "^0.15.3",
+        "passport": "0.2.2",
+        "string-hash": "^1.1.3"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ezra-obiwale/this-dpd-starter.git"
+    },
+    "author": "Ezra Obiwale",
+    "license": "MIT",
+    "homepage": "https://github.com/ezra-obiwale/this-dpd-starter#readme",
+    "readme": "https://github.com/ezra-obiwale/this-dpd-starter#readme",
+    "app": {
+        "name":"APP NAME",
+        "urls": {
+            "client": "http://localhost:2403/#/home",
+            "server": "http://localhost:2403",
+            "resetPassword": "?rpswd=true",
+            "verifyEmailFailed": "?ev=0",
+            "verifiedEmailAlready": "?ev=1",
+            "verifyEmailSuccess": "?ev=2"
+        }
+    }
+}
