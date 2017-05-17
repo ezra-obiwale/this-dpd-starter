@@ -1,7 +1,7 @@
 {
     "name": "this-dpd-starter",
     "version": "1.0.0",
-    "description": "A starter bootstrap for thisJS and deployd",
+    "description": "A starter bootstrap for ThisJS and Deployd",
     "main": "index.js",
     "dependencies": {
         "deployd": "^0.8.9",
@@ -29,7 +29,7 @@
     "homepage": "https://github.com/ezra-obiwale/this-dpd-starter#readme",
     "readme": "https://github.com/ezra-obiwale/this-dpd-starter#readme",
     "app": {
-        "name":"APP NAME",
+        "name":"Starter App",
         "urls": {
             "client": "http://localhost:2403/#/home",
             "server": "http://localhost:2403",

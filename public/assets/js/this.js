@@ -7538,7 +7538,7 @@
         /**
          * Initializes the app
          * @param string page The ID of the page
-         * @param boolean freshCopy Indicates to ignore copy in histor and 
+         * @param boolean freshCopy Indicates to ignore copy in history and 
          * generate a fresh one
          * @returns app
          */
@@ -7561,7 +7561,8 @@
                     url: params.join('/')
                 };
             }
-            if (!freshCopy && history.state &&
+			// load from old state if fresh copy not required and not debugging
+            if (!freshCopy && !this.config.debug && history.state &&
                     hash === this.store('last_page')) {
                 internal.restoreState.call(this, history.state);
             }

@@ -43,7 +43,7 @@ app.debug(true)
                         message = 'Email already verified.';
                         type = 'alert-info';
                     }
-                    $(_c('#login.modal').get(0)).modal('show')
+                    $(_c('#login-email-password.modal').get(0)).modal('show')
                             .find('.modal-footer').removeClass('hidden')
                             .children().addClass(type).html(message);
                     delete app.params.ev;
@@ -102,7 +102,7 @@ app.debug(true)
                 var message = 'Sign up successful. Please check your email for confirmation.';
                 switch (_modal.attr('id')) {
                     case 'login-email-password':
-                        var url = './user/';
+                        var url = './admin/';
                         if (app.params.r)
                             url += decodeURIComponent(app.params.r);
                         // redirect to user page
