@@ -878,10 +878,18 @@ dpd.users.me(function (currentUser) {
             .setDefaultLayout('main')
             .setDataTransport(function (options) {
                 var action, data = options.data instanceof FormData ?
-                        options.data.toObject() : options.data;
+                        options.data.toObject() : options.data,
+                        col = options.on;
+                if (!col && options.form) {
+                    col = _(options.form).this('model');
+                }
+                if (col && col.indexOf('-') !== -1) {
+                    var parts = col.split('-');
+                    col = parts[parts.length - 1];
+                }
                 switch (options.action) {
                     case 'read':
-                        dpd[options.on].get().then(function (data) {
+                        dpd[col].get().then(function (data, error) {
                             if (!data.status) {
                                 options.success(data, data.id);
                             }
@@ -891,20 +899,27 @@ dpd.users.me(function (currentUser) {
                         }).fail(options.error);
                         break;
                     case 'update':
-                        if (!action) {
-                            action = 'put';
-                        }
+                        action = 'put';
                     case 'patch':
                     case 'put':
                         data.id = options.id;
                     case 'create':
-                        action = 'post';
+                        if (!action) {
+                            action = 'post';
+                        }
                     case 'post':
-                        var col = options.on || _(options.form).this('model');
-                        dpd[col][action || options.action](data)
+                        if (!action)
+                            action = options.action;
+                        dpd[col][action](data)
                                 .then(function (data) {
                                     options.success(data, data.id);
                                 }).fail(function (resp) {
+                            // uploaded a picture: delete it!
+                            if (data.___freshUpload && data.___freshUpload.length) {
+								data.___freshUpload.forEach(function(v) {
+									dpd.files.del(v);
+								});
+                            }
                             var message = resp.message;
                             if (resp.errors) {
                                 message = '<ul>';
@@ -917,7 +932,7 @@ dpd.users.me(function (currentUser) {
                         });
                         break;
                     case 'delete':
-                        dpd[options.on].del(options.id, function (obj, error) {
+                        dpd[col].del(options.id, function (obj, error) {
                             if (obj) {
                                 options.success(obj);
                             }
@@ -932,9 +947,14 @@ dpd.users.me(function (currentUser) {
                 var fd = new FormData(),
                         url = 'files/',
                         hasFiles = false;
-                if (options.modelName) {
+                var col = options.modelName;
+                if (col) {
+                    if (col.indexOf('-') !== -1) {
+                        var parts = col.split('-');
+                        col = parts[parts.length - 1];
+                    }
                     // use model name as subdirectory
-                    url += '?subdir=' + options.modelName;
+                    url += '?subdir=' + col;
                 }
                 // add files to formdata
                 _(options.files).each(function () {
@@ -953,16 +973,17 @@ dpd.users.me(function (currentUser) {
                     data: fd,
                     dataType: 'json',
                     success: function (resp) {
-                        var data = {};
+                        var data = {___freshUpload: []};
                         if (resp.length) {
                             app.__.forEach(resp, function (i, value) {
                                 var name = options.files[i].name,
                                         path = app.config.baseURL + 'upload/';
-                                if (options.modelName) {
-                                    path += options.modelName + '/';
+                                if (col) {
+                                    path += col + '/';
                                 }
                                 data[name] = path + value.filename;
                                 data[name + 'Id'] = value.id;
+								data['___freshUpload'].push(value.id);
                             });
                             options.done(data);
                         }
@@ -977,7 +998,7 @@ dpd.users.me(function (currentUser) {
                     }
                 });
             })
-            .before('page.leave', function () {
+			.before('page.leave', function () {
                 $('.modal').modal('hide');
                 hideMessage(false);
             })
