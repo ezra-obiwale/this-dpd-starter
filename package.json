@@ -13,7 +13,7 @@
         "dpd-passport": "^0.3.6",
         "dpd-template": "^0.0.5",
         "forever": "^0.15.3",
-        "passport": "0.2.2",
+        "passport": "0.3.2",
         "string-hash": "^1.1.3"
     },
     "devDependencies": {},
