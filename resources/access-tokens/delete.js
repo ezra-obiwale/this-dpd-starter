@@ -1,0 +1,1 @@
+cancelUnless(ctx.isSuperUser || internal);

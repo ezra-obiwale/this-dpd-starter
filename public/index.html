@@ -8,7 +8,7 @@
         <meta name="author" content="">
         <!--<link rel="icon" href="../../favicon.ico">-->
 
-        <title>SportySeat</title>
+        <title>Starter App</title>
 
         <!-- Bootstrap core CSS -->
         <link href="assets/css/bootstrap.min.css" rel="stylesheet">
@@ -111,11 +111,10 @@
                 <div class="cover-container" this-type="layout" this-id="main" this-loaded>
                     <div class="masthead clearfix">
                         <div class="inner text-center">
-                            {: The app name :}
-                            <h3 class="masthead-brand">SportySeat</h3>
+                            <h3 class="masthead-brand">Starter App</h3>
                             <ul class="nav masthead-nav">
-                                <li class="active"><a href="#" this-goto="home">Home</a></li>
-                                <li><a href="#" this-goto="features">Features</a></li>
+                                <li class="active"><a href="#" this-go-home>Home</a></li>
+                                <li><a href="#">Features</a></li>
                                 <li class="btn btn-default hidden login"><a href="#" data-toggle="modal" data-target="#login">Login</a></li>
                                 <li class="btn btn-default hidden account"><a href="./admin/">Account</a></li>
                             </ul>
@@ -165,7 +164,7 @@
                                 </div>
                                 <div class="modal-body">
                                     <form class="form-horizontal" this-handle-submit method="post"
-                                          action="users/login" enctype="application/x-www-form-urlencoded">
+                                          action="user/login" enctype="application/x-www-form-urlencoded">
                                         <div class="form-group">
                                             <div class="col-xs-12">
                                                 <input required="required" type="email" placeholder="Email Address"
@@ -249,7 +248,7 @@
                                 </div>
                                 <div class="modal-body">
                                     <form class="form-horizontal" this-handle-submit method="post"
-                                          action="resend-verification-email" enctype="application/x-www-form-urlencoded">
+                                          action="user/resend-verification-email" enctype="application/x-www-form-urlencoded">
                                         <div class="form-group">
                                             <div class="col-xs-12">
                                                 <input required="required" type="email" placeholder="Email Address"
@@ -285,7 +284,7 @@
                                 </div>
                                 <div class="modal-body">
                                     <form class="form-horizontal" this-handle-submit method="post"
-                                          action="send-reset-password-email" enctype="application/x-www-form-urlencoded">
+                                          action="user/send-password-reset-email" enctype="application/x-www-form-urlencoded">
                                         <div class="form-group">
                                             <div class="col-xs-12">
                                                 <input required="required" type="email" placeholder="Email Address"
@@ -321,7 +320,7 @@
                                 </div>
                                 <div class="modal-body">
                                     <form class="form-horizontal" this-handle-submit method="post"
-                                          action="reset-password" enctype="application/x-www-form-urlencoded">
+                                          action="user/reset-password" enctype="application/x-www-form-urlencoded">
                                         <input type="hidden" name="token" />
                                         <div class="form-group">
                                             <div class="col-xs-12">
