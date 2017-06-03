@@ -1,0 +1,46 @@
+{
+	"type": "Collection",
+	"properties": {
+		"user": {
+			"name": "user",
+			"type": "string",
+			"typeLabel": "string",
+			"required": true,
+			"id": "user",
+			"order": 0
+		},
+		"apiKey": {
+			"name": "apiKey",
+			"type": "string",
+			"typeLabel": "string",
+			"required": true,
+			"id": "apiKey",
+			"order": 1
+		},
+		"createdDate": {
+			"name": "createdDate",
+			"type": "number",
+			"typeLabel": "number",
+			"required": true,
+			"id": "createdDate",
+			"order": 2
+		},
+		"expirationDate": {
+			"name": "expirationDate",
+			"type": "number",
+			"typeLabel": "number",
+			"required": true,
+			"id": "expirationDate",
+			"order": 3
+		},
+		"refreshToken": {
+			"name": "refreshToken",
+			"type": "string",
+			"typeLabel": "string",
+			"required": true,
+			"id": "refreshToken",
+			"order": 4
+		}
+	},
+	"swagger": {}
+}

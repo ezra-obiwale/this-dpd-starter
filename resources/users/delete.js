@@ -1,1 +1,1 @@
-cancelUnless(this.user !== me.id && !me.admin, 'You cannot delete another user');
+cancelUnless(internal, 'Not Allowed', 403);

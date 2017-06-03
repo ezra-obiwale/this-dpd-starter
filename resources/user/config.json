@@ -1,0 +1,26 @@
+{
+    "type": "EventResource",
+    "jwt": {
+        "verify": {
+            "GET": [
+                "me",
+                "delete-token",
+                "get-chats",
+                "get-polls-created",
+                "get-actionable-polls",
+                "get-schools",
+                "get-sets"
+            ]
+        },
+        "noverify": {
+            "POST": [
+                "register",
+                "login",
+                "revive-token",
+                "resend-verification-email",
+                "reset-password",
+                "send-password-reset-email"
+            ]
+        }
+    }
+}
