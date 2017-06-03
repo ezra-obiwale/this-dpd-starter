@@ -28,5 +28,5 @@
     "dribbbbleClientSecret": "",
     "weiboClientId": "",
     "weiboClientSecret": "",
-    "sessionDataKeys": "-id,apiKey,refreshToken"
+    "sessionDataKeys": "-id,apiKey,refreshToken,verified,socialAccount"
 }

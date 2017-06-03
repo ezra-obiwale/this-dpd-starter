@@ -820,10 +820,11 @@ function hideMessage(tm) {
 }
 
 var app = new ThisApp({
-	name: {
-		full: '<b>Example</b>App',
-		abbr: '<b>E</b>A'
-	},
+    name: {
+        full: '<b>Starter</b>App',
+        abbr: '<b>S</b>A',
+        text: 'Starter App'
+    },
     container: 'app',
     modelUID: 'id',
     pagination: {
@@ -838,281 +839,283 @@ var app = new ThisApp({
         // for hiding messages
         timeout,
         // holds previous page menu link. Needed for reactivation when new page not found
-        formerLink;
-function _(selector) {
-    return app._(selector);
-}
-function _c(selector) {
-    return selector ? app.container.find(selector) : app.container;
-}
-// check user is logged in before continuing
-dpd.users.me(function (currentUser) {
-    if (!currentUser) {
-        location.href = '../';
-        return;
-    }
-
-    app.__.ready(function () {
-        _(window).on('beforeunload', function () {
-            $('.modal').modal('hide');
-        });
-        _('body').on('click', '.sidebar-toggle', function () {
-            if (_('body').hasClass('sidebar-collapse')) {
-                app.store('close_sidebar', null);
-            }
-            else
-                app.store('close_sidebar', true);
-        });
-        if (app.store('close_sidebar')) {
-            _('body').addClass('sidebar-collapse');
-        }
+        formerLink,
+        _ = function (selector) {
+            return app._(selector);
+        },
+        _c = function (selector) {
+            return selector ? app.container.find(selector) : app.container;
+        },
+        store = function (key, value) {
+            if (value === undefined) return localStorage.getItem(key);
+            else if (value === null) return localStorage.removeItem(key);
+            return localStorage.setItem(key, value);
+        };
+app.__.ready(function () {
+    _(window).on('beforeunload', function () {
+        $('.modal').modal('hide');
     });
-    app.onError(function (msg) {
-        var _error = _('#error').html(msg).removeClass('hidden');
-        setTimeout(function () {
-            _error.addClass('hidden');
-        }, 4000);
-    })
-            .debug(1)
-            .setBaseURL('http://localhost:2403/')
-            .setDefaultLayout('main')
-            .setDataTransport(function (options) {
-                var action, data = options.data instanceof FormData ?
-                        options.data.toObject() : options.data,
-                        col = options.on;
-                if (!col && options.form) {
-                    col = _(options.form).this('model');
-                }
-                if (col && col.indexOf('-') !== -1) {
+    _('body').on('click', '.sidebar-toggle', function () {
+        if (_('body').hasClass('sidebar-collapse')) {
+            app.store('close_sidebar', null);
+        }
+        else
+            app.store('close_sidebar', true);
+    });
+    if (app.store('close_sidebar')) {
+        _('body').addClass('sidebar-collapse');
+    }
+});
+
+app.onError(function (msg) {
+    var _error = _('#error').html(msg).removeClass('hidden');
+    setTimeout(function () {
+        _error.addClass('hidden');
+    }, 4000);
+})
+        .debug(1)
+        .setBaseURL('http://localhost:2403/')
+        .setDefaultLayout('main')
+        .secureAPI(function (key, headers, data) {
+            var ssn = app.store('ssn').find(1);
+            headers['X-API-TOKEN'] = ssn.k;
+        })
+        .setUploader(function (options) {
+            var fd = new FormData(),
+                    url = 'files/',
+                    hasFiles = false;
+            var col = options.modelName;
+            if (col) {
+                if (col.indexOf('-') !== -1) {
                     var parts = col.split('-');
                     col = parts[parts.length - 1];
                 }
-                switch (options.action) {
-                    case 'read':
-                        dpd[col].get().then(function (data, error) {
-                            if (!data.status) {
-                                options.success(data, data.id);
+                // use model name as subdirectory
+                url += '?subdir=' + col;
+            }
+            // add files to formdata
+            _(options.files).each(function () {
+                if (!this.files.length) {
+                    return;
+                }
+                fd.append(this.name, this.files[0]);
+                hasFiles = true;
+            });
+            if (!hasFiles) {
+                return options.done({});
+            }
+            app.request({
+                type: 'post',
+                url: url,
+                data: fd,
+                dataType: 'json',
+                success: function (resp) {
+                    var data = {___freshUpload: []};
+                    if (resp.length) {
+                        app.__.forEach(resp, function (i, value) {
+                            var name = options.files[i].name,
+                                    path = app.config.baseURL + 'upload/';
+                            if (col) {
+                                path += col + '/';
                             }
-                            else {
-                                options.error(data);
-                            }
-                        }).fail(options.error);
-                        break;
-                    case 'update':
-                        action = 'put';
-                    case 'patch':
-                    case 'put':
-                        data.id = options.id;
-                    case 'create':
-                        if (!action) {
-                            action = 'post';
-                        }
-                    case 'post':
-                        if (!action)
-                            action = options.action;
-                        dpd[col][action](data)
-                                .then(function (data) {
-                                    options.success(data, data.id);
-                                }).fail(function (resp) {
-                            // uploaded a picture: delete it!
-                            if (data.___freshUpload && data.___freshUpload.length) {
-								data.___freshUpload.forEach(function(v) {
-									dpd.files.del(v);
-								});
-                            }
-                            var message = resp.message;
-                            if (resp.errors) {
-                                message = '<ul>';
-                                app.__.forEach(resp.errors, function (i, v) {
-                                    message += '<li><strong>' + i + '</strong> ' + v + '</li>';
-                                });
-                                message += '</ul>';
-                            }
-                            showErrorMessage(message || 'No internet connection');
+                            data[name] = path + value.filename;
+                            data[name + 'Id'] = value.id;
+                            data['___freshUpload'].push(value.id);
                         });
-                        break;
-                    case 'delete':
-                        dpd[col].del(options.id, function (obj, error) {
-                            if (obj) {
-                                options.success(obj);
-                            }
-                            else {
-                                options.error(error);
-                            }
-                        });
-                        break;
-                }
-            })
-            .setUploader(function (options) {
-                var fd = new FormData(),
-                        url = 'files/',
-                        hasFiles = false;
-                var col = options.modelName;
-                if (col) {
-                    if (col.indexOf('-') !== -1) {
-                        var parts = col.split('-');
-                        col = parts[parts.length - 1];
+                        options.done(data);
                     }
-                    // use model name as subdirectory
-                    url += '?subdir=' + col;
-                }
-                // add files to formdata
-                _(options.files).each(function () {
-                    if (!this.files.length) {
-                        return;
-                    }
-                    fd.append(this.name, this.files[0]);
-                    hasFiles = true;
-                });
-                if (!hasFiles) {
-                    return options.done({});
-                }
-                app.request({
-                    type: 'post',
-                    url: url,
-                    data: fd,
-                    dataType: 'json',
-                    success: function (resp) {
-                        var data = {___freshUpload: []};
-                        if (resp.length) {
-                            app.__.forEach(resp, function (i, value) {
-                                var name = options.files[i].name,
-                                        path = app.config.baseURL + 'upload/';
-                                if (col) {
-                                    path += col + '/';
-                                }
-                                data[name] = path + value.filename;
-                                data[name + 'Id'] = value.id;
-								data['___freshUpload'].push(value.id);
-                            });
-                            options.done(data);
-                        }
-                        else {
-                            showErrorMessage('Upload failed!');
-                            options.done(false);
-                        }
-                    },
-                    error: function (e) {
-                        showErrorMessage(e.responseText);
+                    else {
+                        showErrorMessage('Upload failed!');
                         options.done(false);
                     }
-                });
-            })
-			.before('page.leave', function () {
-                $('.modal').modal('hide');
-                hideMessage(false);
-            })
-            .when('page.leave', 'page', function () {
-                _('.page-loading.overlay').removeClass('hidden');
-            })
-            .when('page.loaded', 'page', function () {
-                _('.page-loading.overlay').addClass('hidden');
-                _(window).trigger('resize');
-                var _link = _('.sidebar-menu a[this-goto="'
-                        + _(this).this('id') + '"]');
-                // use default page's link if current page link doesn't exist
-                if (!_link.length)
-                    _link = _('.sidebar-menu a[this-goto="' + app.config.startWith + '"]');
-                // mark current nav link as active if not already marked
-                if (_link.length && !_link.parent().hasClass('active'))
-                    _link.parent().addClass('active').siblings().removeClass('active');
-                // hide back button
-                if (app.page.this('id') === app.config.startWith)
-                    app.container.find('[this-go-back]').hide();
-                else // show back button
-                    app.container.find('[this-go-back]').show();
-                $container.find('img').error(function () {
-                    $(this).attr('src', '../assets/img/no-image.png');
-                });
-            })
-            .on('page.not.found', function (e) {
-                _('.page-loading.overlay').addClass('hidden');
-                showErrorMessage('Page <strong>' + e.detail.pageId.toUpperCase()
-                        + '</strong> Not Found!', 2500);
-                _(formerLink).addClass('active').siblings().removeClass('active');
-            })
-            .on('form.invalid.submission', function () {
-                showErrorMessage('Form contains some invalid and/or empty fields');
-            })
-            .on('form.submission.error, delete.error', function (e) {
-                showErrorMessage('Unable to connect to the server');
-                setTimeout(function () {
-                    app.container.find('[this-mid="'
-                            + e.detail.model.id + '"]:not(.modal)')
-                            .css('opacity', 1)
-                            .find('.btn,.list-group')
-                            .show();
-                });
-            })
-            .on('form.submission.failed', function (e) {
-                showErrorMessage('Submission failed!<p>' + e.detail.responseData.message + '</p>');
-            })
-            .on('form.submission.success', function () {
-                $(this).closest('.modal').modal('hide');
-                showSuccessMessage('Data saved successfully!');
-            })
-            .on('delete.failed', function (e) {
-                showErrorMessage('Delete failed!');
+                },
+                error: function (e) {
+                    showErrorMessage(e.responseText);
+                    options.done(false);
+                }
+            });
+        })
+        .before('page.leave', function () {
+            $('.modal').modal('hide');
+            hideMessage(false);
+        })
+        .when('page.leave', 'page', function () {
+            _('.page-loading.overlay').removeClass('hidden');
+        })
+        .when('page.loaded', 'page', function () {
+            _('.page-loading.overlay').addClass('hidden');
+            _(window).trigger('resize');
+            var _link = _('.sidebar-menu a[this-goto="'
+                    + _(this).this('id') + '"]');
+            // use default page's link if current page link doesn't exist
+            if (!_link.length)
+                _link = _('.sidebar-menu a[this-goto="' + app.config.startWith + '"]');
+            // mark current nav link as active if not already marked
+            if (_link.length && !_link.parent().hasClass('active'))
+                _link.parent().addClass('active').siblings().removeClass('active');
+            // hide back button
+            if (app.page.this('id') === app.config.startWith)
+                app.container.find('[this-go-back]').hide();
+            else // show back button
+                app.container.find('[this-go-back]').show();
+            // set page title
+            var title = app.config.name.text;
+            if (app.page.this('title'))
+                title += ' | ' + app.page.this('title');
+            _('head>title').html(title);
+            $container.find('img').error(function () {
+                $(this).attr('src', '../assets/images/no-image.png');
+            });
+        })
+        .on('page.not.found', function (e) {
+            _('.page-loading.overlay').addClass('hidden');
+            showErrorMessage('Page <strong>' + e.detail.pageId.toUpperCase()
+                    + '</strong> Not Found!', 2500);
+            _(formerLink).addClass('active').siblings().removeClass('active');
+        })
+        .on('form.invalid.submission', function () {
+            showErrorMessage('Form contains some invalid and/or empty fields');
+        })
+        .on('form.submission.error, delete.error', function (e) {
+            showErrorMessage('Unable to connect to the server');
+            setTimeout(function () {
                 app.container.find('[this-mid="'
                         + e.detail.model.id + '"]:not(.modal)')
                         .css('opacity', 1)
                         .find('.btn,.list-group')
                         .show();
-            })
-            .on('delete.success', function () {
-                $(this).closest('.modal').modal('hide');
-                showSuccessMessage('Delete successful!');
-            })
-            .on('model.binded,model.loaded,cache.model.loaded', function () {
-                $(this).find('img').error(function () {
-                    $(this).attr('src', '../assets/img/no-image.png');
-                });
-            })
-            .on('click', 'a[href="#"]', function (e) {
-                e.preventDefault();
-            })
-            .on('click', '.sidebar-menu a', function () {
-                var _li = _(this).parent();
-                formerLink = _li.siblings('.active');
-                _li.addClass('active')
-                        .siblings().removeClass('active');
-            })
-            .on('click', 'a#sign-out', function (e) {
-                e.preventDefault();
-                dpd.users.logout(function () {
-                    app.store('xeca', true);
-                    location.href = '../';
-                });
-            })
-            .on('click', '[data-target="#form"]', function () {
-                _('#form.modal .modal-title').html(_(this).attr('title'));
-            })
-            // show only modal in container
-            .on('click', '[data-toggle="_modal"]', function () {
-                var $modal = $(app.container.find(_(this).data('target')).get(0)).modal('show');
-                $modal.find('[type="file"]').previewMedia().addClass('hidden');
-                $modal.find('img:not(.actionable)').on('click', function () {
-                    $(this).addClass('actionable').siblings('[type="file"]').click();
-                });
-                $modal.find('input,textarea,select,.btn').get(0).focus();
-            })
-            .on('click', '#delete.modal [this-delete]', function () {
-                var _modal = _(this).closest('.modal');
-                app.container.find('[this-mid="'
-                        + _modal.this('mid') + '"]:not(form):not(.modal)')
-                        .css('opacity', .4)
-                        .find('.btn,.list-group')
-                        .hide();
-            })
-            .start('dashboard');
-
-    var $container = $(_c().get(0));
-    $container.on('click', '[data-target="#delete"]', function () {
-        $('#delete.modal #deleting').html($(this).data('deleting'));
-    })
-            .on('hide.bs.modal', function (e) {
-                app.resetAutocomplete(_(this).find('[this-autocomplete]').this('id'));
-                $(this).find('img.actionable').removeClass('actionable')
-                        .unbind('click').attr('src', '../assets/images/no-image.png');
             });
-});
+        })
+        .on('form.submission.failed', function (e) {
+            showErrorMessage('Submission failed!<p>' + e.detail.responseData.message + '</p>');
+        })
+        .on('form.submission.success', function () {
+            $(this).closest('.modal').modal('hide');
+            showSuccessMessage('Data saved successfully!');
+        })
+        .on('delete.failed', function (e) {
+            showErrorMessage('Delete failed!');
+            app.container.find('[this-mid="'
+                    + e.detail.model.id + '"]:not(.modal)')
+                    .css('opacity', 1)
+                    .find('.btn,.list-group')
+                    .show();
+        })
+        .on('delete.success', function () {
+            $(this).closest('.modal').modal('hide');
+            showSuccessMessage('Delete successful!');
+        })
+        .on('model.binded,model.loaded,cache.model.loaded', function () {
+            $(this).find('img').error(function () {
+                $(this).attr('src', '../assets/images/no-image.png');
+            });
+        })
+        .on('click', 'a[href="#"]', function (e) {
+            e.preventDefault();
+        })
+        .on('click', '.sidebar-menu a', function () {
+            var _li = _(this).parent();
+            formerLink = _li.siblings('.active');
+            _li.addClass('active')
+                    .siblings().removeClass('active');
+        })
+        .on('click', 'a#sign-out', function (e) {
+            e.preventDefault();
+            logout();
+        })
+        .on('click', '[data-target="#form"]', function () {
+            _('#form.modal .modal-title').html(_(this).attr('title'));
+        })
+        // show only modal in container
+        .on('click', '[data-toggle="_modal"]', function () {
+            var $modal = $(app.container.find(_(this).data('target')).get(0)).modal('show');
+            $modal.find('[type="file"]').previewMedia().addClass('hidden');
+            $modal.find('img:not(.actionable)').on('click', function () {
+                $(this).addClass('actionable').siblings('[type="file"]').click();
+            });
+            $modal.find('input,textarea,select,.btn').get(0).focus();
+        })
+        .on('click', '#delete.modal [this-delete]', function () {
+            var _modal = _(this).closest('.modal');
+            app.container.find('[this-mid="'
+                    + _modal.this('mid') + '"]:not(form):not(.modal)')
+                    .css('opacity', .4)
+                    .find('.btn,.list-group')
+                    .hide();
+        })
+        .start('dashboard');
+
+var $container = $(_c().get(0));
+$container.on('click', '[data-target="#delete"]', function () {
+    $('#delete.modal #deleting').html($(this).data('deleting'));
+})
+        .on('hide.bs.modal', function (e) {
+            app.resetAutocomplete(_(this).find('[this-autocomplete]').this('id'));
+            $(this).find('img.actionable').removeClass('actionable')
+                    .unbind('click').attr('src', '../assets/images/no-image.png');
+        });
+var ssn = app.store('ssn').find(1),
+        logout = function () {
+            // show just exited
+            store('exited', true);
+            app.store('ssn').drop();
+            location.href = '../';
+        },
+        watchToken = function (ssn, minutesBefore) {
+            // end time minus 10 minutes
+            var e = ssn.e - Date.now() - minutesBefore * 60 * 1000,
+                    // try to renew token
+                    renewToken = function () {
+                        // send request
+                        app.request({
+                            type: 'post',
+                            url: 'user/renew-token',
+                            data: {
+                                id: ssn.i
+                            }
+                        })
+                                .then(function (d) {
+                                    // got new data
+                                    if (d) {
+                                        ssn = {
+                                            e: d.expires,
+                                            i: d.uid,
+                                            k: d.apiKey,
+                                            v: d.verified
+                                        };
+                                        app.store('ssn')
+                                                .save(ssn, 1);
+                                        // start watching all over again
+                                        watchToken(ssn, minutesBefore);
+                                    }
+                                    // no data: log out
+                                    else logout();
+                                })
+                                // error: log out
+                                .catch(logout);
+                    };
+            // there's still time before expiration
+            if (e > 0) {
+                return setTimeout(renewToken, e);
+            }
+            // try renewal right away
+            else renewToken();
+        };
+// token not expired
+if (ssn && ssn.e > Date.now()) {
+    // check token is valid
+    app.request('user/me')
+            .then(function (user) {
+                // token is valid
+                if (user) {
+                    // watch for renewal
+                    watchToken(ssn, 10);
+                }
+                // invalid token: log out
+                else logout();
+            })
+            // error: log out
+            .catch(logout);
+}
+// token expired: log out
+else logout();

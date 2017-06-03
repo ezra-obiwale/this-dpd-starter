@@ -1,19 +1,31 @@
-var hash = require('string-hash'),
-    app = require('../package.json').app,
-    parse = function(text, data) {
-        for(var key in data) {
-            text = text.replace(new RegExp('{{' + key + '}}', 'g'), data[key]);
-        }
-        return text;
-    };
-this.verificationToken = hash(this.username + Date.now());
-dpd.template.post({"template": 'verify-email.html'}, function(data) {
-    dpd.email.post({
-        to: this.username,
-        subject: 'Verify your email for ' + app.name,
-        html: parse(data.html, {
-            appName: app.name,
-            link: app.urls.server + '/verify-email/' + this.verificationToken
-        })
+if (!this.socialAccount) { // creating user from registration
+    var hash = require('string-hash');
+    this.verificationToken = hash(this.username + Date.now()) + 'T' + Date.now();
+    this.verified = false;
+    dpd.template.post({"template": 'verify-email.html'}, function (data) {
+        ctx.utils.sendmail({
+            recipients: [{address: this.username}],
+            subject: 'Verify your email for ' + ctx.getConfig('name', 'Starter App', true),
+            body: data.html,
+            bodyVariables: {
+                appName: ctx.getConfig('name', 'Starter App', true),
+                link: ctx.appUrls.server + '/user/verify-email/' + this.verificationToken
+            }
+        });
     });
-});
+}
+else { // creating user from social login
+    this.verified = true;
+    switch (this.socialAccount) {
+        case 'google':
+            this.firstName = this.profile.name.givenName;
+            this.lastName = this.profile.name.familyName;
+            if (this.profile.emails.length) {
+                this.email = this.profile.emails[0].value;
+                this.username = this.profile.emails[0].value;
+            }
+            break;
+        case 'facebook':
+            break;
+    }
+}

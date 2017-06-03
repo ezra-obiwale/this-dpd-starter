@@ -9,9 +9,18 @@ var app = new ThisApp({
         },
         _c = function (selector) {
             return selector ? app.container.find(selector) : app.container;
+        },
+        store = function (key, value) {
+            if (value === undefined) return localStorage.getItem(key);
+            else if (value === null) return localStorage.removeItem(key);
+            return localStorage.setItem(key, value);
         };
 app.debug(true)
         .setDefaultLayout('main')
+        .secureAPI(function (key, headers, data) {
+            var ssn = app.store('ssn').find(1);
+            if (ssn) headers['X-API-TOKEN'] = ssn.k;
+        })
         .setBaseURL('http://localhost:2403/')
         .before('form.send', function () {
             _(this).find('[type="submit"]').addClass('hidden')
@@ -21,7 +30,7 @@ app.debug(true)
         })
         .when('page.loaded', 'page', function () {
             // only if page is freshly loaded
-            if (!app.restored) {
+            if (!app.loadedPartial) {
                 // allow reset password - part 2
                 if (app.params.rpswd) {
                     delete app.params.rpswd;
@@ -48,24 +57,76 @@ app.debug(true)
                             .children().addClass(type).html(message);
                     delete app.params.ev;
                 }
+
+                var ssn = app.store('ssn').find(1),
+                        noUser = function () {
+                            if (store('exited')) {
+                                // show login modal
+                                $(_c('#login.modal').get(0)).modal('show')
+                                        .find('.modal-footer').removeClass('hidden')
+                                        .children().addClass('alert-info')
+                                        .html('Session expired');
+                                store('exited', null);
+                            }
+                            _c('li.btn.auth').removeClass('hidden');
+                            _c('li.btn.account').addClass('hidden');
+                            app.store('ssn').drop();
+                        },
+                        watchToken = function (ssn, minutesBefore) {
+                            // end time minus 10 minutes
+                            var e = ssn.e - Date.now() - minutesBefore * 60 * 1000,
+                                    // try to renew token
+                                    renewToken = function () {
+                                        // send request
+                                        app.request({
+                                            type: 'post',
+                                            url: 'user/renew-token',
+                                            data: {
+                                                id: ssn.i
+                                            }
+                                        })
+                                                .then(function (d) {
+                                                    // got new data
+                                                    if (d) {
+                                                        ssn = {
+                                                            e: d.expires,
+                                                            i: d.uid,
+                                                            k: d.apiKey,
+                                                            v: d.verified
+                                                        };
+                                                        app.store('ssn')
+                                                                .save(ssn, 1);
+                                                        // start watching all over again
+                                                        watchToken(ssn, minutesBefore);
+                                                    }
+                                                    // no data
+                                                    else noUser();
+                                                })
+                                                // error: no user
+                                                .catch(noUser);
+                                    };
+                            // there's still time before expiration
+                            if (e > 0) {
+                                return setTimeout(renewToken, e);
+                            }
+                            // try renewal right away
+                            else renewToken();
+                        };
+                if (ssn && ssn.e > Date.now()) {
+                    app.request('user/me')
+                            .then(function (user) {
+                                if (user) {
+                                    _c('li.btn.auth').addClass('hidden');
+                                    _c('li.btn.account').removeClass('hidden');
+                                    // watch token and reset 10 minutes before expiration
+                                    watchToken(ssn, 10);
+                                }
+                                else noUser();
+                            })
+                            .catch(noUser);
+                }
+                else noUser();
             }
-            dpd.users.me().then(function (user) {
-                if (user) {
-                    _c('li.btn.login').addClass('hidden');
-                    _c('li.btn.account').removeClass('hidden');
-                }
-                else {
-                    if (app.store('xeca')) {
-                        // show login modal
-                        $(_c('#login.modal').get(0)).modal('show')
-                                .find('.modal-footer').removeClass('hidden')
-                                .children().addClass('alert-info')
-                                .html('Session expired');
-                        app.store('xeca', null);
-                    }
-                    _c('li.btn.login').removeClass('hidden');
-                }
-            });
         })
         .on('click', '.input-group-addon', function () {
             var _password = _(this).siblings();
@@ -95,7 +156,9 @@ app.debug(true)
                     message += '</ul>';
                 }
                 _alert.removeClass('alert-success alert-info')
-                        .addClass('alert-danger').html(data ? message.replace('username', 'email') : 'No internet connection');
+                        .addClass('alert-danger')
+                        .html(data ? message.replace('username', 'email')
+                                : 'No internet connection');
             }
             // success
             else {
@@ -105,6 +168,12 @@ app.debug(true)
                         var url = './admin/';
                         if (app.params.r)
                             url += decodeURIComponent(app.params.r);
+                        app.store('ssn').save({
+                            k: data.apiKey,
+                            i: data.uid,
+                            v: data.verified,
+                            e: data.expires
+                        }, 1);
                         // redirect to user page
                         location.href = url;
                         _submit.addClass('hidden').siblings().removeClass('hidden');

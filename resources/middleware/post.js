@@ -1,7 +1,8 @@
 var noVerify = ctx.getConfig('jwt.noverify.POST');
-// dpd-ssh-key:true is not in headers
-// and resource is called internally
-if (ctx.isSuperUser || internal ||
+// user exists from token
+// request is made with dpd-ssh-key:true
+// resource is called internally
+if (ctx.user.id || ctx.isSuperUser || internal ||
         //  or not asked to verify
                 (!Array.isArray(noVerify) && noVerify) ||
                 // or asked to verify but not first part
@@ -10,12 +11,5 @@ if (ctx.isSuperUser || internal ||
             proceed();
 // resource is called externally or not asked to not verify
         else {
-            // verify token
-            ctx.jwt.verify({
-                issuer: 'http://smartalumni.io'
-            }, function (err, payload) {
-                killIf(err, 'Access denied!');
-                ctx.user = payload;
-                proceed();
-            });
+            kill('Access denied!');
         }

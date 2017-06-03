@@ -13,4 +13,5 @@ hide('profile');
 hide('socialAccountId');
 // set username to email and hide username
 this.email = this.username;
-hide(this.username);
+hide('username');
+hide('lastLogin');

@@ -1,23 +1,29 @@
-var app = require('../../package.json').app,
-        utils = require('node-utils'),
-        parse = utils.parseTemplate,
-        login = function (body) {
-            cancelUnless(body.email && body.password, 'Email and password are required!');
-            dpd.users.login({
-                username: body.email,
-                password: body.password
-            }, function (session, err) {
-                cancelUnless(session, err);
-                // log from the normal session deployd keeps
-                dpd.users.logout();
+var login = function (body, callback) {
+    cancelUnless(body.email && body.password, 'Email and password are required!');
+    dpd.users.login({
+        username: body.email,
+        password: body.password
+    }, function (session, err) {
+        // log from the normal session deployd keeps
+        dpd.users.logout();
+        if (callback) {
+            callback(session, err);
+        }
+        else {
+            if (!session)
+                setResult(session, err);
+            else
                 setResult({
                     uid: session.uid,
                     apiKey: ctx.session.data.apiKey,
                     expires: ctx.jwt.expires.numeric,
-                    refreshToken: ctx.session.data.refreshToken
+                    refreshToken: ctx.session.data.refreshToken,
+                    verified: ctx.session.data.verified,
+                    socialAccount: false
                 });
-            });
-        };
+        }
+    });
+};
 switch (parts[0]) {
     // without JWT token
     case 'revive-token':
@@ -27,15 +33,12 @@ switch (parts[0]) {
             refreshToken: body.refreshToken
         }, function (tokens, err) {
             cancelUnless(tokens.length, 'Invalid refresh token!');
-            ctx.jwt.create(tokens[0].user, {
-                issuer: ctx.appUrls.server
-            }, function (token, err) {
+            ctx.jwt.create(tokens[0].user, function (err, token) {
                 cancelUnless(token, err);
                 setResult({
-                    uid: body.id,
                     apiKey: token,
-                    refreshToken: body.refreshToken,
-                    expires: ctx.jwt.expires.numeric
+                    expires: ctx.jwt.expires.numeric,
+                    verified: tokens[0].user.verified
                 });
                 dpd.accesstokens.put(tokens[0].id, {
                     apiKey: token
@@ -45,35 +48,49 @@ switch (parts[0]) {
         break;
         // with JWT token
     case 'change-password':
-        cancel('Not Implemented', 501);
+        cancelUnless(body.newPassword === body.confirm, 'Passwords mismatch!');
+        // get user
+        dpd.users.get(ctx.user.id, function (user) {
+            // check old password is correct
+            login({
+                email: user.username,
+                password: body.oldPassword
+            }, function (session, err) {
+                if (!session)
+                    setResult(null, 'Incorrect old password!');
+                // Update password
+                dpd.users.put(user.id, {
+                    password: body.newPassword
+                }, setResult);
+            });
+        });
         break;
     case 'renew-token': // to renew api token before expiration
         cancelUnless(body.id, 'User not specified!');
-        dpd.users.get(body.id, function (user) {
-            cancelUnless(user, 'User not found!');
+        dpd.accesstokens.get({
+            user: body.id,
+            apiKey: ctx.jwt.token
+        }, function (tokens, err) {
+            cancelUnless(tokens.length, 'Invalid token!');
             // create jwt token
-            ctx.jwt.create(user, {// options
-                issuer: ctx.appUrls.server
-            }, function (token, err) { // callback
-                cancelIf(err, err);
-                setResult({
-                    uid: user.id,
-                    apiKey: token
-                });
-                // delete old token
-                dpd.accesstokens.del({
-                    id: {$ne: null},
-                    apiKey: ctx.jwt.token
-                });
-                // create new token
-                dpd.accesstokens.post({
-                    user: user.id,
-                    apiKey: token,
-                    createdDate: Math.floor(Date.now() / 1000),
-                    expirationDate: Math.floor(Date.now() / 1000) + 60 * 60
-                });
+            var token = ctx.jwt.create(tokens[0].user);
+            cancelUnless(token, 'Create token failed!');
+            // send result
+            setResult({
+                apiKey: token,
+                expires: ctx.jwt.expires.numeric,
+                verified: tokens[0].user.verified
             });
-
+            // delete old token
+            dpd.accesstokens.del(tokens[0].id, cancelUnless);
+            // create new token
+            dpd.accesstokens.post({
+                user: body.id,
+                apiKey: token,
+                createdDate: Date.now(),
+                expirationDate: ctx.jwt.expires.numeric,
+                refreshToken: tokens[0].refreshToken
+            }, cancelUnless);
         });
         break;
     case 'revoke-token': // to revoke an api token
@@ -90,16 +107,11 @@ switch (parts[0]) {
         // set username for deployd
         body.username = body.email;
         // confirm password
-        cancelUnless(body.password === body.confirm, 'Passwords mismatch!');
+        cancelIf(body.hasOwnProperty('confirm') &&
+                body.password !== body.confirm, 'Passwords mismatch!');
         dpd.users.post(body, function (user, err) {
-            cancelIf(err, err);
-            if (body.login) {
-                return login({
-                    email: body.email,
-                    password: body.confirm,
-                    ig: true
-                });
-            }
+            if (!user)
+                setResult(null, err);
             delete user.verificationToken;
             setResult(user);
         });
@@ -113,40 +125,22 @@ switch (parts[0]) {
         // get user with email as username
         dpd.users.get({username: body.email}, function (users) {
             cancelUnless(users && users.length, 'No account found for that email!');
-            cancelIf(users[0].verified, 'Account already has been verified!');
+            cancelIf(users[0].verified, 'Account has already been verified!');
             // get template file
             dpd.template.post({"template": 'verify-email.html'}, function (
                     data) {
                 // send email
-                var SP = require('sparkpost'),
-                        sparkpost = new SP(app.sparkpost.key);
-
-                sparkpost.transmissions.send({
-                    content: {
-                        from: app.sparkpost.fromAddress,
-                        subject: 'Verify your email for ' + app.name,
-                        html: parse(data.html, {
-                            appName: app.name,
-                            link: ctx.appUrls.server + '/user/verify-email/' + users[0].verificationToken
-                        })
+                ctx.utils.sendmail({
+                    recipients: [{address: users[0].username}],
+                    subject: 'Verify your email for '
+                            + ctx.getConfig('name', 'Starter App', true),
+                    body: data.html,
+                    bodyVariables: {
+                        appName: ctx.getConfig('name', 'Starter App', true),
+                        link: ctx.appUrls.server + '/user/verify-email/' + users[0].verificationToken
                     },
-                    recipients: [
-                        {address: users[0].username}
-                    ]
-                })
-                        .then(function (response) {
-                            if (response.results.total_accepted_recipients)
-                                setResult({
-                                    status: 200,
-                                    message: 'Mail sent successfully'
-                                });
-                            else
-                                setResult(null, 'Send email failed');
-                        })
-                        .catch(err => {
-                            console.error('Send email failed: ' + err);
-                            setResult(null, err);
-                        });
+                    callback: setResult
+                });
             });
         });
         break;
@@ -187,42 +181,47 @@ switch (parts[0]) {
                 }
                 url += 'token=' + token;
                 // get template file
-                dpd.template.post({"template": 'reset-password.html'}, function (
-                        data) {
-                    var SP = require('sparkpost'),
-                            sparkpost = new SP(app.sparkpost.key);
-
-                    sparkpost.transmissions.send({
-                        // options: {
-                        //   sandbox: true
-                        // },
-                        content: {
-                            from: app.sparkpost.fromAddress,
-                            subject: 'Reset Password for ' + app.name,
-                            html: parse(data.html, {
-                                appName: app.name,
-                                link: url
-                            })
+                dpd.template.post({"template": 'reset-password.html'}, function (data) {
+                    // send email
+                    ctx.utils.sendmail({
+                        recipients: [{address: user.username}],
+                        subject: 'Reset Password for ' + ctx.getConfig('name', 'Starter App', true),
+                        body: data.html,
+                        bodyVariables: {
+                            appName: ctx.getConfig('name', 'Starter App', true),
+                            link: url
                         },
-                        recipients: [
-                            {address: user.username}
-                        ]
-                    })
-                            .then(function (response) {
-                                if (response.results.total_accepted_recipients)
-                                    setResult({
-                                        status: 200,
-                                        message: 'Mail sent successfully'
-                                    });
-                                else
-                                    setResult(null, 'Send email failed');
-                            })
-                            .catch(err => {
-                                console.error('Send email failed: ' + err);
-                                setResult(null, err);
-                            });
+                        callback: setResult
+                    });
                 });
             });
+        });
+        break;
+    case 'update-info':
+        delete body.passwordToken;
+        delete body.lastLogin;
+        cancelIf(body.hasOwnProperty('firstName') && !body.firstName, 'First name cannot be empty!');
+        cancelIf(body.hasOwnProperty('lastName') && !body.lastName, 'Last name cannot be empty!');
+        dpd.users.put(ctx.user.id, body, setResult);
+        break;
+    case 'delete-account':
+        // cancel if provided id is not the same as the user id in token payload
+        cancelIf(body.id !== ctx.user.id, 'Invalid action!');
+        // get the user
+        dpd.users.get(body.id, function (user) {
+            // if account was not created by social login
+            cancelIf(!user.profile && (!body.password || !body.email), 'Email and password must be provided!');
+            if (body.password) {
+                login({email: user.email, password: body.password}, function (session, err) {
+                    if (!session)
+                        setResult(null, err);
+                    dpd.users.del(user.id, setResult);
+                });
+            }
+            else if (body.socialAccountProvider.toLowerCase() !== user.socialAccount.toLowerCase()) {
+                cancel('Invalid email address!');
+                dpd.users.del(user.id, setResult);
+            }
         });
         break;
     default:
