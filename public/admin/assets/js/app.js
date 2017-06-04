@@ -850,6 +850,12 @@ var app = new ThisApp({
             if (value === undefined) return localStorage.getItem(key);
             else if (value === null) return localStorage.removeItem(key);
             return localStorage.setItem(key, value);
+        },
+        logout = function () {
+            // show just exited
+            store('exited', true);
+            app.store('ssn').drop();
+            location.href = '../';
         };
 app.__.ready(function () {
     _(window).on('beforeunload', function () {
@@ -943,6 +949,70 @@ app.onError(function (msg) {
             _('.page-loading.overlay').removeClass('hidden');
         })
         .when('page.loaded', 'page', function () {
+            if (!app.loadedPartial) {
+                // check user is logged in
+                var ssn = app.store('ssn').find(1),
+                        watchToken = function (ssn, minutesBefore) {
+                            // end time minus 10 minutes
+                            var e = ssn.e - Date.now() - minutesBefore * 60 * 1000,
+                                    // try to renew token
+                                    renewToken = function () {
+                                        // send request
+                                        app.request({
+                                            type: 'post',
+                                            url: 'user/renew-token',
+                                            data: {
+                                                id: ssn.i
+                                            }
+                                        })
+                                                .then(function (d) {
+                                                    // got new data
+                                                    if (d) {
+                                                        ssn = {
+                                                            e: d.expires,
+                                                            i: d.uid,
+                                                            k: d.apiKey,
+                                                            v: d.verified
+                                                        };
+                                                        app.store('ssn')
+                                                                .save(ssn, 1);
+                                                        // start watching all over again
+                                                        watchToken(ssn, minutesBefore);
+                                                    }
+                                                    // no data: log out
+                                                    else logout();
+                                                })
+                                                // error: log out
+                                                .catch(logout);
+                                    };
+                            // there's still time before expiration
+                            if (e > 0) {
+                                return setTimeout(renewToken, e);
+                            }
+                            // try renewal right away
+                            else renewToken();
+                        };
+                // token not expired
+                if (ssn && ssn.e > Date.now()) {
+                    // check token is valid
+                    app.request('user/me')
+                            .then(function (user) {
+                                // token is valid
+                                if (user) {
+                                    _c('.user-fullname').html(user.name);
+                                    // watch for renewal
+                                    watchToken(ssn, 10);
+                                }
+                                // invalid token: log out
+                                else logout();
+                            })
+                            // error: log out
+                            .catch(logout);
+                }
+                // token expired: log out
+                else logout();
+            }
+
             _('.page-loading.overlay').addClass('hidden');
             _(window).trigger('resize');
             var _link = _('.sidebar-menu a[this-goto="'
@@ -1054,68 +1124,3 @@ $container.on('click', '[data-target="#delete"]', function () {
             $(this).find('img.actionable').removeClass('actionable')
                     .unbind('click').attr('src', '../assets/images/no-image.png');
         });
-var ssn = app.store('ssn').find(1),
-        logout = function () {
-            // show just exited
-            store('exited', true);
-            app.store('ssn').drop();
-            location.href = '../';
-        },
-        watchToken = function (ssn, minutesBefore) {
-            // end time minus 10 minutes
-            var e = ssn.e - Date.now() - minutesBefore * 60 * 1000,
-                    // try to renew token
-                    renewToken = function () {
-                        // send request
-                        app.request({
-                            type: 'post',
-                            url: 'user/renew-token',
-                            data: {
-                                id: ssn.i
-                            }
-                        })
-                                .then(function (d) {
-                                    // got new data
-                                    if (d) {
-                                        ssn = {
-                                            e: d.expires,
-                                            i: d.uid,
-                                            k: d.apiKey,
-                                            v: d.verified
-                                        };
-                                        app.store('ssn')
-                                                .save(ssn, 1);
-                                        // start watching all over again
-                                        watchToken(ssn, minutesBefore);
-                                    }
-                                    // no data: log out
-                                    else logout();
-                                })
-                                // error: log out
-                                .catch(logout);
-                    };
-            // there's still time before expiration
-            if (e > 0) {
-                return setTimeout(renewToken, e);
-            }
-            // try renewal right away
-            else renewToken();
-        };
-// token not expired
-if (ssn && ssn.e > Date.now()) {
-    // check token is valid
-    app.request('user/me')
-            .then(function (user) {
-                // token is valid
-                if (user) {
-                    // watch for renewal
-                    watchToken(ssn, 10);
-                }
-                // invalid token: log out
-                else logout();
-            })
-            // error: log out
-            .catch(logout);
-}
-// token expired: log out
-else logout();

@@ -12,6 +12,11 @@ ctx.session.data.verified = this.verified;
 if (this.socialAccount)
     ctx.session.data.socialAccount = true;
 
+// create expired tokens
+dpd.accesstokens.del({
+    id: {$ne: null},
+    expirationDate: {$lt: Date.now()}
+});
 // create new token
 dpd.accesstokens.post({
     user: this.id,

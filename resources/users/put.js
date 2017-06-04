@@ -3,8 +3,8 @@ cancelUnless(internal, 'Not Allowed', 403);
 cancelIf(this.admin && !ctx.user.admin, 'Not Allowed', 403);
 
 // disallow changes to the following:
-protect(profile);
-protect(verificationToken);
-protect(socialAccount);
-protect(socialAccountId);
-protect(profile);
+protect('profile');
+protect('verificationToken');
+protect('socialAccount');
+protect('socialAccountId');
+protect('profile');
