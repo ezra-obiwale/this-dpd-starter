@@ -63,7 +63,7 @@ ctx.__proto__.isSuperUser = ALLOW_SUPER_USER ? (ctx.req.headers['dpd-ssh-key'] |
  * The app config object
  * @var {object}
  */
-ctx.__proto__.appConfig = require('../../package.json').app;
+ctx.__proto__.appConfig = require('../../package.json');
 /**
  * The config object the target resource
  * @var {object}
