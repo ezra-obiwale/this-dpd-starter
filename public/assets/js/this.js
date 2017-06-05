@@ -358,13 +358,13 @@
 
         return obj;
     }
-// update href values of links
+    // update href values of links
     function updateLinkHrefs() {
         var _this = this;
         // update links
-        this.container.find('[this-goto]:not(form)').each(function () {
+        this.container.find('a[this-goto]:not(form)').each(function () {
             var _a = _this._(this), href, hrf = '', connector, _model;
-            if (_a.hasAttr('href') && _a.attr('href') !== '#')
+            if (_a.attr('href') && _a.attr('href') !== '#')
                 return;
             href = '#/' + _a.this('goto');
             _model = _a.closest('model,[this-type="model"],[this-model]');
@@ -407,7 +407,6 @@
                 href += '/' + crudConnectors[connector] + '/' + (_a.this('model')
                         || _model.this('model') || _model.this('id')) + '/' + hrf;
             }
-
             _a.attr('href', href);
         });
     }
@@ -1726,7 +1725,7 @@
                                             internal.bindToObject
                                                     .call(_this, _target, data,
                                                             function (elem) {
-                                                                resolve();
+                                                                resolve(elem);
                                                             });
                                         }
                                         else {
@@ -4745,7 +4744,13 @@
                                             __this.removeThis('treated');
                                         });
                                     }
-                                    internal.bindToElementModel.call(_this, _target, _model, __this.this('bind'));
+                                    internal.bindToElementModel
+                                            .call(_this, _target, _model, __this.this('bind'))
+                                            .then(function (elem) {
+//                                                console.log(_target.outerHtml(), elem.outerHtml());
+                                                // replace target with bound elem
+                                                _target.replaceWith(elem);
+                                            });
                                 })
                                 /*
                                  * DELETE event
@@ -5912,6 +5917,15 @@
                 lowercase: function (item) {
                     return this.__factory(item, null, function (item) {
                         return item.toLowerCase();
+                    });
+                },
+                /**
+                 * Turns new lines into <br />
+                 * @param {string} item
+                 */
+                nl2br: function (item) {
+                    return this.__factory(item, null, function (item) {
+                        return (item + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br />$2');
                     });
                 },
                 /**
@@ -7119,7 +7133,7 @@
          */
         bindToObject: function (elem, object, callback) {
             return this.promise(function (resolve) {
-                internal.bindToObject.call(this, elem, object, function () {
+                internal.bindToObject.call(this, this._(elem), object, function (elem) {
                     resolve.apply(this, Array.from(arguments));
                     this.__.callable(callback).apply(this, Array.from(arguments));
                 }.bind(this));
@@ -7145,21 +7159,17 @@
                     .each(function () {
                         var __this = _this._(this),
                                 name = __this.this('model') || __this.this('id');
-                        _this.collection(name, {
-                            success: function (collection) {
-                                collection.clearCache();
-                                if (__this.this('type') === 'page') {
-                                    did_page = true;
-                                    return;
-                                }
-                                // reload element if page's model collection has
-                                // not been cleared. Otherwise, don't. Reloading
-                                // page would take care of that.
-                                if (reload && !did_page) {
-                                    _this.load(__this);
-                                }
-                            }
-                        });
+                        internal.store.call(this, name).drop();
+                        if (__this.this('type') === 'page') {
+                            did_page = true;
+                            return;
+                        }
+                        // reload element if page's model collection has
+                        // not been cleared. Otherwise, don't. Reloading
+                        // page would take care of that.
+                        if (reload && !did_page) {
+                            _this.load(__this);
+                        }
                     });
             // cleared page's model collection: reload page
             if (did_page && reload) {
