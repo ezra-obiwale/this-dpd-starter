@@ -17,9 +17,15 @@ var app = new ThisApp({
         };
 app.debug(true)
         .setDefaultLayout('main')
+        .onError(function (msg) {
+            var _error = app._('#error').html(msg).removeClass('hidden');
+            setTimeout(function () {
+                _error.addClass('hidden');
+            }, 4000);
+        })
         .secureAPI(function (key, headers, data) {
             var ssn = app.store('ssn').find(1);
-            if (ssn) headers['X-API-TOKEN'] = ssn.k;
+            if (ssn && ssn.k) headers['X-API-TOKEN'] = ssn.k;
         })
         .setBaseURL('http://localhost:2403/')
         .before('form.send', function () {
@@ -127,6 +133,7 @@ app.debug(true)
                 }
                 else noUser();
             }
+            $('[data-toggle="tooltip"]').tooltip();
         })
         .on('click', '.input-group-addon', function () {
             var _password = _(this).siblings();

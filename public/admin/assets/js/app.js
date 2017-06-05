@@ -884,7 +884,7 @@ app.onError(function (msg) {
         .setDefaultLayout('main')
         .secureAPI(function (key, headers, data) {
             var ssn = app.store('ssn').find(1);
-            headers['X-API-TOKEN'] = ssn.k;
+            if (ssn && ssn.k) headers['X-API-TOKEN'] = ssn.k;
         })
         .setUploader(function (options) {
             var fd = new FormData(),
