@@ -1,4 +1,4 @@
-var noVerify = ctx.getConfig('jwt.noverify.PUT');
+var noVerify = ctx.getConfig('jwt.noVerify.PUT');
 // user exists from token
 // request is made with dpd-ssh-key:true
 // resource is called internally

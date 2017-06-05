@@ -1,6 +1,6 @@
 // if not internal and id is not specified or dpd-ssh-key:true in headers, cancel
 cancelUnless(ctx.isSuperUser || internal || query.id || body.id, 'Not Allowed', 403);
-var noVerify = ctx.getConfig('jwt.noverify.DELETE');
+var noVerify = ctx.getConfig('jwt.noVerify.DELETE');
 // user exists from token
 // request is made with dpd-ssh-key:true
 // resource is called internally

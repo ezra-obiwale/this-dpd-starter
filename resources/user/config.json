@@ -12,7 +12,7 @@
                 "get-sets"
             ]
         },
-        "noverify": {
+        "noVerify": {
             "POST": [
                 "register",
                 "login",
