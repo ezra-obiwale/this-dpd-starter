@@ -4,7 +4,7 @@
  * the dashboard.
  * @type Boolean
  */
-const ALLOW_SUPER_USER = true;
+const ALLOW_SUPER_USER = false;
 /**
  * A set of urls required by the app for verification, resetting password, etc 
  * for different app environments.
@@ -167,11 +167,11 @@ ctx.__proto__.utils = {
      * @param {string} url The url to redirect to
      * @returns {void}
      */
-    redirect: function (url) {
-        this.statusCode = 302;
-        this.setHeader("Location", url);
-        this.end();
-    }.bind(ctx.res)
+    redirect: function (ctx, url) {
+        ctx.res.statusCode = 302;
+        ctx.res.setHeader("Location", url);
+        ctx.res.end();
+    }
 };
 
 // JSON Web Token

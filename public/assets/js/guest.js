@@ -1,5 +1,5 @@
 var app = new ThisApp({
-    modelUID: '_id.$oid',
+    idKey: 'id',
     pagination: {
         limit: 24
     }

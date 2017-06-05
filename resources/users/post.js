@@ -1,3 +1,4 @@
+cancelUnless(internal, 'Not Allowed', 403);
 if (!this.socialAccount) { // creating user from registration
     var hash = require('string-hash');
     this.verificationToken = hash(this.username + Date.now()) + 'T' + Date.now();

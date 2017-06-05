@@ -1,8 +1,9 @@
-var noVerify = ctx.getConfig('jwt.noverify.POST');
+var noVerify = ctx.getConfig('jwt.noVerify.POST');
+// resource is auth
 // user exists from token
 // request is made with dpd-ssh-key:true
 // resource is called internally
-if (ctx.user.id || ctx.isSuperUser || internal ||
+if (resource === 'auth' || ctx.user.id || ctx.isSuperUser || internal ||
         //  or not asked to verify
                 (!Array.isArray(noVerify) && noVerify) ||
                 // or asked to verify but not first part
