@@ -91,7 +91,7 @@ ctx.__proto__.getConfig = function (path, def, appConfig) {
         result = typeof result === 'object' ? result[parts.shift()] : null;
     }
     return result === null ? def : result;
-}.bind(ctx);
+};
 /**
  * The app urls for the type of server being run
  * @type {object}

@@ -104,7 +104,7 @@
             "required": false,
             "id": "roles",
             "order": 12
-        },
+        }
     },
     "swagger": {}
 }
