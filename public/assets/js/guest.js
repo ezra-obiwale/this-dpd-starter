@@ -96,7 +96,7 @@ app.debug(true)
                                                     if (d) {
                                                         ssn = {
                                                             e: d.expires,
-                                                            i: d.uid,
+                                                            i: ssn.i,
                                                             k: d.apiKey,
                                                             v: d.verified
                                                         };
