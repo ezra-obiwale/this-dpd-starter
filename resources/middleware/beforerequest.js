@@ -71,16 +71,22 @@ ctx.__proto__.appConfig = require('../../package.json');
 ctx.__proto__.resourceConfig = resource && dpd[resource] ? dpd[resource].getResource().config : {};
 /**
  * Fetches the value of the given path from the config
- * @param {string} path The path to the desired value. Children paths should be joined by dot (.)
- * @param {mixed} def The default value if the value does not exist in the config
- * @param {boolean} appConfig Indicates whether to get the value from the appConfig (TRUE) or the resourceConfig (FALSE)
+ * @param string path The path to the desired value. Children paths should be joined by dot (.)
+ * @param mixed def The default value if the value does not exist in the config
+ * @param boolean|string appConfig Indicates whether to get the value from the 
+ * appConfig (TRUE) or the resourceConfig (FALSE). If string, it is the resource from
+ * which to fetch the value
  * E.g. properties.fullName.required
  */
 ctx.__proto__.getConfig = function (path, def, appConfig) {
     // split path by .
     var parts = path.split('.');
     // set result has the whole config
-    result = appConfig ? this.appConfig : this.resourceConfig;
+    if (typeof appConfig === 'string')
+        // appConfig is string, therefore a resource name: load config for it.
+        result = dpd[appConfig] ? dpd[appConfig].getResource().config : null;
+    else // appConfig is boolean
+        result = appConfig ? this.appConfig : this.resourceConfig;
     while (parts.length && result) {
         result = typeof result === 'object' ? result[parts.shift()] : null;
     }
