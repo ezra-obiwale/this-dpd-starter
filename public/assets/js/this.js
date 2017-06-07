@@ -2997,8 +2997,7 @@
                     if (this.__.isArray(data) || isModel === false) {
                         // check if can continue with rendering
                         var __data = ext.canContinue
-                                .call(this, 'collection.render', [data
-                                ], container.get(0));
+                                .call(this, 'collection.render', [data], container.get(0));
                         // rendering canceled
                         if (!__data) {
                             return this;
@@ -3205,8 +3204,7 @@
                     else if (data && isModel) {
                         // check if can continue rendering
                         var __data = ext.canContinue
-                                .call(this, 'model.render', [data
-                                ], container.get(0));
+                                .call(this, 'model.render', [data], container.get(0));
                         // rendering canceled
                         if (!__data) {
                             return this;
@@ -3726,9 +3724,7 @@
                  */
                 log: function (method, param) {
                     if (ext.record.call(this, 'debug')) {
-                        console[method].apply(null, this.__.isArray(param) ? param : [
-                            param
-                        ]);
+                        console[method].apply(null, this.__.isArray(param) ? param : [param]);
                     }
                     return this;
                 },
@@ -5251,8 +5247,7 @@
                                     _form.trigger('form.valid.submission');
                                     var fd = new FormData(this), headers = {};
                                     var data = ext.canContinue
-                                            .call(app, 'form.send', [headers
-                                            ], this);
+                                            .call(app, 'form.send', [headers], this);
                                     if (!data) {
                                         return;
                                     }
@@ -5768,8 +5763,7 @@
                             function (resp) {
                                 // save model to collection
                                 var actionStore = ext[resp.event + 'Store'],
-                                        action = actionStore.find(model_name) || [
-                                ];
+                                        action = actionStore.find(model_name) || [];
                                 switch (resp.event) {
                                     case 'created':
                                         ext.modelToStore
@@ -6335,8 +6329,7 @@
                                             || !crudStatus) {
                                         if (!_this.app.watchCallback) {
                                             ext.store.call(_this.app, _this.name).remove(_this.id);
-                                            var deleted = ext.deletedStore.find(_this.name) || [
-                                            ];
+                                            var deleted = ext.deletedStore.find(_this.name) || [];
                                             /* Indicate model as deleted */
                                             _this.app.__
                                                     .removeArrayValue(deleted, _this.id, true);
