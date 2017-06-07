@@ -109,12 +109,29 @@ switch (parts[0]) {
         // confirm password
         cancelIf(body.hasOwnProperty('confirm') &&
                 body.password !== body.confirm, 'Passwords mismatch!');
+        var recaptchaConfig = ctx.getConfig('recaptcha', null, true),
+                register = function () {
         dpd.users.post(body, function (user, err) {
             if (!user)
                 setResult(null, err);
             delete user.verificationToken;
             setResult(user);
         });
+                };
+        // check whether should use and check recaptcha
+        if (recaptchaConfig) {
+            cancelUnless(body['g-recaptcha-response'], 'You must prove you are not a robot!');
+            var reCAPTCHA = require('recaptcha2'),
+                    recaptcha = new reCAPTCHA(recaptchaConfig);
+            recaptcha.validate(body['g-recaptcha-response'])
+                    .then(function () {
+                        register();
+                    })
+                    .catch(function (errors) {
+                        setResult(null, recaptcha.translateErrors(errors));
+                    });
+        }
+        else register();
         break;
     case 'login': // ajax
         login(body);

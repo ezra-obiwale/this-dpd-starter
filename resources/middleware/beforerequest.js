@@ -4,7 +4,7 @@
  * the dashboard.
  * @type Boolean
  */
-const ALLOW_SUPER_USER = false;
+const ALLOW_SUPER_USER = true;
 /**
  * A set of urls required by the app for verification, resetting password, etc 
  * for different app environments.
