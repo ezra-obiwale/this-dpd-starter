@@ -261,10 +261,10 @@
                 (_(elem).this('type') || _(elem).get(0).tagName.toLowerCase())
                 : null;
     }
-    function getRealData(data) {
+    function getRealData(data, dataKey) {
 // use dataKey if available
-        if (this.config.dataKey) {
-            return data[this.config.dataKey];
+        if (dataKey || this.config.dataKey) {
+            return data[dataKey || this.config.dataKey];
         }
         else {
             return data;
@@ -460,7 +460,6 @@
             },
             progress: function (e, loaded, total) {
             },
-            crossDomain: true,
             async: true,
             clearCache: false
         }, config);
@@ -1010,10 +1009,12 @@
                 /**
                  * Fetches the item at the given index
                  * @param int index
+                 * @param boolean in_ Indicates whether to wrap in _ Object
                  * @returns mixed
                  */
-                get: function (index) {
-                    return this.items[index];
+                get: function (index, in_) {
+                    var item = this.items[index];
+                    return in_ ? _(item, this.debug) : item;
                 },
                 /**
                  * Checks if an attribute exists
@@ -1368,11 +1369,11 @@
                  * @param boolean all Indicates whether to remove all occurrences
                  * @returns array|index Index if removing just one
                  */
-                removeArrayValue: function (array, item, all) {
+                removeArrayValue: function (array, value, all) {
                     return this.tryCatch(function () {
-                        var index = array.indexOf(item), retArr = [];
+                        var index = array.indexOf(value), retArr = [];
                         if (index < 0) {
-                            index = array.indexOf(parseInt(item));
+                            index = array.indexOf(parseInt(value));
                         }
                         if (!all) {
                             return index > -1 ? [
@@ -1380,12 +1381,12 @@
                         }
                         else {
                             while (index > -1) {
-                                var value = this.removeArrayIndex(array, index);
-                                if (value || value == 0)
-                                    retArr.push(value);
-                                index = array.indexOf(item);
+                                var val = this.removeArrayIndex(array, index);
+                                if (val || val == 0)
+                                    retArr.push(val);
+                                index = array.indexOf(value);
                                 if (index < 0)
-                                    index = array.indexOf(parseInt(item));
+                                    index = array.indexOf(parseInt(value));
                             }
                             return retArr;
                         }
@@ -2603,7 +2604,7 @@
                  */
                 loadAsset: function (type, name, elem, callback) {
                     name = name.trim();
-                    var url = (name.indexOf('://') !== -1 && name.startsWith('//')) ?
+                    var url = (name.indexOf('://') !== -1 || name.startsWith('//')) ?
                             name : this.config.paths[type] + name,
                             app = this,
                             load = function (url) {
@@ -2722,7 +2723,7 @@
                     // collection must have id
                     if (!__this.this('id')) {
                         __this.removeThis('loading');
-                        this.__.callback(callback).call(this);
+                        this.__.callable(callback).call(this);
                         return;
                     }
                     if (!__this.this('model'))
@@ -2961,9 +2962,10 @@
                         // set expiration timestamp to 24 hours
                         expires: new Date().setMilliseconds(1000 * 3600 * 24)
                     },
-                            real_data = getRealData.call(this, data);
+                            dataKey = container.this('data-key') || this.config.dataKey,
+                            real_data = getRealData.call(this, data, dataKey);
                     // get expiration if set and data from dataKey if specified
-                    if (this.config.dataKey) {
+                    if (dataKey) {
                         // set data expiration timestamp too.
                         if (!isNaN(data.expires))
                             // expiration is a number. Must be milliseconds
@@ -2997,7 +2999,8 @@
                     if (this.__.isArray(data) || isModel === false) {
                         // check if can continue with rendering
                         var __data = ext.canContinue
-                                .call(this, 'collection.render', [data], container.get(0));
+                                .call(this, 'collection.render', [data
+                                ], container.get(0));
                         // rendering canceled
                         if (!__data) {
                             return this;
@@ -3204,7 +3207,8 @@
                     else if (data && isModel) {
                         // check if can continue rendering
                         var __data = ext.canContinue
-                                .call(this, 'model.render', [data], container.get(0));
+                                .call(this, 'model.render', [data
+                                ], container.get(0));
                         // rendering canceled
                         if (!__data) {
                             return this;
@@ -3329,10 +3333,12 @@
                                 }
                                 gotData(data);
                             }
+                            else if (__this.get(0).tagName.toLowerCase() === 'img')
+                                __this.attr('src', data);
                             else {
                                 // using attribute so that redumping content 
                                 // would still work fine
-                                __this.attr('value', data || '');
+                                __this.attr('value', data);
                             }
                         });
                     }
@@ -3635,10 +3641,12 @@
                                 }
                                 // if data exists/found
                                 if (config.data) {
-                                    var _data = {};
+                                    var _data = {},
+                                            dataKey = config.elem.this('data-key') ||
+                                            this.config.dataKey;
                                     // use dataKey if available
-                                    if (this.config.dataKey) {
-                                        _data[this.config.dataKey] = config.data;
+                                    if (dataKey) {
+                                        _data[dataKey] = config.data;
                                         config.data = _data;
                                     }
                                     // watch for updates
@@ -3724,7 +3732,9 @@
                  */
                 log: function (method, param) {
                     if (ext.record.call(this, 'debug')) {
-                        console[method].apply(null, this.__.isArray(param) ? param : [param]);
+                        console[method].apply(null, this.__.isArray(param) ? param : [
+                            param
+                        ]);
                     }
                     return this;
                 },
@@ -3744,7 +3754,51 @@
                         content = elem.outerHtml();
                     var child = this._(content).get(0),
                             app = this,
-                            level;
+                            level,
+                            process = function (key, value) {
+                                var __data = {
+                                    key: key,
+                                    value: value
+                                },
+                                        _content = ext.inLoop.call(app, __data, filter, content);
+                                if (!_content)
+                                    return;
+                                _content = ext.processExpressions.call(app, _content, __data, model);
+                                var _variables = ext.parseBrackets.call(app, '{{', '}}', _content),
+                                        _content = app._(ext.fillVariables
+                                                .call(app, _variables, __data, _content)
+                                                .replace(/{{key}}/g, key)),
+                                        thisLevel = level;
+                                while (thisLevel) {
+                                    _content = _content.children();
+                                    thisLevel--;
+                                }
+                                // check for loops within current loop and execute
+                                if (app.__.isObject(value, true)) {
+                                    app.__.forEach(value, function (i, v) {
+                                        if (!app.__.isObject(v, true))
+                                            return;
+                                        _content.find('[this-repeat-for="value.' + i + '"]')
+                                                .each(function () {
+                                                    var __this = app._(this),
+                                                            __filter = __this.this('filter'),
+                                                            __content = __this.removeThis('muted')
+                                                            .removeThis('this-repeat-for')
+                                                            .removeThis('filter')
+                                                            .clone().outerHtml()
+                                                            .replace(/__obrace__/g, '{{')
+                                                            .replace(/__cbrace__/g, '}}')
+                                                            .replace(/__obrace2__/g, '({')
+                                                            .replace(/__cbrace2__/g, '})');
+                                                    ext.loop.call(app, v, this, __filter, __content, model);
+                                                });
+                                    });
+                                }
+                                if (elem.hasThis('prepend'))
+                                    elem.after(_content.children());
+                                else
+                                    elem.before(_content.children());
+                            };
                     if (child) {
                         switch (child.tagName.toLowerCase()) {
                             case "td":
@@ -3758,49 +3812,50 @@
                         }
                     }
                     content = '<div>' + this._(content).show().outerHtml() + '</div>';
-                    this.__.forEach(data, function (key, value) {
-                        var __data = {
-                            key: key,
-                            value: value
-                        },
-                                _content = ext.inLoop.call(app, __data, filter, content);
-                        if (!_content)
+                    if (this.__.isObject(data, true)) {
+                        this.__.forEach(data, function (key, value) {
+                            process(key, value);
+                        });
+                    }
+                    // data is string in format: [start ... last, progress]
+                    else {
+                        // parse operation parts
+                        var parts = data.substr(1, data.length - 2)
+                                .replace('...', ',').split(','),
+                                // set the current/start value
+                                current = parts[0],
+                                // set last value
+                                last = parts[1],
+                                // set diff/progress
+                                diff = parts[2] || 1,
+                                up;
+                        try {
+                            // evaluate each in case any is string
+                            current = eval(current);
+                            last = eval(last);
+                            diff = eval(diff);
+
+                            // ensure they all are integers
+                            current = parseInt(current);
+                            last = parseInt(last);
+                            // remove minus sign if available
+                            diff = Math.abs(diff);
+
+                            // incrementing or not
+                            up = current < last;
+
+                            while ((up && current <= last) ||
+                                    (!up && current >= last)) {
+                                process(current, current);
+                                if (up) current += diff;
+                                else current -= diff;
+                            }
+                        }
+                        catch (e) {
+                            this.error(e);
                             return;
-                        _content = ext.processExpressions.call(app, _content, __data, model);
-                        var _variables = ext.parseBrackets.call(app, '{{', '}}', _content),
-                                _content = app._(ext.fillVariables
-                                        .call(app, _variables, __data, _content)
-                                        .replace(/{{key}}/g, key)),
-                                thisLevel = level;
-                        while (thisLevel) {
-                            _content = _content.children();
-                            thisLevel--;
                         }
-                        // check for loops within current loop and execute
-                        if (app.__.isObject(value, true)) {
-                            app.__.forEach(value, function (i, v) {
-                                if (!app.__.isObject(v, true))
-                                    return;
-                                _content.find('[this-repeat-for="value.' + i + '"]')
-                                        .each(function () {
-                                            var __this = app._(this),
-                                                    __filter = __this.this('filter'),
-                                                    __content = __this.removeThis('muted')
-                                                    .removeThis('this-repeat-for').removeThis('filter')
-                                                    .clone().outerHtml()
-                                                    .replace(/__obrace__/g, '{{')
-                                                    .replace(/__cbrace__/g, '}}')
-                                                    .replace(/__obrace2__/g, '({')
-                                                    .replace(/__cbrace2__/g, '})');
-                                            ext.loop.call(app, v, this, __filter, __content, model);
-                                        });
-                            });
-                        }
-                        if (elem.hasThis('prepend'))
-                            elem.after(_content.children());
-                        else
-                            elem.before(_content.children());
-                    });
+                    }
                     elem.remove();
                 },
                 /**
@@ -4033,22 +4088,26 @@
                         };
                     }
                     container = ext.inLoop.call(this, prObj, true, container.outerHtml(), true);
-                    var _each = container.find('[this-repeat-for]'),
-                            current = 0;
+                    var _each = container.find('[this-repeat-for]');
                     while (_each.length) {
-                        var __this = _each.get(current),
+                        var __this = _each.get(0, true),
                                 each = __this.this('repeat-for').trim(),
                                 _data = ext.getVariableValue.call(app, each, data, false),
                                 filter = __this.this('filter'),
                                 content = __this.removeThis('muted').removeThis('filter')
                                 .removeThis('repeat-for').clone().outerHtml()
                                 .replace(/__obrace__/g, '{{').replace(/__cbrace__/g, '}}')
-                                .replace(/__obrace2__/g, '({').replace(/__cbrace2__/g, '})');
+                                .replace(/__obrace2__/g, '({').replace(/__cbrace2__/g, '})'),
+                                ignoreDataCheck = false;
                         __this.html('');
                         // this-repeate-with is not a model key
                         if (!_data) {
+                            if (each.indexOf('...') !== -1) {
+                                ignoreDataCheck = true;
+                                _data = each;
+                            }
                             // do each on a variable value
-                            if (each.startsWith('{{')) {
+                            else if (each.startsWith('{{')) {
                                 // get the value
                                 _data = ext.getVariableValue.call(app, each, data, true);
                             }
@@ -4061,11 +4120,10 @@
                                         .call(app, each, data);
                             }
                         }
-                        if (app.__.isObject(_data, true)) {
+                        if (ignoreDataCheck || app.__.isObject(_data, true)) {
                             ext.loop.call(app, _data, __this, filter, content, data);
                         }
                         _each = container.find('[this-repeat-for]');
-                        current++;
                     }
                     content = ext.processExpressions.call(this, container.outerHtml(), prObj, data);
                     var variables = ext.parseBrackets.call(this, '{{', '}}',
@@ -4670,8 +4728,7 @@
                                 .on('click', '[this-create][this-form]', function () {
                                     var __this = app._(this),
                                             selector = 'form[this-id="'
-                                            + __this.this('form') + '"]'
-                                            ,
+                                            + __this.this('form') + '"]',
                                             _target = app.container.find(selector)
                                             .removeAttr([
                                                 "this-binding", "this-mid",
@@ -5247,7 +5304,8 @@
                                     _form.trigger('form.valid.submission');
                                     var fd = new FormData(this), headers = {};
                                     var data = ext.canContinue
-                                            .call(app, 'form.send', [headers], this);
+                                            .call(app, 'form.send', [headers
+                                            ], this);
                                     if (!data) {
                                         return;
                                     }
@@ -5763,7 +5821,8 @@
                             function (resp) {
                                 // save model to collection
                                 var actionStore = ext[resp.event + 'Store'],
-                                        action = actionStore.find(model_name) || [];
+                                        action = actionStore.find(model_name) || [
+                                ];
                                 switch (resp.event) {
                                     case 'created':
                                         ext.modelToStore
@@ -6329,7 +6388,8 @@
                                             || !crudStatus) {
                                         if (!_this.app.watchCallback) {
                                             ext.store.call(_this.app, _this.name).remove(_this.id);
-                                            var deleted = ext.deletedStore.find(_this.name) || [];
+                                            var deleted = ext.deletedStore.find(_this.name) || [
+                                            ];
                                             /* Indicate model as deleted */
                                             _this.app.__
                                                     .removeArrayValue(deleted, _this.id, true);
@@ -7249,7 +7309,7 @@
          * Fetches a collection of model
          * @param {string} model_name
          * @param {object} config Keys include url (string), data (object|array),
-         * success (function), error (function), idKey (string)
+         * success (function), error (function), idKey (string), dataKey (string)
          * @returns {Promise}
          */
         collection: function (model_name, config) {
@@ -7308,9 +7368,10 @@
                                     if (data) {
                                         // default data structure
                                         var expires = new Date().setMilliseconds(1000 * 3600 * 24),
-                                                real_data = getRealData.call(_this, data);
+                                                dataKey = config.dataKey || _this.config.dataKey,
+                                                real_data = getRealData.call(_this, data, dataKey);
                                         // get expiration if set and data from dataKey if specified
-                                        if (_this.config.dataKey) {
+                                        if (dataKey) {
                                             // set data expiration timestamp too.
                                             if (!isNaN(data.expires))
                                                 // expiration is a number. Must be milliseconds
@@ -7677,7 +7738,8 @@
                 else if (this.__.isObject(url)) {
                     url = url.this('url');
                 }
-                if (!url.startsWith('./') && !url.startsWith('../') && url.indexOf('://') === -1) {
+                if (!url.startsWith('./') && !url.startsWith('../') &&
+                        !url.startsWith('//') && url.indexOf('://') === -1) {
                     url = this.config.baseURL + url;
                     config.api = true;
                 }
@@ -8021,8 +8083,7 @@
     ThisApp.toString = function () {
         return 'See https://this-js.github.com';
     };
-    __.forEach(['Transitions', 'Filters', 'extend', 'toString'
-    ], function (i, v) {
+    __.forEach(['Transitions', 'Filters', 'extend', 'toString'], function (i, v) {
         ThisApp[v].toString = function () {
             return v === 'toString' ? 'toString() { [custom code] }'
                     : 'See https://this-js.github.com/#/advanced?lookup=' + v;
