@@ -19,7 +19,8 @@ var login = function (body, callback) {
                     expires: ctx.jwt.expires.numeric,
                     refreshToken: ctx.session.data.refreshToken,
                     verified: ctx.session.data.verified,
-                    socialAccount: false
+                    socialAccount: false,
+                    path: ctx.session.data.path
                 });
         }
     });
