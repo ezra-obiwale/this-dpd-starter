@@ -25,5 +25,5 @@ dpd.accesstokens.post({
     apiKey: ctx.session.data.apiKey,
     refreshToken: ctx.session.data.refreshToken,
     createdDate: Date.now(),
-    expirationDate: ctx.jwt.expires.numeric
+    expirationDate: Date.now() + ctx.jwt.expires.numeric
 });

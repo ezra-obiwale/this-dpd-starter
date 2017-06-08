@@ -4,7 +4,7 @@
  * the dashboard.
  * @type Boolean
  */
-const ALLOW_SUPER_USER = true;
+var ALLOW_SUPER_USER = null;
 /**
  * A set of urls required by the app for verification, resetting password, etc 
  * for different app environments.
@@ -21,7 +21,7 @@ const ALLOW_SUPER_USER = true;
  * - verifyEmailSuccess: The url to redirect to when email verification succeeds
  * @type Object
  */
-const APP_URLS = null;
+var APP_URLS = null;
 /**
  * The secret string to use with JWT
  * 
@@ -29,36 +29,52 @@ const APP_URLS = null;
  * 
  * @type string
  */
-const JWT_SECRET = null;
+var JWT_SECRET = null;
 /**
  * An object containing the amount of time it would take before a JWT token expires
- * Keys include `string` (e.g. "1h") and `numeric` (e.g. Date.now() + 60 * 60 * 1000
+ * Keys include `string` (e.g. "1h") and `numeric` (e.g. 60 * 60 * 1000
  * @type Object
  */
-const JWT_EXPIRES = {
-    string: '1h',
-    numeric: Date.now() + 60 * 60 * 1000 // 1 hour from now
-};
+var JWT_EXPIRES = null;
 /**
  * The options to create and verify JWT with
  * @see https://github.com/auth0/node-jsonwebtoken#jwtsignpayload-secretorprivatekey-options-callback
  * @type Object
  */
-const JWT_OPTIONS = {
-    issuer: 'http://localhost'
-};
+var JWT_OPTIONS = null;
 /**
  * The header name which holds the JWT token
  * @type String
  */
-const JWT_HEADER_NAME = 'X-API-TOKEN';
-
+var JWT_HEADER_NAME = null;
+/**
+ * Keys include sandbox (boolean), key (string), fromAddress (string)
+ * @type object
+ */
+var SPARKPOST = null;
+/**
+ * Keys are siteKey and secretKey
+ * @type object
+ */
+var RECAPTCHA_CONFIG = null;
 
 // ----------------------- DO NOT EDIT BELOW THIS LINE -------------------------
 
-
-// Set this to false to disable dashboard access
-ctx.__proto__.isSuperUser = ALLOW_SUPER_USER ? (ctx.req.headers['dpd-ssh-key'] || false) : false;
+/**
+ * Evaluates the value of a config path
+ * @see ctx.getConfig()
+ * @returns {mixed}
+ */
+ctx.__proto__.evalConfig = function (path, def, appConfig) {
+    var value = ctx.getConfig(path, def, appConfig);
+    try {
+        return eval(value);
+    }
+    catch (e) {
+        console.error('Eval "' + value + '" failed: ' + e);
+        return def;
+    }
+};
 /**
  * The app config object
  * @var {object}
@@ -90,13 +106,38 @@ ctx.__proto__.getConfig = function (path, def, appConfig) {
     while (parts.length && result) {
         result = typeof result === 'object' ? result[parts.shift()] : null;
     }
-    return result === null ? def : result;
+    return !result && result != 0 ? def : result;
 };
 /**
  * The app urls for the type of server being run
  * @type {object}
  */
-ctx.__proto__.appUrls = APP_URLS || ctx.getConfig('urls.' + ctx.server.options.env, {}, true);
+ctx.__proto__.appUrls = APP_URLS || ctx.getConfig('middleware.urls.' + ctx.server.options.env, {}, true);
+
+// set up variables: override null with package.json settings
+if (ALLOW_SUPER_USER === null)
+    ALLOW_SUPER_USER = ctx.evalConfig('middleware.allowSuperUser', false, true);
+
+if (JWT_EXPIRES === null || typeof JWT_EXPIRES !== 'object') JWT_EXPIRES = {};
+if (JWT_EXPIRES.string === undefined || JWT_EXPIRES.string === null)
+    JWT_EXPIRES.string = ctx.getConfig('middleware.jwt.expires.string', '1h', true);
+if (JWT_EXPIRES.numeric === undefined || JWT_EXPIRES.numeric === null)
+    JWT_EXPIRES.numeric = ctx.evalConfig('middleware.jwt.expires.numeric', 60 * 60 * 1000, true);
+
+if (JWT_OPTIONS === null)
+    JWT_OPTIONS = ctx.getConfig('middleware.jwt.options', {});
+
+if (JWT_HEADER_NAME === null)
+    JWT_HEADER_NAME = ctx.getConfig('middleware.jwt.headerName', 'X-API-TOKEN');
+
+var recaptchaConfig = RECAPTCHA_CONFIG || ctx.getConfig('recaptcha', null, true);
+if (recaptchaConfig) {
+    // set recaptcaha config
+    var reCAPTCHA = require('recaptcha2');
+    ctx.__proto__.recaptcha = new reCAPTCHA(recaptchaConfig);
+}
+// set super user status
+ctx.__proto__.isSuperUser = ALLOW_SUPER_USER ? (ctx.req.headers['dpd-ssh-key'] || false) : false;
 
 // Utility methods
 ctx.__proto__.utils = {
@@ -113,7 +154,7 @@ ctx.__proto__.utils = {
      * @returns {Promise}
      */
     sendmail: function (options, config) {
-        config = config || ctx.getConfig('sparkpost', {}, true);
+        config = config || SPARKPOST || ctx.getConfig('middleware.sparkpost', {}, true);
         options.bodyVariables = options.bodyVariables || {};
         options.callback = options.callback || function () {};
         var SP = require('sparkpost'),
@@ -191,7 +232,7 @@ ctx.__proto__.jwt = {
      * Secret key for signing JWT
      * @type JWT_SECRET|String
      */
-    secret: JWT_SECRET || ctx.getConfig('jwt.secret', '!1a@2b#3c$4d%5e^6f&7g*8h(9i)0j', true),
+    secret: JWT_SECRET || ctx.getConfig('middleware.jwt.secret', '!1a@2b#3c$4d%5e^6f&7g*8h(9i)0j', true),
     /**
      * The API Token sent with the request in the header as X-API-TOKEN
      * @var {string}
@@ -245,7 +286,6 @@ if (ctx.jwt.token || !ctx.user) {
     ctx.__proto__.user = ctx.jwt.token ?
             // verify token
             ctx.jwt.verify() : {};
-//    console.log(ctx.jwt.token, ctx.user);
 }
 
 /**

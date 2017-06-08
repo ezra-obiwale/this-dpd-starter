@@ -16,7 +16,7 @@ var login = function (body, callback) {
                 setResult({
                     uid: session.uid,
                     apiKey: ctx.session.data.apiKey,
-                    expires: ctx.jwt.expires.numeric,
+                    expires: Date.now() + ctx.jwt.expires.numeric,
                     refreshToken: ctx.session.data.refreshToken,
                     verified: ctx.session.data.verified,
                     socialAccount: false,
@@ -38,7 +38,7 @@ switch (parts[0]) {
                 cancelUnless(token, err);
                 setResult({
                     apiKey: token,
-                    expires: ctx.jwt.expires.numeric,
+                    expires: Date.now() + ctx.jwt.expires.numeric,
                     verified: tokens[0].user.verified
                 });
                 dpd.accesstokens.put(tokens[0].id, {
@@ -79,7 +79,7 @@ switch (parts[0]) {
             // send result
             setResult({
                 apiKey: token,
-                expires: ctx.jwt.expires.numeric,
+                expires: Date.now() + ctx.jwt.expires.numeric,
                 verified: tokens[0].user.verified
             });
             // delete old token
@@ -89,7 +89,7 @@ switch (parts[0]) {
                 user: body.id,
                 apiKey: token,
                 createdDate: Date.now(),
-                expirationDate: ctx.jwt.expires.numeric,
+                expirationDate: Date.now() + ctx.jwt.expires.numeric,
                 refreshToken: tokens[0].refreshToken
             }, cancelUnless);
         });
@@ -110,21 +110,18 @@ switch (parts[0]) {
         // confirm password
         cancelIf(body.hasOwnProperty('confirm') &&
                 body.password !== body.confirm, 'Passwords mismatch!');
-        var recaptchaConfig = ctx.getConfig('recaptcha', null, true),
-                register = function () {
-        dpd.users.post(body, function (user, err) {
-            if (!user)
-                setResult(null, err);
-            delete user.verificationToken;
-            setResult(user);
-        });
-                };
+        var register = function () {
+            dpd.users.post(body, function (user, err) {
+                if (!user)
+                    setResult(null, err);
+                delete user.verificationToken;
+                setResult(user);
+            });
+        };
         // check whether should use and check recaptcha
-        if (recaptchaConfig) {
+        if (ctx.recaptcha) {
             cancelUnless(body['g-recaptcha-response'], 'You must prove you are not a robot!');
-            var reCAPTCHA = require('recaptcha2'),
-                    recaptcha = new reCAPTCHA(recaptchaConfig);
-            recaptcha.validate(body['g-recaptcha-response'])
+            ctx.recaptcha.validate(body['g-recaptcha-response'])
                     .then(function () {
                         register();
                     })
