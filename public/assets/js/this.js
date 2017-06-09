@@ -1944,7 +1944,8 @@
                             process = function (key, value) {
                                 var __data = {
                                     key: key,
-                                    value: value
+                                    value: value,
+                                    model: model
                                 },
                                         _content = ext.inLoop.call(app, __data, filter, content);
                                 if (!_content)
@@ -3877,7 +3878,6 @@
                  * @returns {_}
                  */
                 loop: function (container, data) {
-                    console.log(data);
                     if (!data) return;
                     container = this._(container);
                     var _each = container.find('[this-repeat-for]');
@@ -4147,8 +4147,8 @@
                             model: data
                         };
                     }
-                    container = ext.inLoop.call(this, prObj, true, container.outerHtml(), true);
                     ext.loop.call(this, container, data);
+                    container = ext.inLoop.call(this, prObj, true, container.outerHtml(), true);
                     var content = ext.processExpressions.call(this, container.outerHtml(), prObj, data);
                     var variables = ext.parseBrackets.call(this, '{{', '}}',
                             this.__.isString(content) ? content : content.outerHtml());
