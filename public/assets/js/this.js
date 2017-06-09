@@ -1792,7 +1792,8 @@
                                     });
                                     this.__.callable(callback).apply(this, Array.from(arguments));
                                 }.bind(this));
-                    }.bind(this), elem.find('[this-component]'));
+                    }.bind(this),
+                            elem.find('[this-component]:not([this-ignore])'));
                 },
                 /**
                  * Checks beforeCallbacks for the given action to determine if the action should
@@ -1927,6 +1928,122 @@
                     ext.parseData
                             .call(this, data, isModel ? container : content, false, isModel, _callback);
                     return this;
+                },
+                /**
+                 * Runs the loop operation
+                 */
+                doLoop: function (data, elem, filter, content, model) {
+                    if (!data)
+                        return;
+                    elem = this._(elem);
+                    if (!content)
+                        content = elem.outerHtml();
+                    var child = this._(content).get(0),
+                            app = this,
+                            level,
+                            process = function (key, value) {
+                                var __data = {
+                                    key: key,
+                                    value: value
+                                },
+                                        _content = ext.inLoop.call(app, __data, filter, content);
+                                if (!_content)
+                                    return;
+                                _content = ext.processExpressions.call(app, _content, __data, model);
+                                var _variables = ext.parseBrackets.call(app, '{{', '}}', _content),
+                                        _content = app._(ext.fillVariables
+                                                .call(app, _variables, __data, _content)
+                                                .replace(/{{key}}/g, key)),
+                                        thisLevel = level;
+                                while (thisLevel) {
+                                    _content = _content.children();
+                                    thisLevel--;
+                                }
+                                // check for loops within current loop and execute
+                                if (app.__.isObject(value, true)) {
+                                    app.__.forEach(value, function (i, v) {
+                                        if (!app.__.isObject(v, true))
+                                            return;
+                                        // do loop for repeater on current object
+                                        _content.find('[this-repeat-for="value.' + i + '"]')
+                                                .each(function () {
+                                                    var __this = app._(this),
+                                                            __filter = __this.this('filter'),
+                                                            __content = __this.removeThis('muted')
+                                                            .removeThis('this-repeat-for')
+                                                            .removeThis('filter')
+                                                            .clone().outerHtml()
+                                                            .replace(/__obrace__/g, '{{')
+                                                            .replace(/__cbrace__/g, '}}')
+                                                            .replace(/__obrace2__/g, '({')
+                                                            .replace(/__cbrace2__/g, '})');
+                                                    ext.doLoop.call(app, v, this, __filter, __content, model);
+                                                });
+                                    });
+                                }
+                                if (elem.hasThis('prepend'))
+                                    elem.after(_content.children());
+                                else
+                                    elem.before(_content.children());
+                            };
+                    if (child) {
+                        switch (child.tagName.toLowerCase()) {
+                            case "td":
+                                level = 3;
+                                content = this._('<table />').html(content).outerHtml();
+                                break;
+                            case "tr":
+                                level = 2;
+                                content = this._('<table />').html(content).outerHtml();
+                                break;
+                        }
+                    }
+                    content = '<div>' + this._(content).show().outerHtml() + '</div>';
+                    if (this.__.isObject(data, true)) {
+                        this.__.forEach(data, function (key, value) {
+                            process(key, value);
+                        });
+                    }
+                    // data is string in format: [start ... last, progress]
+                    else {
+                        // parse operation parts
+                        var parts = data.substr(1, data.length - 2)
+                                .replace('...', ',').split(','),
+                                // set the current/start value
+                                current = parts[0],
+                                // set last value
+                                last = parts[1],
+                                // set diff/progress
+                                diff = parts[2] || 1,
+                                up;
+                        try {
+                            // evaluate each in case any is string
+                            current = eval(current);
+                            last = eval(last);
+                            diff = eval(diff);
+
+                            // ensure they all are integers
+                            current = parseInt(current);
+                            last = parseInt(last);
+                            // remove minus sign if available
+                            diff = Math.abs(diff);
+
+                            // incrementing or not
+                            up = current < last;
+
+                            while ((up && current <= last) ||
+                                    (!up && current >= last)) {
+                                process(current, current);
+                                if (up) current += diff;
+                                else current -= diff;
+                            }
+                        }
+                        catch (e) {
+                            this.error(e);
+                            return;
+                        }
+                    }
+                    elem.remove();
                 },
                 /**
                  * Parses temporary attributes
@@ -2085,15 +2202,20 @@
                 },
                 /**
                  * Fills an autocomplete list with the data given
-                 * @param {string} selector
-                 * @param {object} data
-                 * @param {string} uid
+                 * @param {object} options Keys include list (_), data (Object),
+                 * uid (string), filter (string), dropdownList (_), ignoreIds (boolean)
                  * @returns {array} Array of ids added to the list
                  */
                 fillAutocompleteList: function (options) {
                     var app = this,
                             ids = [],
-                            data_length = Object.keys(options.data).length;
+                            data_length = Object.keys(options.data).length,
+                            _dropdownList, selected = '';
+                    if (options.dropdownList) {
+                        _dropdownList = options.dropdownList;
+                        var selected = _dropdownList
+                                .this('selected') || '';
+                    }
                     // loop through data
                     this.__.forEach(options.data, function (i, v) {
                         // filter list
@@ -2112,10 +2234,8 @@
                                 return;
                         }
                         // get unique id value
-                        var id = ext.getUIDValue.call(app, v);
+                        var id = ext.getUIDValue.call(app, v, options.uid);
                         // don't render elem if already selected
-                        var selected = options.list
-                                .this('selected') || '';
                         if (selected.indexOf(id + ',') !== -1) {
                             data_length--;
                             return;
@@ -2136,8 +2256,13 @@
                                                     .this('id', id)).show();
                                         });
                     });
-                    if (data_length)
+                    // add selected ids to the dropdown list for future refereces
+                    if (ids.length) {
+                        if (_dropdownList && !options.ignoreIds)
+                            _dropdownList.this('selected', (_dropdownList.this('selected') || '')
+                                    + ids.join(',') + ',');
                         options.list.trigger('list.loaded');
+                    }
                     else
                         options.list.trigger('list.no.data');
                     return ids;
@@ -2221,7 +2346,6 @@
                                         });
                             }
                             else {
-                                // load page as a model. no data provided
                                 ext.showPage.call(this, replaceInState);
                             }
                         }.bind(this));
@@ -2280,11 +2404,18 @@
                                                 });
                                         elem.find('[this-autocomplete][this-list]')
                                                 .each(function () {
-                                                    var __this = app._(this);
-                                                    elem.find('list[this-id="' + __this.this('list')
-                                                            + '"],[this-type="list"][this-id="' + __this.this('list')
-                                                            + '"]')
-                                                            .this('autocompleting', __this.this('id'));
+                                                    var __this = app._(this),
+                                                            _dropdownList = elem.find('list[this-id="'
+                                                                    + __this.this('list')
+                                                                    + '"],[this-type="list"][this-id="' + __this.this('list')
+                                                                    + '"]')
+                                                            .this('autocompleting', __this.this('id')),
+                                                            _selectedList = elem.find('list[this-id="'
+                                                                    + _dropdownList.this('selection-list')
+                                                                    + '"],[this-type="list"][this-id="'
+                                                                    + _dropdownList.this('selection-list')
+                                                                    + '"]')
+                                                            .this('parent-list', _dropdownList.this('id'));
                                                 });
                                         elem.find('img[src]').each(function () {
                                             var __this = app._(this);
@@ -2309,8 +2440,9 @@
                                                     + ' this-url="' + idOrPath + '" />')
                                                     .html(elem.clone().removeThis('url')));
                                             done();
-                                        }, elem.find('[this-type="collection"][this-static],'
-                                        + 'collection[this-static]'));
+                                        },
+                                        elem.find('[this-type="collection"][this-static]:not([this-ignore]),'
+                                                + 'collection[this-static]:not([this-ignore])'));
                             }
                             // pages and layouts
                             else {
@@ -2573,7 +2705,9 @@
                                     level--;
                                 }
                             });
-                    content.find('[this-ignore]').removeThis('ignore');
+                    content.find('[this-if][this-ignore],[this-else-if][this-ignore],'
+                            + '[this-else][this-ignore],[this-end-if][this-ignore]')
+                            .removeThis('ignore');
                     return returnObject ? content.children() : content.html();
                 },
                 /**
@@ -2821,11 +2955,12 @@
                     var app = this,
                             chain = collections === null,
                             collections = collections || this.container.find('collection:not([this-loaded])'
-                                    + ':not([this-data]):not([this-loading]),'
+                                    + ':not([this-data]):not([this-loading]):not([this-ignore]),'
                                     + '[this-type="collection"]:not([this-loaded])'
-                                    + ':not([this-data]):not([this-loading])'),
+                                    + ':not([this-data]):not([this-loading]):not([this-ignore])'),
                             length = collections.length,
                             done = function () {
+                                if (length) return;
                                 if (chain) {
                                     ext.loadForms.call(this, null, null, replaceState, chain);
                                 }
@@ -2835,16 +2970,14 @@
                             }.bind(this);
                     if (!length)
                         done();
-                    else
+                    else {
                         collections.each(function () {
-                            var __this = this;
                             ext.loadCollection.call(app, this, function () {
                                 length--;
-                                if (!length) {
-                                    done();
-                                }
+                                done();
                             }.bind(app), null, replaceState);
                         });
+                    }
                     return this;
                 },
                 /**
@@ -2904,7 +3037,7 @@
                  */
                 loadComponents: function (callback, components) {
                     var app = this,
-                            components = components || this.container.find('[this-component]'),
+                            components = components || this.container.find('[this-component]:not([this-ignore])'),
                             length = components.length;
                     if (!length) {
                         this.__.callable(callback).call(this);
@@ -2999,8 +3132,7 @@
                     if (this.__.isArray(data) || isModel === false) {
                         // check if can continue with rendering
                         var __data = ext.canContinue
-                                .call(this, 'collection.render', [data
-                                ], container.get(0));
+                                .call(this, 'collection.render', [data], container.get(0));
                         // rendering canceled
                         if (!__data) {
                             return this;
@@ -3207,8 +3339,7 @@
                     else if (data && isModel) {
                         // check if can continue rendering
                         var __data = ext.canContinue
-                                .call(this, 'model.render', [data
-                                ], container.get(0));
+                                .call(this, 'model.render', [data], container.get(0));
                         // rendering canceled
                         if (!__data) {
                             return this;
@@ -3309,10 +3440,10 @@
                                         }
                                         ids = ext.fillAutocompleteList.call(this, {
                                             list: _selectedList.html(''),
-                                            data: data
+                                            data: data,
+                                            dropdownList: _dropDownList
                                         });
                                     }
-                                    _dropDownList.this('selected', ids.join(',') + ',');
                                 }.bind(app);
                                 // refill list from provided function
                                 if (_selectedList.this('refill')) {
@@ -3394,7 +3525,8 @@
                  */
                 loadLayouts: function (replaceInState) {
                     var _layout = _(), app = this;
-                    if (this.config.layout || this.page.this('layout')) {
+                    if (!this.page.hasThis('no-layout') &&
+                            (this.config.layout || this.page.this('layout'))) {
                         var layout = this.page.this('layout') || this.config.layout;
                         // get existing layout in container if not asked to reload layouts
                         _layout = this.reloadLayouts ? _layout :
@@ -3487,7 +3619,7 @@
                             type = getElemType(__this),
                             common_selector = '';
                     __this.this('loading', '')
-                            .find('collection,[this-type="collection"]')
+                            .find('collection:not([this-ignore]),[this-type="collection"]:not([this-ignore])')
                             .this('loading', '');
                     if (__this.this('id'))
                         common_selector += '[this-id="' + __this.this('id') + '"]';
@@ -3498,7 +3630,6 @@
                         this.__.callable(callback).call(this);
                         return;
                     }
-
                     if (type !== 'page') {
                         // necessary in case of binding and target has already been used
                         __this.html(this.getCached(common_selector, type).hide()
@@ -3525,8 +3656,8 @@
                                                     .removeThis('loading')
                                                     .trigger('model.loaded')
                                                     .show();
+                                            ext.postLoad.call(app, elem);
                                         }
-                                        ext.postLoad.call(app, elem);
                                         this.__.callable(callback).call(this, data);
                                     }.bind(app));
                         },
@@ -3550,7 +3681,8 @@
                     }
                     ext.loadComponents.call(this, function () {
                         loadedComponents.call(app, __this.outerHtml());
-                    }, __this.find('[this-component]'));
+                    },
+                            __this.find('[this-component]:not([this-ignore])'));
                     return app;
                 },
                 /**
@@ -3561,8 +3693,8 @@
                 loadModels: function (replaceState, chain) {
                     var app = this;
                     var models = this.page
-                            .find('model:not([this-in-collection]),'
-                                    + '[this-type="model"]:not([this-in-collection])'),
+                            .find('model:not([this-in-collection]):not([this-ignore]),'
+                                    + '[this-type="model"]:not([this-in-collection]):not([this-ignore])'),
                             length = models.length;
                     if (chain && !length)
                         ext.loadCollections.call(this, null, null, replaceState);
@@ -3732,9 +3864,7 @@
                  */
                 log: function (method, param) {
                     if (ext.record.call(this, 'debug')) {
-                        console[method].apply(null, this.__.isArray(param) ? param : [
-                            param
-                        ]);
+                        console[method].apply(null, this.__.isArray(param) ? param : [param]);
                     }
                     return this;
                 },
@@ -3746,117 +3876,47 @@
                  * @param {string} content
                  * @returns {_}
                  */
-                loop: function (data, elem, filter, content, model) {
-                    if (!data)
-                        return;
-                    elem = this._(elem);
-                    if (!content)
-                        content = elem.outerHtml();
-                    var child = this._(content).get(0),
-                            app = this,
-                            level,
-                            process = function (key, value) {
-                                var __data = {
-                                    key: key,
-                                    value: value
-                                },
-                                        _content = ext.inLoop.call(app, __data, filter, content);
-                                if (!_content)
-                                    return;
-                                _content = ext.processExpressions.call(app, _content, __data, model);
-                                var _variables = ext.parseBrackets.call(app, '{{', '}}', _content),
-                                        _content = app._(ext.fillVariables
-                                                .call(app, _variables, __data, _content)
-                                                .replace(/{{key}}/g, key)),
-                                        thisLevel = level;
-                                while (thisLevel) {
-                                    _content = _content.children();
-                                    thisLevel--;
+                loop: function (container, data) {
+                    console.log(data);
+                    if (!data) return;
+                    container = this._(container);
+                    var _each = container.find('[this-repeat-for]');
+                    while (_each.length) {
+                        var __this = _each.get(0, true),
+                                each = __this.this('repeat-for').trim(),
+                                _data = ext.getVariableValue.call(this, each, data, false),
+                                filter = __this.this('filter'),
+                                content = __this.removeThis('muted').removeThis('filter')
+                                .removeThis('repeat-for').clone().outerHtml()
+                                .replace(/__obrace__/g, '{{').replace(/__cbrace__/g, '}}')
+                                .replace(/__obrace2__/g, '({').replace(/__cbrace2__/g, '})'),
+                                ignoreDataCheck = false;
+                        __this.html('');
+                        // this-repeate-with is not a model key
+                        if (!_data) {
+                            if (each.indexOf('...') !== -1) {
+                                ignoreDataCheck = true;
+                                _data = each;
+                            }
+                            // do each on a variable value
+                            else if (each.startsWith('{{')) {
+                                // get the value
+                                _data = ext.getVariableValue.call(this, each, data, true);
+                            }
+                            // do each on an expression
+                            else {
+                                if (each.startsWith('({')) {
+                                    each = each.substr(1, each.length - 2);
                                 }
-                                // check for loops within current loop and execute
-                                if (app.__.isObject(value, true)) {
-                                    app.__.forEach(value, function (i, v) {
-                                        if (!app.__.isObject(v, true))
-                                            return;
-                                        _content.find('[this-repeat-for="value.' + i + '"]')
-                                                .each(function () {
-                                                    var __this = app._(this),
-                                                            __filter = __this.this('filter'),
-                                                            __content = __this.removeThis('muted')
-                                                            .removeThis('this-repeat-for')
-                                                            .removeThis('filter')
-                                                            .clone().outerHtml()
-                                                            .replace(/__obrace__/g, '{{')
-                                                            .replace(/__cbrace__/g, '}}')
-                                                            .replace(/__obrace2__/g, '({')
-                                                            .replace(/__cbrace2__/g, '})');
-                                                    ext.loop.call(app, v, this, __filter, __content, model);
-                                                });
-                                    });
-                                }
-                                if (elem.hasThis('prepend'))
-                                    elem.after(_content.children());
-                                else
-                                    elem.before(_content.children());
-                            };
-                    if (child) {
-                        switch (child.tagName.toLowerCase()) {
-                            case "td":
-                                level = 3;
-                                content = this._('<table />').html(content).outerHtml();
-                                break;
-                            case "tr":
-                                level = 2;
-                                content = this._('<table />').html(content).outerHtml();
-                                break;
-                        }
-                    }
-                    content = '<div>' + this._(content).show().outerHtml() + '</div>';
-                    if (this.__.isObject(data, true)) {
-                        this.__.forEach(data, function (key, value) {
-                            process(key, value);
-                        });
-                    }
-                    // data is string in format: [start ... last, progress]
-                    else {
-                        // parse operation parts
-                        var parts = data.substr(1, data.length - 2)
-                                .replace('...', ',').split(','),
-                                // set the current/start value
-                                current = parts[0],
-                                // set last value
-                                last = parts[1],
-                                // set diff/progress
-                                diff = parts[2] || 1,
-                                up;
-                        try {
-                            // evaluate each in case any is string
-                            current = eval(current);
-                            last = eval(last);
-                            diff = eval(diff);
-
-                            // ensure they all are integers
-                            current = parseInt(current);
-                            last = parseInt(last);
-                            // remove minus sign if available
-                            diff = Math.abs(diff);
-
-                            // incrementing or not
-                            up = current < last;
-
-                            while ((up && current <= last) ||
-                                    (!up && current >= last)) {
-                                process(current, current);
-                                if (up) current += diff;
-                                else current -= diff;
+                                _data = ext.eval
+                                        .call(this, each, data);
                             }
                         }
-                        catch (e) {
-                            this.error(e);
-                            return;
+                        if (ignoreDataCheck || this.__.isObject(_data, true)) {
+                            ext.doLoop.call(this, _data, __this, filter, content, data);
                         }
+                        _each = container.find('[this-repeat-for]');
                     }
-                    elem.remove();
                 },
                 /**
                  * Fetches a model from a collection store
@@ -4088,44 +4148,8 @@
                         };
                     }
                     container = ext.inLoop.call(this, prObj, true, container.outerHtml(), true);
-                    var _each = container.find('[this-repeat-for]');
-                    while (_each.length) {
-                        var __this = _each.get(0, true),
-                                each = __this.this('repeat-for').trim(),
-                                _data = ext.getVariableValue.call(app, each, data, false),
-                                filter = __this.this('filter'),
-                                content = __this.removeThis('muted').removeThis('filter')
-                                .removeThis('repeat-for').clone().outerHtml()
-                                .replace(/__obrace__/g, '{{').replace(/__cbrace__/g, '}}')
-                                .replace(/__obrace2__/g, '({').replace(/__cbrace2__/g, '})'),
-                                ignoreDataCheck = false;
-                        __this.html('');
-                        // this-repeate-with is not a model key
-                        if (!_data) {
-                            if (each.indexOf('...') !== -1) {
-                                ignoreDataCheck = true;
-                                _data = each;
-                            }
-                            // do each on a variable value
-                            else if (each.startsWith('{{')) {
-                                // get the value
-                                _data = ext.getVariableValue.call(app, each, data, true);
-                            }
-                            // do each on an expression
-                            else {
-                                if (each.startsWith('({')) {
-                                    each = each.substr(1, each.length - 2);
-                                }
-                                _data = ext.eval
-                                        .call(app, each, data);
-                            }
-                        }
-                        if (ignoreDataCheck || app.__.isObject(_data, true)) {
-                            ext.loop.call(app, _data, __this, filter, content, data);
-                        }
-                        _each = container.find('[this-repeat-for]');
-                    }
-                    content = ext.processExpressions.call(this, container.outerHtml(), prObj, data);
+                    ext.loop.call(this, container, data);
+                    var content = ext.processExpressions.call(this, container.outerHtml(), prObj, data);
                     var variables = ext.parseBrackets.call(this, '{{', '}}',
                             this.__.isString(content) ? content : content.outerHtml());
                     content = ext.fillVariables.call(this, variables, data, content);
@@ -4142,8 +4166,10 @@
                         this.__.callable(callback).call(this, container);
                     }.bind(this);
                     if (isModel) {
-                        var collections = container.find('collection:not([this-loaded]),'
-                                + '[this-type="collection"]:not([this-loaded])');
+                        var collections = container.find('collection:not([this-loaded])'
+                                + ':not([this-data]):not([this-loading]):not([this-ignore]),'
+                                + '[this-type="collection"]:not([this-loaded]):not([this-data])'
+                                + ':not([this-loading]):not([this-ignore])');
                         if (collections.length) {
                             this.__proto__.modelCollections = collections.length;
                             collections.each(function () {
@@ -4192,8 +4218,9 @@
                         content = content.replace(/\n/g, '<br/>').replace(/\s/g, '&nbsp;');
                         __this.html(content).removeThis('code');
                     });
-                    elem.find('[this-hidden]').hide()
+                    elem.find('[this-hidden],[this-type="list"]').hide()
                             .removeThis('hidden');
+                    ext.loop.call(this, elem, {});
                 },
                 /**
                  * Processes all expressions in the content
@@ -5081,7 +5108,9 @@
                                                     .call(app, {
                                                         list: _list,
                                                         filter: _list.this('filter'),
-                                                        data: data
+                                                        data: data,
+                                                        dropdownList: _list,
+                                                        ignoreIds: true
                                                     });
                                             ext.recordsStore.save(data, 'autocompleting');
                                         },
@@ -5153,7 +5182,7 @@
                                                 _selectedList.append(elem).show();
                                                 __this.trigger('list.option.selected', {
                                                     data: data,
-                                                    selection: elem.get(0),
+                                                    option: elem.get(0),
                                                     autocompleteInput: _input.get(0)
                                                 });
                                                 if (!_input.hasThis('multiple')) {
@@ -5186,7 +5215,9 @@
                                                             + _dropDownList
                                                             .this('autocompleting') +
                                                             '"]').show();
-                                            __this.remove();
+                                            __this.trigger('list.option.removed', {
+                                                option: __this.get(0)
+                                            }).remove();
                                             if (!_list.children().length)
                                                 _list.trigger('list.emptied');
                                             if (_input.hasThis('multiple')) {
@@ -5304,8 +5335,7 @@
                                     _form.trigger('form.valid.submission');
                                     var fd = new FormData(this), headers = {};
                                     var data = ext.canContinue
-                                            .call(app, 'form.send', [headers
-                                            ], this);
+                                            .call(app, 'form.send', [headers], this);
                                     if (!data) {
                                         return;
                                     }
@@ -5494,6 +5524,9 @@
                                                     }.bind(this));
                                                 }.bind(app));
                                     }
+                                })
+                                .when('list.emptied, list.no.data', 'list', function () {
+                                    _(this).hide();
                                 });
                         /*
                          * State resuscitation
@@ -5821,8 +5854,7 @@
                             function (resp) {
                                 // save model to collection
                                 var actionStore = ext[resp.event + 'Store'],
-                                        action = actionStore.find(model_name) || [
-                                ];
+                                        action = actionStore.find(model_name) || [];
                                 switch (resp.event) {
                                     case 'created':
                                         ext.modelToStore
@@ -6388,8 +6420,7 @@
                                             || !crudStatus) {
                                         if (!_this.app.watchCallback) {
                                             ext.store.call(_this.app, _this.name).remove(_this.id);
-                                            var deleted = ext.deletedStore.find(_this.name) || [
-                                            ];
+                                            var deleted = ext.deletedStore.find(_this.name) || [];
                                             /* Indicate model as deleted */
                                             _this.app.__
                                                     .removeArrayValue(deleted, _this.id, true);
@@ -7424,6 +7455,31 @@
             return this;
         },
         /**
+         * Fills an autocomplete list with the data given
+         * @param {_}|{string} list
+         * @param {object} data
+         * @param {string} uid
+         * @param {string} filter
+         * @returns {array} Array of ids added to the list
+         */
+        fillAutocompleteList: function (list, data, uid, filter) {
+            list = this.__.isString(list) ?
+                    this.container.find('[this-id="' + list + '"]') : list;
+            var _dropdownList = list.this('autocompleting') ? list :
+                    this.container.find('list[this-id="'
+                            + list.this('parent-list') +
+                            '"],[this-type="list"][this-id="'
+                            + list.this('parent-list') +
+                            '"]');
+            return ext.fillAutocompleteList.call(this, {
+                list: list,
+                data: data,
+                uid: uid,
+                filter: filter,
+                dropdownList: _dropdownList
+            });
+        },
+        /**
          * Takes the app forward one step in history
          * @returns ThisApp
          */
@@ -7533,9 +7589,9 @@
                 return this;
             });
         },
-        /**
+        /** 
          * Loads an element (collection, model, component, or layout)
-         * @param {HTMLElement}|{_} elem
+         * @param {HTMLElement}|{_}|{string} elem
          * @param {Object} data
          * @param {Function} callback
          * @returns {ThisApp}
@@ -7788,8 +7844,8 @@
                                         + '"][this-type="list"],list[this-id="'
                                         + _dropdownList.this('selection-list')
                                         + '"]');
-                        _selectedList.html('').hide();
-                        _dropdownList.removeThis('selected').html('').hide();
+                        _selectedList.html('').hide().trigger('list.emptied');
+                        _dropdownList.removeThis('selected').html('').hide().trigger('list.emptied');
                         _input.val('').trigger('keyup').show();
                     });
                 }
