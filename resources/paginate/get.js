@@ -22,16 +22,24 @@ if (query.query) {
         // queryKeys must be an array
         if (Array.isArray(queryKeys) && queryKeys.length) {
             query.$or = [];
-            // loop over each key
-            queryKeys.forEach(function (key) {
+            var process = function (key, search) {
                 var obj = {};
                 // set the query for key with regex
                 obj[key] = {
-                    $regex: query.query,
+                    $regex: search,
                     $options: "i"
                 };
                 // add to the or query key
                 query.$or.push(obj);
+            };
+            // loop over each key
+            queryKeys.forEach(function (key) {
+                // split query by pipe and process each item
+                query.query.split('|')
+                        .forEach(function (q) {
+                            // only process if query is not empty
+                            if (q.trim()) process(key, q);
+                        });
                 // mark as queried
                 queried = true;
             });
