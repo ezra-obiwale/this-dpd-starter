@@ -975,7 +975,7 @@ app.onError(function (msg) {
                                                             v: d.verified
                                                         };
                                                         app.store('ssn')
-                                                                .save(ssn, 1);
+                                                                .save(ssn, 1, true);
                                                         // start watching all over again
                                                         watchToken(ssn, minutesBefore);
                                                     }
