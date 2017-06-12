@@ -317,29 +317,39 @@
 
         return obj;
     }
-    function elemToSelector(elem) {
+    function elemToSelector(elem, options) {
         elem = _(elem);
+        options.ignore = options.ignore || [];
+        options.attrs = options.attrs || false;
         // no element found
         if (!elem.length) return '';
         // set selector as the tag name
         var sel = elem.get(0).tagName.toLowerCase(),
                 cls = '';
-        // get id
-        if (elem.attr('id')) sel = '#' + elem.attr('id');
-        // parse attributes
-        elem.attr().forEach(function (v) {
-            // don't add id or style
-            if (v.name === 'id' || v.name === 'style') return;
-            // keep class for later parsing
-            else if (v.name === 'class') {
-                cls = v.value;
-                return;
-            }
-            // add attribute to selector
-            sel += '[' + v.name;
-            if (v.value) sel += '="' + v.value + '"';
-            sel += ']';
-        });
+        // get id if not ignored
+        if (!__.inArray('id', options.ignore) && elem.attr('id'))
+            sel = '#' + elem.attr('id');
+        // parse attributes if not ignored
+        if (!__.inArray('attrs', options.ignore))
+            elem.attr().forEach(function (v) {
+                // skip if attribute is not requested
+                if (__.isArray(options.attrs) && !__.inArray(v.name, options.attrs))
+                    return;
+                // don't add id or style
+                if (v.name === 'id' || v.name === 'style') return;
+                // keep class for later parsing
+                else if (v.name === 'class') {
+                    cls = v.value.trim();
+                    return;
+                }
+                // add attribute to selector
+                sel += '[' + v.name;
+                if (v.value) sel += '="' + v.value + '"';
+                sel += ']';
+            });
+        // skip classes if ignored
+        if (__.inArray('class', options.ignore)) return sel;
+        else if (cls) sel += '.';
         // add classes: replace spaces with dots
         sel += cls.replace(/\s/g, '.');
         return sel;
@@ -1843,8 +1853,7 @@
                         return Promise.reject('Element to bind must be already bound to model.');
                     }
                     var model_name = _elem.this('model') || _elem.this('id'),
-                            selector = ext.elementToSelector.call(this, _target, true),
-                            _tmpl = this.getCached(selector),
+                            _tmpl = this.getCached(_target),
                             app = this;
                     if (_tmpl.length) {
                         if (_target.this('tar'))
@@ -2201,23 +2210,6 @@
                     if (!noShow && type !== 'page')
                         __this.show();
                     return __this.removeThis('tar');
-                },
-                /**
-                 * Converts an element to selector string
-                 * @param {_} elem
-                 * @param {boolean} ignoreType
-                 * @returns {string}
-                 */
-                elementToSelector: function (elem, ignoreType) {
-                    elem = this._(elem);
-                    var selector = elem.get(0).tagName.toLowerCase();
-                    if (elem.this('id'))
-                        selector += '[this-id="' + elem.this('id') + '"]';
-                    if (!ignoreType && elem.this('type'))
-                        selector += '[this-type="' + elem.this('type') + '"]';
-                    if (elem.attr('class'))
-                        selector += '.' + elem.attr('class').replace(/\s/g, '.');
-                    return selector;
                 },
                 /**
                  * Empty lists, models and collections in the given elem.
@@ -3006,8 +2998,7 @@
                     }
                     // get collection content
                     var content = this.getCached('[this-id="'
-                            + __this.this('id') +
-                            '"]', 'collection')
+                            + __this.this('id') + '"]', 'collection')
                             .children()
                             .clone().outerHtml(),
                             app = this,
@@ -3055,6 +3046,7 @@
                             __.callable(callback).call(app, data);
                             return;
                         }
+                        console.log(data);
                         ext.loadData
                                 .call(app, __this, data, content, false, save,
                                         function (elem) {
@@ -4037,7 +4029,7 @@
                                 .replace(/__obrace2__/g, '({').replace(/__cbrace2__/g, '})'),
                                 ignoreDataCheck = false;
                         __this.html('');
-                        // this-repeate-with is not a model key
+                        // this-repeat-with is not a model key
                         if (!_data) {
                             if (each.indexOf('...') !== -1) {
                                 ignoreDataCheck = true;
@@ -4157,10 +4149,6 @@
                  */
                 pageFound: function (page, replaceInState) {
                     if (ext.is.call(this, 'page', page)) {
-                        if (!ext.canContinue
-                                .call(this, 'page.load', [], page.get(0))) {
-                            return this;
-                        }
                         if (this.page) {
                             this.oldPage = this.page.this('dead', '')
                                     .trigger('page.leave');
@@ -4752,6 +4740,7 @@
                                                 + '[this-type="component"]:not([this-loaded])'
                                                 + '[this-paginate-next],[this-paginate-previous]')
                                         .hide());
+                        // add the remaining page and layouts to cache
                         this.addToCache(this.container.find('page,[this-type="page"],layout,[this-type="layout"]'));
                         // remove templates
                         this.container.find('[this-type="template"]').remove();
@@ -7495,8 +7484,8 @@
         addToCache: function (elem) {
             return this.tryCatch(function () {
                 var _this = this;
-                elem.each(function () {
-                    var _elem = _this._(this).clone();
+                this._(elem).each(function () {
+                    var _elem = _this._(this).clone().removeThis('loaded');
                     if (_elem.this('type') === 'layout')
                         _elem.find('[this-content]').html('');
                     _elem.find('style').each(function () {
@@ -7784,7 +7773,10 @@
                 var _this = this,
                         elem = this._();
                 if (__.isObject(selector))
-                    selector = elemToSelector(selector);
+                    selector = elemToSelector(selector, {
+                        attrs: ["this-id", "this-type", "this-model"],
+                        ignore: ["class"]
+                    });
                 if (type) {
                     var seltr = '';
                     __.forEach(selector.split(','), function (i, v) {
@@ -7895,11 +7887,12 @@
                         && !this.firstPage))
                     return this;
                 if (this.page && !ext.canContinue
-                        .call(this, 'page.leave', [], this.page.items[0])) {
+                        .call(this, 'page.leave', [], this.page.items[0]))
                     return this;
-                }
-                this.oldPage = _();
                 pageIDorPath = ext.pageIDFromLink.call(this, pageIDorPath, true);
+                if (!ext.canContinue.call(this, 'page.load', [pageIDorPath]))
+                    return this;
+                this.oldPage = _();
                 var newPage = this.getCached('[this-id="' + pageIDorPath + '"]', 'page');
                 if (newPage.length > 1) {
                     this.error('Target page matches multiple pages!');
