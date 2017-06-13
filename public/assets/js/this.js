@@ -556,7 +556,7 @@
         };
         // add data to the form from the given data
         this.fromObject = function (data) {
-            additionalData = data;
+            additionalData = __.extend(additionalData, data);
             return this;
         };
         // fetches the form data in the best format
@@ -633,13 +633,8 @@
         // set config data to best format base on the type of request this is
         if (config.data instanceof Form)
             config.data = config.data.getData(config.type);
-        else if (__.isObject(config.data)) {
-            if (config.data instanceof FormData) {
-                // leave to send a multipart request
-                if (config.type !== 'post')
-                    config.data = config.data.toQueryString();
-            }
-            else config.data = objToQStr(config.data);
+        else if (__.isObject(config.data) && !(config.data instanceof FormData)) {
+            config.data = objToQStr(config.data);
         }
         // data is string but no content type has been set
         if (config.data && __.isString(config.data)) {
@@ -770,6 +765,8 @@
                  */
                 attr: function (attr, val) {
                     return this.tryCatch(function () {
+                        if (!this.items.length)
+                            return;
                         if (val !== undefined || __.isObject(attr)) {
                             this.each(function () {
                                 if (__.isObject(attr)) {
@@ -783,8 +780,6 @@
                             });
                             return this;
                         }
-                        if (!this.items.length)
-                            return;
                         if (!attr)
                             return Array.from(this.items[0].attributes);
                         if (this.items[0].getAttribute(attr) !== null)
@@ -6792,7 +6787,8 @@
                                         method = this.id
                                         ? this.app.config.crud.methods.update
                                         : this.app.config.crud.methods.create,
-                                        formData = new Form(config.form).fromObject(data);
+                                        formData = new Form(config.form);
+                                formData.fromObject(data);
                                 if (this.method)
                                     method = this.method;
                                 if (this.id && config.cacheOnly) {
@@ -6900,9 +6896,7 @@
                                                         return;
                                                     }
                                                     else if (__.isObject(_data, true)) {
-                                                        __.forEach(_data, function (i, v) {
-                                                            data[i] = v;
-                                                        });
+                                                        data = __.extend(data, _data);
                                                     }
                                                     finalizeSave.call(this, config, data);
                                                 }.bind(this)
