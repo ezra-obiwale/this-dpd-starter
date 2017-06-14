@@ -882,7 +882,7 @@ app.onError(function (msg) {
         .debug(1)
         .setBaseURL('http://localhost:2403/')
         .setDefaultLayout('main')
-        .secureAPI(function (key, headers, data) {
+        .secureAPI(function (headers, data) {
             var ssn = app.store('ssn').find(1);
             if (ssn && ssn.k) headers['X-API-TOKEN'] = ssn.k;
         })

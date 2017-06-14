@@ -23,7 +23,7 @@ app.debug(true)
                 _error.addClass('hidden');
             }, 4000);
         })
-        .secureAPI(function (key, headers, data) {
+        .secureAPI(function (headers, data) {
             var ssn = app.store('ssn').find(1);
             if (ssn && ssn.k) headers['X-API-TOKEN'] = ssn.k;
         })

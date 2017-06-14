@@ -219,8 +219,8 @@
     }
     function getRealData(data, dataKey) {
         // use dataKey if available
-        if (dataKey || this.config.dataKey) {
-            return data[dataKey || this.config.dataKey];
+        if (dataKey || ext.config.call(this).dataKey) {
+            return data[dataKey || ext.config.call(this).dataKey];
         }
         else {
             return data;
@@ -433,7 +433,9 @@
         var data = [],
                 // add the element to the data array
                 elemToData = function (_elem) {
-                    if (_elem.attr('type').toLowerCase() === 'file') return;
+                    if (_elem.is('input') &&
+                            _elem.attr('type').toLowerCase() === 'file')
+                        return;
                     data.push({
                         name: _elem.attr('name'),
                         value: _elem.val()
@@ -452,7 +454,7 @@
                         elemToData(_elem);
                     }
                     // handle others
-                    else if (_elem.val()) {
+                    else if (_elem.val().trim()) {
                         elemToData(_elem);
                     }
                 });
@@ -2030,9 +2032,9 @@
                  */
                 doLoad: function (container, data, content, isModel, level, callback) {
                     container = this._(container).hide();
-                    var uid = container.this('model-id-key') ||
+                    var idKey = container.this('model-id-key') ||
                             container.this('id-key') || '',
-                            id = ext.getUIDValue.call(this, data, uid),
+                            id = ext.getUIDValue.call(this, data, idKey),
                             url = container.this('url') || '',
                             url_parts = url.split('?');
                     url = url_parts[0];
@@ -2047,7 +2049,7 @@
                         }
                         if (!isModel) {
                             _temp.this('mid', id)
-                                    .this('id-key', uid)
+                                    .this('id-key', idKey)
                                     .this('type', 'model')
                                     .this('in-collection', '');
                             if (!_temp.this('url'))
@@ -2059,7 +2061,7 @@
                                     .removeThis('loading');
                         }
                         else {
-                            container.this('id-key', uid).this('mid', id);
+                            container.this('id-key', idKey).this('mid', id);
                             container.html(_temp.html()).show();
                         }
                         __.callable(callback).call(this, container);
@@ -2329,7 +2331,7 @@
                 /**
                  * Fills an autocomplete list with the data given
                  * @param {object} options Keys include list (_), data (Object),
-                 * uid (string), filter (string), dropdownList (_), ignoreIds (boolean)
+                 * idKey (string), filter (string), dropdownList (_), ignoreIds (boolean)
                  * @returns {array} Array of ids added to the list
                  */
                 fillAutocompleteList: function (options) {
@@ -2361,7 +2363,7 @@
                                 return;
                         }
                         // get unique id value
-                        var id = ext.getUIDValue.call(app, v, options.uid);
+                        var id = ext.getUIDValue.call(app, v, options.idKey);
                         // don't render elem if already selected
                         if (selected.indexOf(id + ',') !== -1) {
                             data_length--;
@@ -2468,7 +2470,7 @@
                                             return collection.model(this.page.this('mid'), {
                                                 url: this.page.this('url'),
                                                 ignoreCache: this.page.hasThis('ignore-cache')
-                                                        || !this.config.cacheData
+                                                        || !ext.config.call(this).cacheData
                                             });
                                         }.bind(this))
                                         .then(function (model) {
@@ -2519,12 +2521,12 @@
                  * @returns {void}
                  */
                 fullyFromURL: function (type, idOrPath, success, error) {
-                    if (!this.config.paths) {
+                    if (!ext.config.call(this).paths) {
                         __.callable(error).call(this);
                         return;
                     }
                     var app = this,
-                            pathConfig = this.config.paths[type + 's'];
+                            pathConfig = ext.config.call(this).paths[type + 's'];
                     if (!__.isObject(pathConfig)) {
                         this.__callable(error).call(this);
                         return;
@@ -2652,14 +2654,14 @@
                     return exps;
                 },
                 /**
-                 * Fetches the value of the uid of the given data
+                 * Fetches the value of the idKey of the given data
                  * @param {object} data
-                 * @param {string} uid If not provided, the default in the config is fallen
+                 * @param {string} idKey If not provided, the default in the config is fallen
                  * back to
                  * @returns {mixed}
                  */
-                getUIDValue: function (data, uid) {
-                    return ext.getDeepValue.call(this, uid || this.config.idKey, data);
+                getUIDValue: function (data, idKey) {
+                    return ext.getDeepValue.call(this, idKey || ext.config.call(this).idKey, data);
                 },
                 /**
                  * Retrieves the value of the variable from the data and filters it if required
@@ -2852,6 +2854,12 @@
                     return record && record.running;
                 },
                 /**
+                 * Gets the configuration object for the app
+                 */
+                config: function () {
+                    return ext.record.call(this, 'config');
+                },
+                /**
                  * Loads the given type of asset on the given elementF
                  * @param {string} type js|css
                  * @param {string} name Asset filename, or full path to file if remote
@@ -2862,7 +2870,7 @@
                 loadAsset: function (type, name, elem, callback) {
                     name = name.trim();
                     var url = (name.indexOf('://') !== -1 || name.startsWith('//')) ?
-                            name : this.config.paths[type] + name,
+                            name : ext.config.call(this).paths[type] + name,
                             app = this,
                             load = function (url) {
                                 if (type === 'js') {
@@ -2880,7 +2888,7 @@
                         pageAssets[type] = {};
                     if (ext.record.call(this, 'debug') || !pageAssets[type][url]) {
                         this.request({
-                            dataType: type,
+                            dataType: type === 'css' ? 'text/css' : 'text/javascript',
                             url: url,
                             success: function (content) {
                                 pageAssets[type][url] = content;
@@ -3001,7 +3009,9 @@
                             !__this.children(':first-child').this('mid')) {
                         __this.html('');
                     }
-                    var requestData = {}, save = true, success, error;
+                    var requestData = {},
+                            save = ext.config.call(this).cacheData,
+                            success, error;
                     if (app.page.this('query')) {
                         requestData['query'] = app.page.this('query');
                         /* don't save search response requestData */
@@ -3023,15 +3033,15 @@
                             if (__this.this('paginate')) {
                                 requestData['limit'] = __this.this('paginate');
                             }
-                            else if (this.config.pagination && this.config.pagination.limit) {
-                                requestData['limit'] = this.config.pagination.limit;
+                            else if (ext.config.call(this).pagination && ext.config.call(this).pagination.limit) {
+                                requestData['limit'] = ext.config.call(this).pagination.limit;
                             }
                         }
                     }
                     // callbacks for request
-                    success = function (data, uid, handled) {
-                        if (uid)
-                            __this.this('model-id-key', uid);
+                    success = function (data, idKey, handled) {
+                        if (idKey)
+                            __this.this('model-id-key', idKey);
                         if (handled) {
                             __.callable(callback).call(app, data);
                             return;
@@ -3216,7 +3226,7 @@
                         // set expiration timestamp to 24 hours
                         expires: new Date().setMilliseconds(1000 * 3600 * 24)
                     },
-                            dataKey = container.this('data-key') || this.config.dataKey,
+                            dataKey = container.this('data-key') || ext.config.call(this).dataKey,
                             real_data = getRealData.call(this, data, dataKey);
                     // get expiration if set and data from dataKey if specified
                     if (dataKey) {
@@ -3265,7 +3275,7 @@
                                 // filter for the collection
                                 filter = container.this('filter'),
                                 // unique id key for models
-                                uid = container.this('model-id-key') || this.config.idKey,
+                                idKey = container.this('model-id-key') || ext.config.call(this).idKey,
                                 tab_cont = ext.checkTableContent.call(this, content),
                                 level = tab_cont.level,
                                 content = tab_cont.container.outerHtml();
@@ -3282,8 +3292,8 @@
                                 if ((container.hasThis('paginate-overwrite')
                                         && container.this('paginate-overwrite') === 'true')
                                         || (!container.hasThis('paginate-overwrite')
-                                                && this.config.pagination
-                                                && this.config.pagination.overwrite)
+                                                && ext.config.call(this).pagination
+                                                && ext.config.call(this).pagination.overwrite)
                                         // and current page is the first
                                         && container.this('pagination-page') === 1) {
                                     // hide previous button too
@@ -3309,7 +3319,7 @@
                                 }
                             }
                             // inline command not exist. check config pagination command
-                            else if (this.config.pagination && this.config.pagination.overwrite) {
+                            else if (ext.config.call(this).pagination && ext.config.call(this).pagination.overwrite) {
                                 container.html('');
                             }
                             // the indices of the all models in collection
@@ -3338,8 +3348,8 @@
                                                 _tmpl.get(0));
                                 // remove model if already exists in collection element
                                 container.children('[this-mid="' + index + '"]').remove();
-                                // get id from model with uid
-                                var id = ext.getUIDValue.call(app, model, uid);
+                                // get id from model with idKey
+                                var id = ext.getUIDValue.call(app, model, idKey);
                                 // keep index for later cached pagination
                                 indices.push(id || index);
                                 if (!__data) {
@@ -3374,20 +3384,20 @@
                                             index: index,
                                             model: model
                                         }), model);
-                                if (!uid)
-                                    uid = app.config.idKey;
-                                var uid_parts = uid.split('.').reverse(),
+                                if (!idKey)
+                                    idKey = ext.config.call(app).idKey;
+                                var idKey_parts = idKey.split('.').reverse(),
                                         _id = {},
-                                        top_uid = uid_parts.pop();
-                                // uid must exist in model
-                                if (!model[top_uid]) {
-                                    $.each(uid_parts, function (i, v) {
+                                        top_idKey = idKey_parts.pop();
+                                // idKey must exist in model
+                                if (!model[top_idKey]) {
+                                    $.each(idKey_parts, function (i, v) {
                                         if (!i)
                                             _id[v] = id || index;
                                         else
                                             _id[v] = _id;
                                     });
-                                    model[top_uid] = _id;
+                                    model[top_idKey] = _id;
                                 }
                                 // continue loading
                                 ext.doLoad.call(app, container, model, _content,
@@ -3407,8 +3417,8 @@
                                 else if ((container.hasThis('paginate-overwrite')
                                         && container.this('paginate-overwrite') === 'true')
                                         || (!container.hasThis('paginate-overwrite')
-                                                && this.config.pagination
-                                                && this.config.pagination.overwrite)) {
+                                                && ext.config.call(this).pagination
+                                                && ext.config.call(this).pagination.overwrite)) {
                                     // show previous button
                                     this.container.find('[this-paginate-previous="'
                                             + container.this('id') + '"]').show();
@@ -3428,8 +3438,8 @@
                             // mark pagination done if length of last result is not
                             // equal to the expected limit
                             if ((container.this('paginate') && indices.length != container.this('paginate'))
-                                    || (!container.this('paginate') && this.config.pagination
-                                            && this.config.pagination.limit && indices.length != this.config.pagination.limit)) {
+                                    || (!container.this('paginate') && ext.config.call(this).pagination
+                                            && ext.config.call(this).pagination.limit && indices.length != ext.config.call(this).pagination.limit)) {
                                 done();
                             }
                         }
@@ -3451,7 +3461,7 @@
                         }
                         // saving is allowed
                         if (save !== false) {
-                            ext.store.call(this, save_as).saveMany(_data.data, uid);
+                            ext.store.call(this, save_as).saveMany(_data.data, idKey);
                             ext.expirationStore.save(_data.expires, save_as);
                             ext.paginationStore.save(_data.pagination, save_as);
                         }
@@ -3546,11 +3556,11 @@
                                                 __this.val(data);
                                                 return;
                                             }
-                                            // data must be a string and therefore the uid
-                                            // create an object with the uid => the data
+                                            // data must be a string and therefore the idKey
+                                            // create an object with the idKey => the data
                                             var id = data;
                                             data = {};
-                                            data[app.config.idKey || 'id'] = id;
+                                            data[ext.config.call(app).idKey || 'id'] = id;
                                         }
                                         if (!__this.hasThis('multiple')) {
                                             // ensure data is an array
@@ -3647,8 +3657,8 @@
                 loadLayouts: function (replaceInState) {
                     var _layout = _(), app = this;
                     if (!this.page.hasThis('no-layout') &&
-                            (this.config.layout || this.page.this('layout'))) {
-                        var layout = this.page.this('layout') || this.config.layout;
+                            (ext.config.call(this).layout || this.page.this('layout'))) {
+                        var layout = this.page.this('layout') || ext.config.call(this).layout;
                         // get existing layout in container if not asked to reload layouts
                         _layout = this.reloadLayouts ? _layout :
                                 this.container.find('layout[this-id="' + layout
@@ -3767,7 +3777,7 @@
                         if (Object.keys(this.notWiths).length) {
                             content = __this.outerHtml();
                         }
-                        var success = function (data, uid, handled) {
+                        var success = function (data, idKey, handled) {
                             __this.removeThis('loading');
                             if (handled) {
                                 __.callable(callback).call(app, data);
@@ -3775,7 +3785,11 @@
                             }
                             ext.loadData.call(app, __this, data, content, true,
                                     // only save the data if not loading page
-                                    type !== 'page',
+                                    // or loading a page and cache is not to be cached:
+                                    // cache so that saving forms can work fine:
+                                    // cache would be cleared when the collection is
+                                    // rendered again
+                                    type !== 'page' || ext.config.call(app).cacheData === false,
                                     function (elem) {
                                         if (elem) {
                                             elem.this('loaded', '')
@@ -3849,7 +3863,7 @@
                             expires = ext.expirationStore.find(model_name),
                             cache_expired = (expires && expires < Date.now()) || !expires,
                             cache, fromCache;
-                    if (this.config.cacheData) {
+                    if (ext.config.call(this).cacheData) {
                         if (!isCollection) {
                             cache = ext.store.call(app, model_name).find(config.elem.this('mid'));
                         }
@@ -3903,7 +3917,7 @@
                                 if (config.data) {
                                     var _data = {},
                                             dataKey = config.elem.this('data-key') ||
-                                            this.config.dataKey;
+                                            ext.config.call(this).dataKey;
                                     // use dataKey if available
                                     if (dataKey) {
                                         _data[dataKey] = config.data;
@@ -3947,7 +3961,7 @@
                                     || config.elem.hasThis('ignore-cache'))) {
                         var type;
                         try {
-                            type = app.config.crud.methods.read;
+                            type = ext.config.call(app).crud.methods.read;
                         }
                         catch (e) {
                             type = 'get';
@@ -4096,9 +4110,8 @@
                             else {
                                 if (!action)
                                     action = [];
-                                // Remove options.model uid if exists to avoid duplicates
-                                this.app.__
-                                        .removeArrayValue(action, options.modelId, true);
+                                // Remove options.model idKey if exists to avoid duplicates
+                                __.removeArrayValue(action, options.modelId, true);
                                 action.push(options.modelId);
                             }
                             actionStore.save(action, options.modelName);
@@ -4218,6 +4231,8 @@
                         this.page = this.container.find('[this-type="page"],page');
                         this.page.find('[this-type="template"]').remove();
                         this.page.trigger('page.loaded');
+                        // save templates after first page load
+                        ext.store.call(this, '___cache').save(this.templates.html(), location.pathname);
                         ext.saveState.call(this, replaceState);
                     }
                     // page was restored from history
@@ -4226,6 +4241,10 @@
                         ext.updatePage.call(this, true);
                         this.restored = true;
                         this.page.trigger('page.loaded');
+                        // clear cache of collections and models if not to cacheData
+                        if (ext.config.call(this).cacheData === false) {
+                            this.clearPageCache();
+                        }
                     }
 
                     if (this.firstPage) {
@@ -4248,6 +4267,7 @@
                         }
                         delete this.firstPage;
                     }
+
                     ext.recordsStore.save(this.watching, 'watching');
                     this.pageIsLoaded = true;
                     return this;
@@ -4380,6 +4400,10 @@
                     elem.html(content);
                     updateLinkHrefs.call(this, elem);
                     ext.loop.call(this, elem, {});
+                    // clear cache of collections and models if not to cacheData
+                    if (ext.config.call(this).cacheData === false) {
+                        this.clearPageCache();
+                    }
                 },
                 /**
                  * Processes all expressions in the content
@@ -4553,8 +4577,8 @@
                     this.page = this.container.find('page[this-id="' + state.id
                             + '"],[this-type="page"][this-id="'
                             + state.id + '"]').removeThis('dead');
-                    if (this.config.titleContainer)
-                        this.config.titleContainer.html(state.title);
+                    if (ext.config.call(this).titleContainer)
+                        ext.config.call(this).titleContainer.html(state.title);
                     ext.recordsStore.save(state.url, 'last_page');
                     this.removedAssets = {};
                     this.container.find('[this-type="layout"]')
@@ -4590,7 +4614,7 @@
                     if (replace || this.firstPage)
                         action = 'replaceState';
                     var url = '#/' + this.page.this('id');
-                    if (this.config.keepParamsInURL && Object.keys(this.params).length)
+                    if (ext.config.call(this).keepParamsInURL && Object.keys(this.params).length)
                         url += '?' + objToQStr(this.params);
                     if (this.__proto__.modelParams && this.__proto__.modelParams.length)
                         url += '/' + crudConnectors[this.pageAction] + '/' + this.__proto__.modelParams.join('/');
@@ -4693,6 +4717,26 @@
                         }
                         else if (!this.container.this('id'))
                             this.container.this('id', __.randomString());
+
+                        // setup record for this app
+                        ext.records[this.container.this('id')] = {
+                            running: true,
+                            secureAPI: this.secap || function () {},
+                            uploader: this.setup || null,
+                            config: this.config
+                        };
+                        delete this.secap;
+                        delete this.setup;
+                        // set debug mode
+                        ext.record.call(this, 'debug', ext.config.call(this).debug || false);
+                        // get necessary stores up
+                        ext.recordsStore = ext.store.call(this, '___records');
+                        ext.createdStore = ext.store.call(this, '___created');
+                        ext.updatedStore = ext.store.call(this, '___updated');
+                        ext.deletedStore = ext.store.call(this, '___deleted');
+                        ext.expirationStore = ext.store.call(this, '___expiration');
+                        ext.paginationStore = ext.store.call(this, '___pagination');
+
                         // mark layouts in container as loaded
                         this.container.find('layout,[this-type="layout"]')
                                 .this('loaded', '');
@@ -4705,54 +4749,44 @@
                                 this.container.this('id') + '"]').length)
                             this._('body').append('<div this-type="templates" this-app="' +
                                     this.container.this('id') + '" style="display:none"/>');
-                        this.templates = this._('[this-type="templates"][this-app="' +
-                                this.container.this('id') + '"]')
-                                // put all unloaded element into templates
-                                .html(
-                                        // hide all types not loaded or default page
-                                        //  (models, collections, layouts,
-                                        // components, etc)
-                                        this.container.find('page:not([this-default-page]),model:not([this-loaded]),'
-                                                + 'collection:not([this-loaded]),layout:not([this-loaded]),list:not([this-loaded]),'
-                                                + 'component:not([this-loaded]),'
-                                                + '[this-type="page"]:not([this-default-page]),'
-                                                + '[this-type="model"]:not([this-loaded]),'
-                                                + '[this-type="collection"]:not([this-loaded]),'
-                                                + '[this-type="layout"]:not([this-loaded]),'
-                                                + '[this-type="list"]:not([this-loaded]),'
-                                                + '[this-type="component"]:not([this-loaded])'
-                                                + '[this-paginate-next],[this-paginate-previous]')
-                                        .hide()
-                                        );
+                        // load templates from store if other pages already exist in history
+                        var templates = ext.store.call(this, '___cache').find(location.pathname);
+                        if (!templates) {
+                            this.templates = this._('[this-type="templates"][this-app="' +
+                                    this.container.this('id') + '"]')
+                                    // put all unloaded element into templates
+                                    .html(
+                                            // hide all types not loaded or default page
+                                            //  (models, collections, layouts,
+                                            // components, etc)
+                                            this.container.find('page:not([this-default-page]),model:not([this-loaded]),'
+                                                    + 'collection:not([this-loaded]),layout:not([this-loaded]),list:not([this-loaded]),'
+                                                    + 'component:not([this-loaded]),'
+                                                    + '[this-type="page"]:not([this-default-page]),'
+                                                    + '[this-type="model"]:not([this-loaded]),'
+                                                    + '[this-type="collection"]:not([this-loaded]),'
+                                                    + '[this-type="layout"]:not([this-loaded]),'
+                                                    + '[this-type="list"]:not([this-loaded]),'
+                                                    + '[this-type="component"]:not([this-loaded])'
+                                                    + '[this-paginate-next],[this-paginate-previous]')
+                                            .hide()
+                                            );
+                        }
+                        else {
+                            this.templates = this._('[this-type="templates"][this-app="' +
+                                    this.container.this('id') + '"]')
+                                    .html(templates);
+                        }
                         // add the remaining page and layouts to cache
                         this.addToCache(this.container
                                 .find('page,[this-type="page"],layout,[this-type="layout"]')
                                 .removeThis('loaded').removeThis('default-page'));
                         // remove templates
-                        this.container.find('[this-type="template"]').remove();
+                        this.container.find('[this-type="templates"]').remove();
                         ext.emptyFeatures.call(this, this.container);
                         if (this.config.titleContainer)
                             this.config.titleContainer = this._(this.config.titleContainer,
                                     ext.record.call(this, 'debug'));
-
-                        // setup record for this app
-                        ext.records[this.container.this('id')] = {
-                            running: true,
-                            secureAPI: this.secap || function () {},
-                            uploader: this.setup || null,
-                            config: this.config
-                        };
-                        delete this.secap;
-                        delete this.setup;
-                        // set debug mode
-                        ext.record.call(this, 'debug', this.config.debug || false);
-                        // get necessary stores up
-                        ext.recordsStore = ext.store.call(this, '___records');
-                        ext.createdStore = ext.store.call(this, '___created');
-                        ext.updatedStore = ext.store.call(this, '___updated');
-                        ext.deletedStore = ext.store.call(this, '___deleted');
-                        ext.expirationStore = ext.store.call(this, '___expiration');
-                        ext.paginationStore = ext.store.call(this, '___pagination');
 
                         var autocomplete_timeout;
                         this.container
@@ -4966,14 +5000,14 @@
                                             || _model.this('url') || '#',
                                             model_name = __this.this('model')
                                             || _model.this('id'),
-                                            uid = _model.this('id-key'),
+                                            idKey = _model.this('id-key'),
                                             goto = analyzeLink(__this.this('goto')).page,
                                             // necessary in case goto is a url and not an id
                                             pageId = goto.replace(/\/\\/g, '-');
                                     app.tar['page#' + pageId] = {
                                         "do": "delete",
                                         action: url,
-                                        uid: uid
+                                        "id-key": idKey
                                     };
                                     if (_model) {
                                         app.tar['page#' + pageId]['model'] = model_name;
@@ -5085,7 +5119,8 @@
                                             _model.this('url') ||
                                             _do.this('action'),
                                             model_id = _model.this('mid') ||
-                                            _do.this('mid');
+                                            _do.this('mid'),
+                                            model;
                                     if (!ext.canContinue
                                             .call(app, 'model.delete',
                                                     [], _model.get(0))) {
@@ -5107,7 +5142,8 @@
                                                 });
                                             })
                                             // got model
-                                            .then(function (model) {
+                                            .then(function (model_) {
+                                                model = model_;
                                                 return model.remove({
                                                     complete: function () {
                                                         _model.trigger('delete.complete', {
@@ -5119,7 +5155,7 @@
                                             })
                                             // removed
                                             .then(function (data) {
-                                                var crudStatus = app.config.crud.status;
+                                                var crudStatus = ext.config.call(app).crud.status;
                                                 if ((crudStatus &&
                                                         data[crudStatus.key] === crudStatus.successValue)
                                                         || !crudStatus) {
@@ -5131,6 +5167,7 @@
                                                                 + (_model.this('model')
                                                                         || _model.this('id'))
                                                                 + '"][this-binding]').hide();
+                                                        ext.updatePage.call(app, true);
                                                     }
                                                     data = getRealData.call(app, data);
                                                     _model.trigger('delete.success', {
@@ -5264,7 +5301,7 @@
                                         __this.this('last-query', val);
                                         var type;
                                         try {
-                                            type = app.config.crud.methods.read;
+                                            type = ext.config.call(app).crud.methods.read;
                                         }
                                         catch (e) {
                                             type = 'get';
@@ -5455,7 +5492,7 @@
                                                     // saved
                                                     .then(function (data) {
                                                         var model = getRealData.call(app, data),
-                                                                crudStatus = app.config.crud.status;
+                                                                crudStatus = ext.config.call(app).crud.status;
                                                         if (((crudStatus &&
                                                                 data[crudStatus.key] ===
                                                                 crudStatus.successValue)
@@ -5467,8 +5504,10 @@
                                                                         .length)
                                                                     app.back();
                                                                 // hide creation form if binding
-                                                                else if (__this.hasThis('binding'))
+                                                                else if (__this.hasThis('binding')) {
                                                                     __this.hide();
+                                                                    ext.updatePage.call(app, true);
+                                                                }
                                                             }
                                                             __this.trigger('form.submission.success',
                                                                     {
@@ -5739,26 +5778,26 @@
                  * @return {void}
                  */
                 showPage: function (replaceInState) {
-                    var transit = __.callable(this.config.transition, true),
+                    var transit = __.callable(ext.config.call(this).transition, true),
                             wait;
                     if (transit)
                         wait = transit.call(null, this.oldPage.removeThis('current'),
-                                this.page, this.config.transitionOptions);
-                    else if (__.isString(this.config.transition)) {
-                        if (!Transitions[this.config.transition])
-                            this.config.transition = 'switch';
+                                this.page, ext.config.call(this).transitionOptions);
+                    else if (__.isString(ext.config.call(this).transition)) {
+                        if (!Transitions[ext.config.call(this).transition])
+                            ext.config.call(this).transition = 'switch';
                         this.oldPage = this._(this.oldPage);
-                        wait = Transitions[this.config.transition](this.oldPage
+                        wait = Transitions[ext.config.call(this).transition](this.oldPage
                                 .removeThis('current'),
-                                this.page, this.config.transitionOptions);
+                                this.page, ext.config.call(this).transitionOptions);
                     }
                     setTimeout(function () {
                         if (this.oldPage)
                             this.oldPage.remove();
                         delete this.oldPage;
                     }.bind(this), __.isNumber(wait) ? wait : 0);
-                    if (this.config.titleContainer)
-                        this.config.titleContainer.html(this.page.this('title'));
+                    if (ext.config.call(this).titleContainer)
+                        ext.config.call(this).titleContainer.html(this.page.this('title'));
                     // this ensures that only expressions and variables for the page
                     // are run
                     ext.emptyFeatures.call(this, this.container);
@@ -5809,7 +5848,7 @@
                                 back: false,
                                 cancel: false
                             };
-                    /* Add created models to collection list */
+                    // add created object to collection
                     if (_collections.length) {
                         __.forEach(created, function (model_name, arr) {
                             var _collection = app.container.find('collection[this-model="'
@@ -5819,50 +5858,46 @@
                             if (!_collection.length)
                                 return;
                             touched.created = true;
-                            var __collection = ext.store(model_name),
-                                    uid = __collection.uid || '';
+                            var __collection = ext.store.call(app, model_name),
+                                    idKey = __collection.idKey || '';
                             __.forEach(arr, function (i, v) {
-                                var tmpl = app.getCached('[this-id="'
+                                var _clone = app.getCached('[this-id="'
                                         + _collection.this('id')
-                                        + '"]', 'collection').children(),
+                                        + '"]', 'collection'),
                                         action = _collection.this('prepend-new') ?
                                         'prepend' : 'append',
                                         data = __collection.find(v),
-                                        __data = ext.canContinue
-                                        .call(app, 'collection.model.render',
-                                                [data, _collection.get(0)],
-                                                tmpl.get(0));
-                                if (!__data) {
-                                    return;
-                                }
-                                else if (__.isObject(__data))
-                                    data = __data;
-                                ext.parseData.call(app, data,
-                                        tmpl, true, null,
-                                        function (tmpl) {
-                                            if (!tmpl.this('url'))
-                                                tmpl.this('url', _collection.this('url') + v);
-                                            ext.loadFormElements.call(this, tmpl.find('[this-is]'), data);
-                                            ext.postLoad.call(app, tmpl);
-                                            _collection[action](tmpl.this('mid', v)
-                                                    .this('id-key', uid)
-                                                    .this('type', 'model')
-                                                    .this('id', model_name)
-                                                    .this('in-collection', '')
-                                                    .outerHtml()).show();
-                                            __.removeArrayIndex(arr, i);
-                                        }.bind(app));
+                                        idKey = _collection.this('id-key') ||
+                                        ext.config.call(app).idKey || 'id',
+                                        _data = {};
+                                var idKeyParts = idKey.split('.').reverse(),
+                                        _id = data,
+                                        topIdKey = idKeyParts.pop();
+                                // add idKey to data
+                                $.each(idKeyParts, function (i, v) {
+                                    if (!i)
+                                        _id[v] = id || index;
+                                    else
+                                        _id[v] = _id;
+                                });
+                                _data[topIdKey] = _id;
+                                ext.loadCollection.call(app, _clone, function () {
+                                    __.removeArrayIndex(arr, i);
+                                    _collection[action](_clone.children().show());
+                                    ext.postLoad.call(app, _clone.children());
+                                }, _data);
                             });
                             if (!created[model_name].length) {
                                 ext.createdStore.remove(model_name);
-                                if (!app.config.cacheData)
-                                    ext.store(model_name).drop();
+                                if (!ext.config.call(app).cacheData)
+                                    ext.store.call(app, model_name).drop();
                             }
                             else
                                 ext.createdStore.save(arr, model_name, true);
                         });
                     }
                     if (_models.length) {
+                        // update object elements, whether in collection or standalone
                         __.forEach(updated, function (model_name, arr) {
                             var _model = app.container.find('model[this-id="' + model_name
                                     + '"],[this-type="model"][this-id="'
@@ -5881,7 +5916,7 @@
                                 // update page model if part of update models
                                 if (app.pageModel && app.pageModel.name === model_name
                                         && app.pageModel.id === id) {
-                                    app.pageModel.attributes = __.extend(app.pageModel.attributes, v);
+                                    app.pageModel.__proto__.attributes = __.extend(app.pageModel.attributes, v.data);
                                 }
                                 _model.filter(function () {
                                     var __model = app._(this);
@@ -5902,64 +5937,49 @@
                                                 var _collection = __model.parent();
                                                 _clone = app.getCached('[this-id="'
                                                         + _collection.this('id')
-                                                        + '"]', 'collection').children();
+                                                        + '"]', 'collection');
+                                                var idKey = _collection.this('id-key') ||
+                                                        ext.config.call(app).idKey || 'id',
+                                                        _data = {};
+                                                var idKeyParts = idKey.split('.').reverse(),
+                                                        _id = v.data,
+                                                        topIdKey = idKeyParts.pop();
+                                                // add idKey to data
+                                                $.each(idKeyParts, function (i, v) {
+                                                    if (!i)
+                                                        _id[v] = id || index;
+                                                    else
+                                                        _id[v] = _id;
+                                                });
+                                                _data[topIdKey] = _id;
+                                                ext.loadCollection.call(app, _clone, function () {
+                                                    delete arr[id];
+                                                    __model.html(_clone.children().html()).show()
+                                                            .this('updated', v.timestamp)
+                                                            .this('url', _clone.children().this('url'));
+                                                    ext.postLoad.call(app, __model);
+                                                }, _data);
                                             }
                                             else {
                                                 _clone = app.getCached('[this-id="'
                                                         + __model.this('id')
                                                         + '"]', getElemType(__model));
+                                                ext.loadModel.call(app, _clone, function () {
+                                                    __model.html(_clone.html()).show()
+                                                            .this('updated', v.timestamp)
+                                                            .this('url', _clone.this('url'));
+                                                    ext.postLoad.call(app, __model);
+                                                }, v.data);
                                             }
-
-                                            var data = v.data,
-                                                    __data = ext.canContinue
-                                                    .call(app, in_collection ?
-                                                            'collection.model.render'
-                                                            : 'model.render',
-                                                            in_collection ? [
-                                                                data,
-                                                                _model.parent()
-                                                            ] : [data],
-                                                            _clone);
-                                            if (!__data) {
-                                                return;
-                                            }
-                                            else if (__.isObject(__data))
-                                                data = __data;
-                                            // replace clone model's collections with existing
-                                            // model collections
-                                            _clone.find('collection,[this-type="collection"]')
-                                                    .each(function () {
-                                                        var _cl_col = app._(this),
-                                                                // loaded collection
-                                                                selector = 'collection[this-id="'
-                                                                + _cl_col.this('id') + '"],'
-                                                                + '[this-type="collection"][this-id="'
-                                                                + _cl_col.this('id') + '"]',
-                                                                _rl_col = _model.find(selector);
-                                                        if (_rl_col.length)
-                                                            _cl_col.replaceWith(_rl_col.clone());
-                                                        else
-                                                            _cl_col.remove();
-                                                    });
-                                            // put back current model's url
-                                            _clone.this('url', __model.this('url'));
-                                            ext.parseData.call(app, data,
-                                                    _clone, false, true, function (tmpl) {
-                                                        delete arr[id];
-                                                        ext.loadFormElements.call(app, tmpl.find('[this-is]'), data);
-                                                        __model.html(tmpl.html()).show()
-                                                                .this('updated', v.timestamp)
-                                                                .this('url', tmpl.this('url'));
-                                                        ext.postLoad.call(app, __model);
-                                                    });
                                         });
                             });
-                            if (!updated[model_name].length) {
+                            if (!Object.keys(updated[model_name]).length) {
                                 ext.updatedStore.remove(model_name);
                             }
                             else
                                 ext.updatedStore.save(arr, model_name, true);
                         });
+                        // delete object elements
                         __.forEach(deleted, function (model_name, arr) {
                             __.forEach(arr, function (i, mid) {
                                 var _model = app.container.find('[this-id="' + model_name
@@ -5973,6 +5993,7 @@
                                     var __model = app._(this);
                                     if (__model.hasThis('in-collection')) {
                                         __model.remove();
+                                        __.removeArrayIndex(arr, i);
                                     }
                                     else {
                                         __model.hide();
@@ -6036,7 +6057,7 @@
                                                     model: resp.data,
                                                     isNew: true
                                                 });
-                                        /* Remove model uid if exists to avoid duplicates */
+                                        /* Remove model idKey if exists to avoid duplicates */
                                         break;
                                     case 'updated':
                                         var data = resp.data, id = resp.id;
@@ -6492,7 +6513,7 @@
              * Model Object
              * @param {string} id The unique id of the model
              * @param {object} attributes Attributues of the model
-             * @param {object} props Model properties like name, app (ThisApp), uid, url,
+             * @param {object} props Model properties like name, app (ThisApp), idKey, url,
              * collection (Collection)
              * @returns {Model}
              */
@@ -6697,7 +6718,7 @@
                             }
                             else if (this.url || config.url) {
                                 var _success = function (data) {
-                                    var crudStatus = _this.app.config.crud.status;
+                                    var crudStatus = ext.config.call(app).crud.status;
                                     if ((crudStatus &&
                                             data[crudStatus.key] === crudStatus.successValue)
                                             || !crudStatus) {
@@ -6730,7 +6751,7 @@
                                 ext.request.call(this.app, null,
                                         function () {
                                             return {
-                                                type: config.method || this.app.config.crud.methods.delete,
+                                                type: config.method || ext.config.call(app).crud.methods.delete,
                                                 url: config.url || this.url,
                                                 id: config.id || this.id,
                                                 action: 'delete',
@@ -6740,7 +6761,7 @@
                                         }.bind(this),
                                         function () {
                                             return {
-                                                type: config.method || this.app.config.crud.methods.delete,
+                                                type: config.method || ext.config.call(app).crud.methods.delete,
                                                 url: config.url || _this.url,
                                                 success: _success,
                                                 error: _error
@@ -6793,10 +6814,10 @@
                             var finalizeSave = function (config, data) {
                                 var _this = this,
                                         method = this.id
-                                        ? this.app.config.crud.methods.update
-                                        : this.app.config.crud.methods.create,
-                                        formData = new Form(config.form);
-                                formData.fromObject(data);
+                                        ? ext.config.call(app).crud.methods.update
+                                        : ext.config.call(app).crud.methods.create,
+                                        form = new Form(config.form);
+                                form.fromObject(data);
                                 if (this.method)
                                     method = this.method;
                                 if (this.id && config.cacheOnly) {
@@ -6804,7 +6825,7 @@
                                     var model = ext.modelToStore.call(this.app, {
                                         modelName: this.name,
                                         modelId: this.id,
-                                        model: formData.toObject(),
+                                        model: form.toObject(),
                                         isNew: !this.id,
                                         ignoreDom: !(!config.ignoreDOM)
                                     });
@@ -6814,7 +6835,7 @@
                                     var _success = function (data, id) {
                                         if (data) {
                                             var model = getRealData.call(_this.app, data),
-                                                    crudStatus = _this.app.config.crud.status;
+                                                    crudStatus = ext.config.call(app).crud.status;
                                             if (((crudStatus &&
                                                     data[crudStatus.key] === crudStatus.successValue)
                                                     || !crudStatus) && model) {
@@ -6833,7 +6854,7 @@
                                                                         .find('collection[this-model="'
                                                                                 + _this.name + '"],[this-type="collection"][this-model="'
                                                                                 + _this.name + '"]').hasThis('paginate'),
-                                                                isNew: !(!_this.id),
+                                                                isNew: !_this.id,
                                                                 ignoreDom: !(!config.ignoreDOM)
                                                             });
                                                 }
@@ -6862,7 +6883,7 @@
                                                     url: config.url || this.url,
                                                     id: this.id,
                                                     form: config.form,
-                                                    data: formData,
+                                                    data: form,
                                                     type: config.method || method,
                                                     success: _success,
                                                     error: _error
@@ -6872,7 +6893,7 @@
                                                 return {
                                                     type: config.method || method,
                                                     url: config.url || _this.url,
-                                                    data: formData,
+                                                    data: form,
                                                     success: _success,
                                                     error: _error
                                                 };
@@ -6943,7 +6964,7 @@
                     else {
                         // save data
                         ext.store.call(options.app, options.name)
-                                .save(options.models, options.idKey || options.app.config.idKey);
+                                .save(options.models, options.idKey || options.ext.config.call(app).idKey);
                     }
                 }
                 var _Collection = Object.create({
@@ -7129,7 +7150,7 @@
                             }
                             var ignoreCache = options.hasOwnProperty('ignoreCache');
                             if (((ignoreCache && !options.ignoreCache)
-                                    || (!ignoreCache && !this.app.config.cacheData))
+                                    || (!ignoreCache && !ext.config.call(app).cacheData))
                                     && this.models[model_id]) {
                                 var model = __.extend(this.models[model_id]),
                                         _model = new Model(model_id, model, {
@@ -7263,7 +7284,7 @@
                                         function () {
                                             return {
                                                 url: this.url,
-                                                type: config.method || this.app.config.crud.methods.delete,
+                                                type: config.method || ext.config.call(app).crud.methods.delete,
                                                 success: _success,
                                                 error: _error
                                             };
@@ -7271,7 +7292,7 @@
                                         function () {
                                             return {
                                                 url: this.url,
-                                                type: config.method || this.app.config.crud.methods.delete,
+                                                type: config.method || ext.config.call(app).crud.methods.delete,
                                                 success: _success,
                                                 error: _error
                                             };
@@ -7433,7 +7454,7 @@
              */
             layout: null,
             /*
-             * Default uid for models and collections if not explicitly defined
+             * Default idKey for models and collections if not explicitly defined
              */
             idKey: 'id',
             /*
@@ -7506,7 +7527,7 @@
          */
         tar: {},
         /**
-         * Array of elements being watched for updates
+         * Elements being watched for updates
          */
         watching: {},
         /**
@@ -7537,8 +7558,13 @@
                             .replace(/\}\}/g, '__cbrace__')
                             .replace(/\(\{/g, '__obrace2__')
                             .replace(/\}\)/g, '__cbrace2__'));
-                    return this;
                 });
+                // save templates to store if page has already been loaded
+                // because all templates would already have been stored then.
+                if (this.pageIsLoaded) {
+                    ext.store.call(this, '___cache').save(this.templates.html(), location.pathname);
+                }
+                return this;
             });
         },
         /**
@@ -7611,14 +7637,14 @@
          * @returns {ThisApp}
          */
         clearPageCache: function (reload) {
-            var _this = this,
+            var app = this,
                     did_page = false;
-            this.container.find('[this-model],model:not([this-in-collection]),'
+            this.container.find('collection,[this-type="collection"],model:not([this-in-collection]),'
                     + '[this-type="model"]:not([this-in-collection])')
                     .each(function () {
-                        var __this = _this._(this),
+                        var __this = app._(this),
                                 name = __this.this('model') || __this.this('id');
-                        ext.store.call(this, name).drop();
+                        ext.store.call(app, name).drop();
                         if (__this.this('type') === 'page') {
                             did_page = true;
                             return;
@@ -7627,7 +7653,7 @@
                         // not been cleared. Otherwise, don't. Reloading
                         // page would take care of that.
                         if (reload && !did_page) {
-                            _this.load(__this);
+                            app.load(__this);
                         }
                     });
             // cleared page's model collection: reload page
@@ -7653,34 +7679,25 @@
         },
         /**
          * Sets the app debug mode
-         * @param boolean debug Default is TRUE
+         * @param boolean mode Default is TRUE
          * @returns ThisApp
          */
-        debug: function (debug) {
+        debug: function (mode) {
             if (!ext.isRunning.call(this))
-                this.config.debug = debug === undefined ? true : debug;
-            return this;
-        },
-        /**
-         * The function called when an error occurs
-         * @param string msg
-         * @returns ThisApp
-         */
-        error: function (msg) {
-            ext.log.call(this, 'warn', msg);
+                this.config.debug = mode === undefined ? true : mode;
             return this;
         },
         /**
          * Fills an autocomplete list with the data given
          * @param {_}|{string} list
          * @param {object} data
-         * @param {string} uid
+         * @param {string} idKey
          * @param {string} filter
          * @returns {array} Array of ids added to the list
          */
-        fillAutocompleteList: function (list, data, uid, filter) {
+        fillAutocompleteList: function (list, data, idKey, filter) {
             list = __.isString(list) ?
-                    this.container.find('[this-id="' + list + '"]') : list;
+                    this.container.find('[this-id="' + list + '"]') : this._(list);
             var _dropdownList = list.this('autocompleting') ? list :
                     this.container.find('list[this-id="'
                             + list.this('parent-list') +
@@ -7690,7 +7707,7 @@
             return ext.fillAutocompleteList.call(this, {
                 list: list,
                 data: data,
-                uid: uid,
+                idKey: idKey,
                 filter: filter,
                 dropdownList: _dropdownList
             });
@@ -7794,7 +7811,7 @@
          */
         home: function (replaceState) {
             return this.tryCatch(function () {
-                this.loadPage(this.config.startWith ||
+                this.loadPage(ext.config.call(this).startWith ||
                         this.getCached('[this-default-page]', 'page')
                         .this('id'), replaceState);
                 return this;
@@ -7848,7 +7865,8 @@
                     return this;
                 }
                 else if (!newPage.length) {
-                    if (this.config.paths && this.config.paths.pages) {
+                    var paths = ext.config.call(this).paths;
+                    if (paths && paths.pages) {
                         var _this = this;
                         ext.fullyFromURL.call(this, 'page', pageIDorPath,
                                 function (elem) {
@@ -7911,7 +7929,6 @@
          */
         onError: function (callback) {
             this.error = function (message) {
-                this.__proto__.error(message);
                 __.callable(callback, true).call(this, message);
             };
             return this;
@@ -8008,7 +8025,7 @@
                 }
                 if (!url.startsWith('./') && !url.startsWith('../') &&
                         !url.startsWith('//') && url.indexOf('://') === -1) {
-                    url = this.config.baseURL + url;
+                    url = ext.config.call(this).baseURL + url;
                     config.api = true;
                 }
                 config.type = config.type || 'get';
@@ -8096,7 +8113,7 @@
         setComponentsPath: function (path, ext) {
             if (!this.config.paths)
                 this.config.paths = {};
-            this.__proto__.config.paths.components = {
+            this.config.paths.components = {
                 dir: path, ext: ext || '.html'
             };
             return this;
@@ -8110,7 +8127,7 @@
         setCSSPath: function (path) {
             if (!this.config.paths)
                 this.config.paths = {};
-            this.__proto__.config.paths.css = path;
+            this.config.paths.css = path;
             return this;
         },
         /**
@@ -8127,7 +8144,7 @@
          * object of configuration for the transportation with keys action (create,update,read,delete),
          * id, url, data [formData] (only for create and update actions), success callback, error callback
          * and isCollection (only for read action)
-         * The success callback takes three params (data [required], id [optional], uid [optional])
+         * The success callback takes three params (data [required], id [optional], idKey [optional])
          * @returns {ThisApp}
          */
         setDataTransport: function (callback) {
@@ -8153,7 +8170,7 @@
         setJSPath: function (path) {
             if (!this.config.paths)
                 this.config.paths = {};
-            this.__proto__.config.paths.js = path;
+            this.config.paths.js = path;
             return this;
         },
         /**
@@ -8167,7 +8184,7 @@
         setLayoutsPath: function (path, ext) {
             if (!this.config.paths)
                 this.config.paths = {};
-            this.__proto__.config.paths.layouts = {
+            this.config.paths.layouts = {
                 dir: path,
                 ext: ext || '.html'
             };
@@ -8184,7 +8201,7 @@
         setPagesPath: function (path, ext) {
             if (!this.config.paths)
                 this.config.paths = {};
-            this.__proto__.config.paths.pages = {
+            this.config.paths.pages = {
                 dir: path,
                 ext: ext || '.html'
             };
@@ -8267,6 +8284,13 @@
         start: function (page, freshCopy) {
             if (ext.isRunning.call(this))
                 return this;
+            // set default error function
+            if (!this.error) {
+                this.__proto__.error = function (msg) {
+                    ext.log.call(this, 'error', msg);
+                    return this;
+                };
+            }
             // set startwith in config if page is specified
             if (page)
                 this.config.startWith = page;
@@ -8282,14 +8306,13 @@
                     .this('default-page', '');
             this.firstPage = true;
             ext.setup.call(this);
-            ;
             // load from old state if fresh copy not required and not debugging
             if (!freshCopy && !this.config.debug && history.state &&
                     start_page === ext.recordsStore.find('last_page')) {
                 ext.restoreState.call(this, history.state);
             }
             else {
-                this.loadPage(start_page);
+                this.loadPage((hash && hash !== '#' && hash !== '#/') ? hash : start_page);
             }
             return this;
         },
