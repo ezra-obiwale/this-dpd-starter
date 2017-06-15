@@ -1,3 +1,357 @@
+// ThisApp
+
+function showErrorMessage(msg, hide) {
+    clearTimeout(timeout);
+    app._('callout').hide();
+    app._('.callout').removeClass('callout-success callout-info')
+            .addClass('callout-danger')
+            .removeClass('hidden')
+            .html(msg);
+    if (false !== hide)
+        hideMessage(hide || 7000);
+}
+function showSuccessMessage(msg, hide) {
+    clearTimeout(timeout);
+    app._('callout').hide();
+    app._('.callout').removeClass('callout-danger callout-info')
+            .addClass('callout-success')
+            .removeClass('hidden')
+            .html(msg);
+    if (false !== hide)
+        hideMessage(hide);
+}
+function showInfoMessage(msg, hide) {
+    clearTimeout(timeout);
+    app._('callout').hide();
+    app._('.callout').removeClass('callout-danger callout-success')
+            .addClass('callout-info')
+            .removeClass('hidden')
+            .html(msg);
+    if (hide)
+        hideMessage(hide);
+}
+function hideMessage(tm) {
+    if (tm === false) {
+        app._('.callout').addClass('hidden');
+        return;
+    }
+    timeout = setTimeout(function () {
+        app._('.callout').addClass('hidden');
+    }, tm || 5000);
+}
+
+var app = new ThisApp({
+    name: {
+        full: '<b>Starter</b>App',
+        abbr: '<b>S</b>A',
+        text: 'Starter App'
+    },
+    container: 'app',
+    modelUID: 'id',
+    pagination: {
+        limit: 12
+    },
+    dataKey: null,
+//    cacheData: false,
+    crud: {
+        status: false
+    }
+}),
+        // for hiding messages
+        timeout,
+        // holds previous page menu link. Needed for reactivation when new page not found
+        formerLink,
+        _ = function (selector) {
+            return app._(selector);
+        },
+        _c = function (selector) {
+            return selector ? app.container.find(selector) : app.container;
+        },
+        store = function (key, value) {
+            if (value === undefined) return localStorage.getItem(key);
+            else if (value === null) return localStorage.removeItem(key);
+            return localStorage.setItem(key, value);
+        },
+        logout = function () {
+            // show just exited
+            store('exited', true);
+            app.store('ssn').drop();
+            location.href = '../';
+        },
+        me = app.store('ssn').find('u') || {};
+app.__.ready(function () {
+    _(window).on('beforeunload', function () {
+        $('.modal').modal('hide');
+    });
+    _('body').on('click', '.sidebar-toggle', function () {
+        if (_('body').hasClass('sidebar-collapse')) {
+            app.store('close_sidebar', null);
+        }
+        else
+            app.store('close_sidebar', true);
+    });
+    if (app.store('close_sidebar')) {
+        _('body').addClass('sidebar-collapse');
+    }
+});
+
+app.onError(function (msg) {
+    var _error = _('#error').html(msg).removeClass('hidden');
+    setTimeout(function () {
+        _error.addClass('hidden');
+    }, 4000);
+})
+        .debug(1)
+        .setBaseURL('http://localhost:2403/')
+        .setDefaultLayout('main')
+        .secureAPI(function (headers, data) {
+            var ssn = app.store('ssn').find(1);
+            if (ssn && ssn.k) headers['X-API-TOKEN'] = ssn.k;
+        })
+        .setUploader(function (options) {
+            var fd = new FormData(),
+                    url = 'files/',
+                    hasFiles = false;
+            var col = options.modelName;
+            if (col) {
+                if (col.indexOf('-') !== -1) {
+                    var parts = col.split('-');
+                    col = parts[parts.length - 1];
+                }
+                // use model name as subdirectory
+                url += '?subdir=' + col;
+            }
+            // add files to formdata
+            _(options.files).each(function () {
+                if (!this.files.length) {
+                    return;
+                }
+                fd.append(this.name, this.files[0]);
+                hasFiles = true;
+            });
+            if (!hasFiles) {
+                return options.done({});
+            }
+            app.request({
+                type: 'post',
+                url: url,
+                data: fd,
+                dataType: 'json',
+                success: function (resp) {
+                    var data = {___freshUpload: []};
+                    if (resp.length) {
+                        app.__.forEach(resp, function (i, value) {
+                            var name = options.files[i].name,
+                                    path = app.config.baseURL + 'upload/';
+                            if (col) {
+                                path += col + '/';
+                            }
+                            data[name] = path + value.filename;
+                            data[name + 'Id'] = value.id;
+                            data['___freshUpload'].push(value.id);
+                        });
+                        options.done(data);
+                    }
+                    else {
+                        showErrorMessage('Upload failed!');
+                        options.done(false);
+                    }
+                },
+                error: function (e) {
+                    showErrorMessage(e.responseText);
+                    options.done(false);
+                }
+            });
+        })
+        .before('page.load', function () {
+            if (!app.loadedPartial) {
+                // check user is logged in
+                var ssn = app.store('ssn').find(1),
+                        watchToken = function (ssn, minutesBefore) {
+                            // end time minus 10 minutes
+                            var e = ssn.e - Date.now() - minutesBefore * 60 * 1000,
+                                    // try to renew token
+                                    renewToken = function () {
+                                        // send request
+                                        app.request({
+                                            type: 'post',
+                                            url: 'user/renew-token',
+                                            data: {
+                                                id: ssn.i
+                                            }
+                                        })
+                                                .then(function (d) {
+                                                    // got new data
+                                                    if (d) {
+                                                        ssn = {
+                                                            e: d.expires,
+                                                            i: ssn.i,
+                                                            k: d.apiKey,
+                                                            v: d.verified
+                                                        };
+                                                        app.store('ssn')
+                                                                .save(ssn, 1, true);
+                                                        // start watching all over again
+                                                        watchToken(ssn, minutesBefore);
+                                                    }
+                                                    // no data: log out
+                                                    else logout();
+                                                })
+                                                // error: log out
+                                                .catch(logout);
+                                    };
+                            // there's still time before expiration
+                            if (e > 0) {
+                                return setTimeout(renewToken, e);
+                            }
+                            // try renewal right away
+                            else renewToken();
+                        };
+                // token not expired
+                if (ssn && ssn.e > Date.now()) {
+                    // check token is valid
+                    app.request('user/me')
+                            .then(function (user) {
+                                // token is valid
+                                if (user) {
+                                    me = user;
+                                    _c('.user-fullname').html(user.name);
+                                    app.store('ssn').save(user, 'u');
+                                    // watch for renewal
+                                    watchToken(ssn, 10);
+                                }
+                                // invalid token: log out
+                                else logout();
+                            })
+                            // error: log out
+                            .catch(logout);
+                }
+                // token expired: log out
+                else logout();
+            }
+        })
+        .before('page.leave', function () {
+            $('.modal').modal('hide');
+            hideMessage(false);
+        })
+        .when('page.leave', 'page', function () {
+            _('.page-loading.overlay').removeClass('hidden');
+        })
+        .when('page.loaded', 'page', function () {
+            _('.page-loading.overlay').addClass('hidden');
+            _(window).trigger('resize');
+            var _link = _('.sidebar-menu a[this-goto="'
+                    + _(this).this('id') + '"]');
+            // use default page's link if current page link doesn't exist
+            if (!_link.length)
+                _link = _('.sidebar-menu a[this-goto="' + app.config.startWith + '"]');
+            // mark current nav link as active if not already marked
+            if (_link.length && !_link.parent().hasClass('active'))
+                _link.parent().addClass('active').siblings().removeClass('active');
+            // hide back button
+            if (app.page.this('id') === app.config.startWith)
+                app.container.find('[this-go-back]').hide();
+            else // show back button
+                app.container.find('[this-go-back]').show();
+            // set page title
+            var title = app.config.name.text;
+            if (app.page.this('title'))
+                title += ' | ' + app.page.this('title');
+            _('head>title').html(title);
+            $container.find('img').error(function () {
+                $(this).attr('src', '../assets/images/no-image.png');
+            });
+        })
+        .on('page.not.found', function (e) {
+            _('.page-loading.overlay').addClass('hidden');
+            showErrorMessage('Page <strong>' + e.detail.pageId.toUpperCase()
+                    + '</strong> Not Found!', 2500);
+            _(formerLink).addClass('active').siblings().removeClass('active');
+        })
+        .on('form.invalid.submission', function () {
+            showErrorMessage('Form contains some invalid and/or empty fields');
+        })
+        .on('form.submission.error, delete.error', function (e) {
+            showErrorMessage('Unable to connect to the server');
+            setTimeout(function () {
+                app.container.find('[this-mid="'
+                        + e.detail.model.id + '"]:not(.modal)')
+                        .css('opacity', 1)
+                        .find('.btn,.list-group')
+                        .show();
+            });
+        })
+        .on('form.submission.failed', function (e) {
+            showErrorMessage('Submission failed!<p>' + e.detail.responseData.message + '</p>');
+        })
+        .on('form.submission.success', function () {
+            $(this).closest('.modal').modal('hide');
+            showSuccessMessage('Data saved successfully!');
+        })
+        .on('delete.failed', function (e) {
+            showErrorMessage('Delete failed!');
+            app.container.find('[this-mid="'
+                    + e.detail.model.id + '"]:not(.modal)')
+                    .css('opacity', 1)
+                    .find('.btn,.list-group')
+                    .show();
+        })
+        .on('delete.success', function () {
+            $(this).closest('.modal').modal('hide');
+            showSuccessMessage('Delete successful!');
+        })
+        .on('model.binded,model.loaded,cache.model.loaded', function () {
+            $(this).find('img').error(function () {
+                $(this).attr('src', '../assets/images/no-image.png');
+            });
+        })
+        .on('click', 'a[href="#"]', function (e) {
+            e.preventDefault();
+        })
+        .on('click', '.sidebar-menu a', function () {
+            var _li = _(this).parent();
+            formerLink = _li.siblings('.active');
+            _li.addClass('active')
+                    .siblings().removeClass('active');
+        })
+        .on('click', 'a#sign-out', function (e) {
+            e.preventDefault();
+            logout();
+        })
+        .on('click', '[data-target="#form"]', function () {
+            _('#form.modal .modal-title').html(_(this).attr('title'));
+        })
+        // show only modal in container
+        .on('click', '[data-toggle="_modal"]', function () {
+            var $modal = $(app.container.find(_(this).data('target')).get(0)).modal('show');
+            $modal.find('[type="file"]').previewMedia().addClass('hidden');
+            $modal.find('img:not(.actionable)').on('click', function () {
+                $(this).addClass('actionable').siblings('[type="file"]').click();
+            });
+            $modal.find('input,textarea,select,.btn').get(0).focus();
+        })
+        .on('click', '#delete.modal [this-delete]', function () {
+            var _modal = _(this).closest('.modal');
+            app.container.find('[this-mid="'
+                    + _modal.this('mid') + '"]:not(form):not(.modal)')
+                    .css('opacity', .4)
+                    .find('.btn,.list-group')
+                    .hide();
+        })
+        .start('dashboard');
+
+var $container = $(_c().get(0));
+$container.on('click', '[data-target="#delete"]', function () {
+    $('#delete.modal #deleting').html($(this).data('deleting'));
+})
+        .on('hide.bs.modal', function (e) {
+            app.resetAutocomplete(_(this).find('[this-autocomplete]').this('id'));
+            $(this).find('img.actionable').removeClass('actionable')
+                    .unbind('click').attr('src', '../assets/images/no-image.png');
+        });
+
+// ---------------------------------------------------
+
 /*! AdminLTE app.js
  * ================
  * Main JS application file for AdminLTE v2. This file
@@ -776,351 +1130,3 @@ function _init() {
         });
     };
 }(jQuery));
-
-// ThisApp
-
-function showErrorMessage(msg, hide) {
-    clearTimeout(timeout);
-    app._('callout').hide();
-    app._('.callout').removeClass('callout-success callout-info')
-            .addClass('callout-danger')
-            .removeClass('hidden')
-            .html(msg);
-    if (false !== hide)
-        hideMessage(hide || 7000);
-}
-function showSuccessMessage(msg, hide) {
-    clearTimeout(timeout);
-    app._('callout').hide();
-    app._('.callout').removeClass('callout-danger callout-info')
-            .addClass('callout-success')
-            .removeClass('hidden')
-            .html(msg);
-    if (false !== hide)
-        hideMessage(hide);
-}
-function showInfoMessage(msg, hide) {
-    clearTimeout(timeout);
-    app._('callout').hide();
-    app._('.callout').removeClass('callout-danger callout-success')
-            .addClass('callout-info')
-            .removeClass('hidden')
-            .html(msg);
-    if (hide)
-        hideMessage(hide);
-}
-function hideMessage(tm) {
-    if (tm === false) {
-        app._('.callout').addClass('hidden');
-        return;
-    }
-    timeout = setTimeout(function () {
-        app._('.callout').addClass('hidden');
-    }, tm || 5000);
-}
-
-var app = new ThisApp({
-    name: {
-        full: '<b>Starter</b>App',
-        abbr: '<b>S</b>A',
-        text: 'Starter App'
-    },
-    container: 'app',
-    modelUID: 'id',
-    pagination: {
-        limit: 12
-    },
-    dataKey: null,
-//    cacheData: false,
-    crud: {
-        status: false
-    }
-}),
-        // for hiding messages
-        timeout,
-        // holds previous page menu link. Needed for reactivation when new page not found
-        formerLink,
-        _ = function (selector) {
-            return app._(selector);
-        },
-        _c = function (selector) {
-            return selector ? app.container.find(selector) : app.container;
-        },
-        store = function (key, value) {
-            if (value === undefined) return localStorage.getItem(key);
-            else if (value === null) return localStorage.removeItem(key);
-            return localStorage.setItem(key, value);
-        },
-        logout = function () {
-            // show just exited
-            store('exited', true);
-            app.store('ssn').drop();
-            location.href = '../';
-        };
-app.__.ready(function () {
-    _(window).on('beforeunload', function () {
-        $('.modal').modal('hide');
-    });
-    _('body').on('click', '.sidebar-toggle', function () {
-        if (_('body').hasClass('sidebar-collapse')) {
-            app.store('close_sidebar', null);
-        }
-        else
-            app.store('close_sidebar', true);
-    });
-    if (app.store('close_sidebar')) {
-        _('body').addClass('sidebar-collapse');
-    }
-});
-
-app.onError(function (msg) {
-    var _error = _('#error').html(msg).removeClass('hidden');
-    setTimeout(function () {
-        _error.addClass('hidden');
-    }, 4000);
-})
-        .debug(1)
-        .setBaseURL('http://localhost:2403/')
-        .setDefaultLayout('main')
-        .secureAPI(function (headers, data) {
-            var ssn = app.store('ssn').find(1);
-            if (ssn && ssn.k) headers['X-API-TOKEN'] = ssn.k;
-        })
-        .setUploader(function (options) {
-            var fd = new FormData(),
-                    url = 'files/',
-                    hasFiles = false;
-            var col = options.modelName;
-            if (col) {
-                if (col.indexOf('-') !== -1) {
-                    var parts = col.split('-');
-                    col = parts[parts.length - 1];
-                }
-                // use model name as subdirectory
-                url += '?subdir=' + col;
-            }
-            // add files to formdata
-            _(options.files).each(function () {
-                if (!this.files.length) {
-                    return;
-                }
-                fd.append(this.name, this.files[0]);
-                hasFiles = true;
-            });
-            if (!hasFiles) {
-                return options.done({});
-            }
-            app.request({
-                type: 'post',
-                url: url,
-                data: fd,
-                dataType: 'json',
-                success: function (resp) {
-                    var data = {___freshUpload: []};
-                    if (resp.length) {
-                        app.__.forEach(resp, function (i, value) {
-                            var name = options.files[i].name,
-                                    path = app.config.baseURL + 'upload/';
-                            if (col) {
-                                path += col + '/';
-                            }
-                            data[name] = path + value.filename;
-                            data[name + 'Id'] = value.id;
-                            data['___freshUpload'].push(value.id);
-                        });
-                        options.done(data);
-                    }
-                    else {
-                        showErrorMessage('Upload failed!');
-                        options.done(false);
-                    }
-                },
-                error: function (e) {
-                    showErrorMessage(e.responseText);
-                    options.done(false);
-                }
-            });
-        })
-        .before('page.leave', function () {
-            $('.modal').modal('hide');
-            hideMessage(false);
-        })
-        .when('page.leave', 'page', function () {
-            _('.page-loading.overlay').removeClass('hidden');
-        })
-        .when('page.loaded', 'page', function () {
-            if (!app.loadedPartial) {
-                // check user is logged in
-                var ssn = app.store('ssn').find(1),
-                        watchToken = function (ssn, minutesBefore) {
-                            // end time minus 10 minutes
-                            var e = ssn.e - Date.now() - minutesBefore * 60 * 1000,
-                                    // try to renew token
-                                    renewToken = function () {
-                                        // send request
-                                        app.request({
-                                            type: 'post',
-                                            url: 'user/renew-token',
-                                            data: {
-                                                id: ssn.i
-                                            }
-                                        })
-                                                .then(function (d) {
-                                                    // got new data
-                                                    if (d) {
-                                                        ssn = {
-                                                            e: d.expires,
-                                                            i: ssn.i,
-                                                            k: d.apiKey,
-                                                            v: d.verified
-                                                        };
-                                                        app.store('ssn')
-                                                                .save(ssn, 1, true);
-                                                        // start watching all over again
-                                                        watchToken(ssn, minutesBefore);
-                                                    }
-                                                    // no data: log out
-                                                    else logout();
-                                                })
-                                                // error: log out
-                                                .catch(logout);
-                                    };
-                            // there's still time before expiration
-                            if (e > 0) {
-                                return setTimeout(renewToken, e);
-                            }
-                            // try renewal right away
-                            else renewToken();
-                        };
-                // token not expired
-                if (ssn && ssn.e > Date.now()) {
-                    // check token is valid
-                    app.request('user/me')
-                            .then(function (user) {
-                                // token is valid
-                                if (user) {
-                                    _c('.user-fullname').html(user.name);
-                                    // watch for renewal
-                                    watchToken(ssn, 10);
-                                }
-                                // invalid token: log out
-                                else logout();
-                            })
-                            // error: log out
-                            .catch(logout);
-                }
-                // token expired: log out
-                else logout();
-            }
-
-            _('.page-loading.overlay').addClass('hidden');
-            _(window).trigger('resize');
-            var _link = _('.sidebar-menu a[this-goto="'
-                    + _(this).this('id') + '"]');
-            // use default page's link if current page link doesn't exist
-            if (!_link.length)
-                _link = _('.sidebar-menu a[this-goto="' + app.config.startWith + '"]');
-            // mark current nav link as active if not already marked
-            if (_link.length && !_link.parent().hasClass('active'))
-                _link.parent().addClass('active').siblings().removeClass('active');
-            // hide back button
-            if (app.page.this('id') === app.config.startWith)
-                app.container.find('[this-go-back]').hide();
-            else // show back button
-                app.container.find('[this-go-back]').show();
-            // set page title
-            var title = app.config.name.text;
-            if (app.page.this('title'))
-                title += ' | ' + app.page.this('title');
-            _('head>title').html(title);
-            $container.find('img').error(function () {
-                $(this).attr('src', '../assets/images/no-image.png');
-            });
-        })
-        .on('page.not.found', function (e) {
-            _('.page-loading.overlay').addClass('hidden');
-            showErrorMessage('Page <strong>' + e.detail.pageId.toUpperCase()
-                    + '</strong> Not Found!', 2500);
-            _(formerLink).addClass('active').siblings().removeClass('active');
-        })
-        .on('form.invalid.submission', function () {
-            showErrorMessage('Form contains some invalid and/or empty fields');
-        })
-        .on('form.submission.error, delete.error', function (e) {
-            showErrorMessage('Unable to connect to the server');
-            setTimeout(function () {
-                app.container.find('[this-mid="'
-                        + e.detail.model.id + '"]:not(.modal)')
-                        .css('opacity', 1)
-                        .find('.btn,.list-group')
-                        .show();
-            });
-        })
-        .on('form.submission.failed', function (e) {
-            showErrorMessage('Submission failed!<p>' + e.detail.responseData.message + '</p>');
-        })
-        .on('form.submission.success', function () {
-            $(this).closest('.modal').modal('hide');
-            showSuccessMessage('Data saved successfully!');
-        })
-        .on('delete.failed', function (e) {
-            showErrorMessage('Delete failed!');
-            app.container.find('[this-mid="'
-                    + e.detail.model.id + '"]:not(.modal)')
-                    .css('opacity', 1)
-                    .find('.btn,.list-group')
-                    .show();
-        })
-        .on('delete.success', function () {
-            $(this).closest('.modal').modal('hide');
-            showSuccessMessage('Delete successful!');
-        })
-        .on('model.binded,model.loaded,cache.model.loaded', function () {
-            $(this).find('img').error(function () {
-                $(this).attr('src', '../assets/images/no-image.png');
-            });
-        })
-        .on('click', 'a[href="#"]', function (e) {
-            e.preventDefault();
-        })
-        .on('click', '.sidebar-menu a', function () {
-            var _li = _(this).parent();
-            formerLink = _li.siblings('.active');
-            _li.addClass('active')
-                    .siblings().removeClass('active');
-        })
-        .on('click', 'a#sign-out', function (e) {
-            e.preventDefault();
-            logout();
-        })
-        .on('click', '[data-target="#form"]', function () {
-            _('#form.modal .modal-title').html(_(this).attr('title'));
-        })
-        // show only modal in container
-        .on('click', '[data-toggle="_modal"]', function () {
-            var $modal = $(app.container.find(_(this).data('target')).get(0)).modal('show');
-            $modal.find('[type="file"]').previewMedia().addClass('hidden');
-            $modal.find('img:not(.actionable)').on('click', function () {
-                $(this).addClass('actionable').siblings('[type="file"]').click();
-            });
-            $modal.find('input,textarea,select,.btn').get(0).focus();
-        })
-        .on('click', '#delete.modal [this-delete]', function () {
-            var _modal = _(this).closest('.modal');
-            app.container.find('[this-mid="'
-                    + _modal.this('mid') + '"]:not(form):not(.modal)')
-                    .css('opacity', .4)
-                    .find('.btn,.list-group')
-                    .hide();
-        })
-        .start('dashboard');
-
-var $container = $(_c().get(0));
-$container.on('click', '[data-target="#delete"]', function () {
-    $('#delete.modal #deleting').html($(this).data('deleting'));
-})
-        .on('hide.bs.modal', function (e) {
-            app.resetAutocomplete(_(this).find('[this-autocomplete]').this('id'));
-            $(this).find('img.actionable').removeClass('actionable')
-                    .unbind('click').attr('src', '../assets/images/no-image.png');
-        });

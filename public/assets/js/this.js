@@ -317,15 +317,23 @@
 
         return obj;
     }
+    /**
+     * @param {_} elem
+     * @param {object} options Keys include ignore (array) and attrs (array).
+     * Values for ignore may include any of tag, id, class, attrs
+     * @returns {string}
+     */
     function elemToSelector(elem, options) {
         elem = _(elem);
         options.ignore = options.ignore || [];
-        options.attrs = options.attrs || false;
+        options.attrs = options.attrs || [];
         // no element found
         if (!elem.length) return '';
         // set selector as the tag name
-        var sel = elem.get(0).tagName.toLowerCase(),
+        var sel = '',
                 cls = '';
+        if (!__.inArray('tag', options.ignore))
+            sel = elem.get(0).tagName.toLowerCase();
         // get id if not ignored
         if (!__.inArray('id', options.ignore) && elem.attr('id'))
             sel = '#' + elem.attr('id');
@@ -333,7 +341,7 @@
         if (!__.inArray('attrs', options.ignore))
             elem.attr().forEach(function (v) {
                 // skip if attribute is not requested
-                if (__.isArray(options.attrs) && !__.inArray(v.name, options.attrs))
+                if (!__.inArray(v.name, options.attrs))
                     return;
                 // don't add id or style
                 if (v.name === 'id' || v.name === 'style') return;
@@ -566,7 +574,7 @@
         // fetches the form's HTMLElement
         this.getForm = function () {
             return form;
-        }
+        };
     };
     /**
      * Creates an AJAX connection
@@ -2117,11 +2125,7 @@
                                                             __content = __this.removeThis('muted')
                                                             .removeThis('this-repeat-for')
                                                             .removeThis('filter')
-                                                            .clone().outerHtml()
-                                                            .replace(/__obrace__/g, '{{')
-                                                            .replace(/__cbrace__/g, '}}')
-                                                            .replace(/__obrace2__/g, '({')
-                                                            .replace(/__cbrace2__/g, '})');
+                                                            .clone().outerHtml();
                                                     ext.doLoop.call(app, v, this, __filter, __content, model);
                                                 });
                                     });
@@ -2488,7 +2492,10 @@
                                         });
                             }
                             else {
+                                // load page s model. Ensures expresssion are executed
+//                                ext.loadModel.call(this, this.page, function () {
                                 ext.showPage.call(this, replaceInState);
+//                                }.bind(this), {});
                             }
                         }.bind(this));
                     }.bind(this);
@@ -2751,11 +2758,7 @@
                             + '[this-type="collection"],[this-type="model"],[this-type="list"]')
                             .each(function () {
                                 var __this = app._(this);
-                                __this.html(__this.html()
-                                        .replace(/\{\{/g, '__obrace__')
-                                        .replace(/\}\}/g, '__cbrace__')
-                                        .replace(/\(\{/g, '__obrace2__')
-                                        .replace(/\}\)/g, '__cbrace2__'));
+                                __this.html(__this.html());
                                 if (__this.this('this-repeat-for')) {
                                     __this.find('[this-if], [this-else-if], [this-else]')
                                             .this('ignore', '').this('muted', '');
@@ -4028,9 +4031,7 @@
                                 _data = ext.getVariableValue.call(this, each, data, false),
                                 filter = __this.this('filter'),
                                 content = __this.removeThis('muted').removeThis('filter')
-                                .removeThis('repeat-for').clone().outerHtml()
-                                .replace(/__obrace__/g, '{{').replace(/__cbrace__/g, '}}')
-                                .replace(/__obrace2__/g, '({').replace(/__cbrace2__/g, '})'),
+                                .removeThis('repeat-for').clone().outerHtml(),
                                 ignoreDataCheck = false;
                         __this.html('');
                         // this-repeat-with is not a model key
@@ -4232,7 +4233,7 @@
                         this.page.find('[this-type="template"]').remove();
                         this.page.trigger('page.loaded');
                         // save templates after first page load
-                        ext.store.call(this, '___cache').save(this.templates.html(), location.pathname);
+                        ext.store.call(this, '___cache').save(this.templates.html(), location.pathname, true);
                         ext.saveState.call(this, replaceState);
                     }
                     // page was restored from history
@@ -4404,6 +4405,51 @@
                     if (ext.config.call(this).cacheData === false) {
                         this.clearPageCache();
                     }
+                },
+                /**
+                 * Called from setup, it prepares the dom for viewing by moving
+                 * elements to the template node
+                 */
+                prepareDOMCache: function (startPage) {
+                    // create templates container if not exists
+                    if (!this._('[this-type="templates"][this-app="' +
+                            this.container.this('id') + '"]').length)
+                        this._('body').append('<div this-type="templates" this-app="' +
+                                this.container.this('id') + '" style="display:none"/>');
+                    // load templates from store if other pages already exist in history
+                    var templates = ext.store.call(this, '___cache')
+                            .find(location.pathname);
+                    if (!templates) {
+                        this.templates = this._('[this-type="templates"][this-app="' +
+                                this.container.this('id') + '"]')
+                                // put all unloaded element into templates
+                                .html(
+                                        // hide all types not loaded or default page
+                                        //  (models, collections, layouts,
+                                        // components, etc)
+                                        this.container.find('page:not([this-default-page]),model:not([this-loaded]),'
+                                                + 'collection:not([this-loaded]),layout:not([this-loaded]),list:not([this-loaded]),'
+                                                + 'component:not([this-loaded]),'
+                                                + '[this-type="page"]:not([this-default-page]),'
+                                                + '[this-type="model"]:not([this-loaded]),'
+                                                + '[this-type="collection"]:not([this-loaded]),'
+                                                + '[this-type="layout"]:not([this-loaded]),'
+                                                + '[this-type="list"]:not([this-loaded]),'
+                                                + '[this-type="component"]:not([this-loaded])'
+                                                + '[this-paginate-next],[this-paginate-previous]')
+                                        .hide()
+                                        );
+                    }
+                    else {
+                        this.templates = this._('[this-type="templates"][this-app="' +
+                                this.container.this('id') + '"]').html(templates);
+                    }
+                    // add the remaining page and layouts to cache
+                    this.addToCache(this.container
+                            .find('page,[this-type="page"],layout,[this-type="layout"]')
+                            .removeThis('loaded').removeThis('default-page'));
+                    // remove templates
+                    this.container.find('[this-type="templates"]').remove();
                 },
                 /**
                  * Processes all expressions in the content
@@ -4662,7 +4708,7 @@
                  * Setups the app events
                  * @returns ThisApp
                  */
-                setup: function () {
+                setup: function (startPage) {
                     this.tryCatch(function () {
                         var app = this;
                         // save page state before leaving
@@ -4744,45 +4790,7 @@
                         if (!this.config.startWith)
                             this.config.startWith = this.container.find('[this-default-page]')
                                     .this('id');
-                        // create templates container if not exists
-                        if (!this._('[this-type="templates"][this-app="' +
-                                this.container.this('id') + '"]').length)
-                            this._('body').append('<div this-type="templates" this-app="' +
-                                    this.container.this('id') + '" style="display:none"/>');
-                        // load templates from store if other pages already exist in history
-                        var templates = ext.store.call(this, '___cache').find(location.pathname);
-                        if (!templates) {
-                            this.templates = this._('[this-type="templates"][this-app="' +
-                                    this.container.this('id') + '"]')
-                                    // put all unloaded element into templates
-                                    .html(
-                                            // hide all types not loaded or default page
-                                            //  (models, collections, layouts,
-                                            // components, etc)
-                                            this.container.find('page:not([this-default-page]),model:not([this-loaded]),'
-                                                    + 'collection:not([this-loaded]),layout:not([this-loaded]),list:not([this-loaded]),'
-                                                    + 'component:not([this-loaded]),'
-                                                    + '[this-type="page"]:not([this-default-page]),'
-                                                    + '[this-type="model"]:not([this-loaded]),'
-                                                    + '[this-type="collection"]:not([this-loaded]),'
-                                                    + '[this-type="layout"]:not([this-loaded]),'
-                                                    + '[this-type="list"]:not([this-loaded]),'
-                                                    + '[this-type="component"]:not([this-loaded])'
-                                                    + '[this-paginate-next],[this-paginate-previous]')
-                                            .hide()
-                                            );
-                        }
-                        else {
-                            this.templates = this._('[this-type="templates"][this-app="' +
-                                    this.container.this('id') + '"]')
-                                    .html(templates);
-                        }
-                        // add the remaining page and layouts to cache
-                        this.addToCache(this.container
-                                .find('page,[this-type="page"],layout,[this-type="layout"]')
-                                .removeThis('loaded').removeThis('default-page'));
-                        // remove templates
-                        this.container.find('[this-type="templates"]').remove();
+                        ext.prepareDOMCache.call(this, startPage);
                         ext.emptyFeatures.call(this, this.container);
                         if (this.config.titleContainer)
                             this.config.titleContainer = this._(this.config.titleContainer,
@@ -7366,6 +7374,11 @@
         this.version = '1.0';
         if (config && __.isObject(config))
             this.config = __.extend(this.config, config, true);
+        // set default error function
+        this.error = function (msg) {
+            ext.log.call(this, 'error', msg);
+            return this;
+        };
     };
     /**
      * Transitions affect how old pages are exited and new pages are entered
@@ -7544,6 +7557,10 @@
          * @returns {ThisApp}
          */
         addToCache: function (elem) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return this;
+            }
             return this.tryCatch(function () {
                 var _this = this;
                 this._(elem).each(function () {
@@ -7551,18 +7568,20 @@
                     if (_elem.this('type') === 'layout')
                         _elem.find('[this-content]').html('');
                     _elem.find('style').each(function () {
-                        _this._(this).replaceWith('<div this-type="style">' + this.innerText + '</div>');
+                        _this._(this).replaceWith('<div this-type="style">'
+                                + this.innerText + '</div>');
                     });
-                    _this.templates.append(_elem.outerHtml()
-                            .replace(/\{\{/g, '__obrace__')
-                            .replace(/\}\}/g, '__cbrace__')
-                            .replace(/\(\{/g, '__obrace2__')
-                            .replace(/\}\)/g, '__cbrace2__'));
+                    // remove existing cache
+                    _this.templates.find(elemToSelector(_elem, {
+                        ignore: ['tag'],
+                        attrs: ['this-type', 'this-id']
+                    })).remove();
+                    _this.templates.append(_elem.outerHtml());
                 });
                 // save templates to store if page has already been loaded
                 // because all templates would already have been stored then.
                 if (this.pageIsLoaded) {
-                    ext.store.call(this, '___cache').save(this.templates.html(), location.pathname);
+                    ext.store.call(this, '___cache').save(this.templates.html(), location.pathname, true);
                 }
                 return this;
             });
@@ -7572,6 +7591,10 @@
          * @returns ThisApp
          */
         back: function (e) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return this;
+            }
             return this.tryCatch(function () {
                 if (e && __.isObject(e) && e['preventDefault'])
                     e.preventDefault();
@@ -7616,6 +7639,10 @@
          * @param {Funtion} callback
          */
         bindToObject: function (elem, object, callback) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return Promise.reject('App not started yet!');
+            }
             return this.promise(function (resolve) {
                 ext.bindToObject.call(this, this._(elem), object, function (_elem) {
                     elem.replaceWith(_elem);
@@ -7628,6 +7655,10 @@
          * Checks whether the page has a previous page it can go back to
          */
         canGoBack: function () {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return this;
+            }
             return history.length > 2;
         },
         /**
@@ -7637,6 +7668,10 @@
          * @returns {ThisApp}
          */
         clearPageCache: function (reload) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return this;
+            }
             var app = this,
                     did_page = false;
             this.container.find('collection,[this-type="collection"],model:not([this-in-collection]),'
@@ -7670,6 +7705,10 @@
          * @returns {Promise}
          */
         collection: function (modelName, options) {
+            if (!ext.isRunning.call(this)) {
+                __.callable(options.error).call('App not started yet!');
+                return Promise.reject('App not started yet!');
+            }
             return this.tryCatch(function () {
                 options = options || {};
                 options.app = this;
@@ -7696,6 +7735,10 @@
          * @returns {array} Array of ids added to the list
          */
         fillAutocompleteList: function (list, data, idKey, filter) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return [];
+            }
             list = __.isString(list) ?
                     this.container.find('[this-id="' + list + '"]') : this._(list);
             var _dropdownList = list.this('autocompleting') ? list :
@@ -7717,6 +7760,10 @@
          * @returns ThisApp
          */
         forward: function (e) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return this;
+            }
             return this.tryCatch(function () {
                 if (e && __.isObject(e) && e['preventDefault'])
                     e.preventDefault();
@@ -7737,6 +7784,10 @@
          * @returns {_}
          */
         getCached: function (selector, type) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return this._();
+            }
             return this.tryCatch(function () {
                 var _this = this,
                         elem = this._();
@@ -7787,8 +7838,13 @@
                         }
                     }
                 }
-                if (!elem.length)
+                if (!elem.length) {
+                    // return empty element if loading first page and debugging
+                    // This ensures that a fresh copy is loaded
+                    if (this.firstPage && ext.config.call(this).debug)
+                        return elem;
                     elem = this.templates.children(selector);
+                }
                 elem = elem.clone();
                 if (elem.this('type') === 'template')
                     elem.removeThis('type');
@@ -7796,11 +7852,7 @@
                     _this._(this).replaceWith('<style>' + this.innerText + '</style>');
                 });
                 ext.emptyFeatures.call(_this, elem);
-                return this._(elem.outerHtml()
-                        .replace(/__obrace__/g, '{{')
-                        .replace(/__cbrace__/g, '}}')
-                        .replace(/__obrace2__/g, '({')
-                        .replace(/__cbrace2__/g, '})'));
+                return this._(elem.outerHtml());
             });
         },
         /**
@@ -7810,6 +7862,10 @@
          * @returns ThisApp
          */
         home: function (replaceState) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return this;
+            }
             return this.tryCatch(function () {
                 this.loadPage(ext.config.call(this).startWith ||
                         this.getCached('[this-default-page]', 'page')
@@ -7825,6 +7881,11 @@
          * @returns {ThisApp}
          */
         load: function (elem, data, callback) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                __.callable.call(this, null, 'App not started yet!');
+                return this;
+            }
             return this.tryCatch(function () {
                 var _this = this;
                 this._(elem).each(function () {
@@ -7847,8 +7908,13 @@
          * @returns {ThisApp}
          */
         loadPage: function (pageIDorPath, replaceState) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return this;
+            }
             return this.tryCatch(function () {
                 var last_page = ext.recordsStore.find('last_page');
+                // cancel loading the same page again
                 if (!pageIDorPath || ((last_page === pageIDorPath || last_page === '#/' + pageIDorPath)
                         && !this.firstPage))
                     return this;
@@ -7928,9 +7994,11 @@
          * @returns ThisApp
          */
         onError: function (callback) {
-            this.error = function (message) {
-                __.callable(callback, true).call(this, message);
-            };
+            if (!ext.isRunning.call(this)) {
+                this.error = function (message) {
+                    __.callable(callback, true).call(this, message);
+                };
+            }
             return this;
         },
         /**
@@ -7939,7 +8007,9 @@
          * @returns {ThisApp}
          */
         pageNotFound: function (callback) {
-            this.notFound = callback;
+            if (!ext.isRunning.call(this)) {
+                this.notFound = callback;
+            }
             return this;
         },
         /*
@@ -7960,6 +8030,10 @@
          * @returns {ThisApp}
          */
         reload: function (resources, layouts) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return this;
+            }
             return this.tryCatch(function () {
                 var last_page = ext.recordsStore.find('last_page');
                 ext.recordsStore.remove('last_page');
@@ -7988,6 +8062,10 @@
          * @returns {ThisApp}
          */
         replaceCached: function (selector, elem) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return this;
+            }
             this.templates.find(selector).replaceWith(this._(elem).clone());
             return this;
         },
@@ -8006,6 +8084,10 @@
          * @returns {Promise}
          */
         request: function (config) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return Promise.reject('App not started yet!');
+            }
             return this.tryCatch(function () {
                 if (!__.isObject(config)) {
                     config = {
@@ -8055,6 +8137,10 @@
          * @return {ThisApp}
          */
         resetAutocomplete: function (id) {
+            if (!ext.isRunning.call(this)) {
+                this.error('App not started yet!');
+                return this;
+            }
             return this.tryCatch(function () {
                 if (id) {
                     var selector = '', _this = this;
@@ -8284,13 +8370,6 @@
         start: function (page, freshCopy) {
             if (ext.isRunning.call(this))
                 return this;
-            // set default error function
-            if (!this.error) {
-                this.__proto__.error = function (msg) {
-                    ext.log.call(this, 'error', msg);
-                    return this;
-                };
-            }
             // set startwith in config if page is specified
             if (page)
                 this.config.startWith = page;
@@ -8305,7 +8384,7 @@
                     + '"],[this-type="page"][this-id="' + default_page + '"]')
                     .this('default-page', '');
             this.firstPage = true;
-            ext.setup.call(this);
+            ext.setup.call(this, start_page);
             // load from old state if fresh copy not required and not debugging
             if (!freshCopy && !this.config.debug && history.state &&
                     start_page === ext.recordsStore.find('last_page')) {
@@ -8323,7 +8402,8 @@
          */
         store: function (collection) {
             return this.tryCatch(function () {
-                return collection ? ext.store.call(this, collection) : Store;
+                return collection ?
+                        ext.store.call(this, collection) : Store;
             });
         },
         /**
@@ -8351,7 +8431,9 @@
          * @returns {ThisApp}
          */
         watch: function (callback) {
-            this.watchCallback = callback;
+            if (!ext.isRunning.call(this)) {
+                this.watchCallback = callback;
+            }
             return this;
         },
         /**

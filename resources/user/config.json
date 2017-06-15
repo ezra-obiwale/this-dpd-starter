@@ -22,5 +22,537 @@
                 "send-password-reset-email"
             ]
         }
+    },
+    "swagger": {
+        "/user/login": {
+            "post": {
+                "description": "Logs in a user",
+                "parameters": [
+                    {
+                        "description": "Object containing user credentials",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "id": "email",
+                                    "name": "email",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "password": {
+                                    "id": "password",
+                                    "name": "password",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - Guest"
+                ]
+            }
+        },
+        "/user/resend-verification-email": {
+            "post": {
+                "description": "Resends the verification email to the use",
+                "parameters": [
+                    {
+                        "description": "Object containing user's email",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "id": "email",
+                                    "name": "email",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - Guest"
+                ]
+            }
+        },
+        "/user/reset-password": {
+            "post": {
+                "description": "Reset a user's password",
+                "parameters": [
+                    {
+                        "description": "Object containing user's new password and token allowing it",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "password": {
+                                    "id": "password",
+                                    "name": "password",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "confirm": {
+                                    "id": "confirm",
+                                    "name": "confirm",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "token": {
+                                    "id": "token",
+                                    "name": "token",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - Guest"
+                ]
+            }
+        },
+        "/user/send-password-reset-email": {
+            "post": {
+                "description": "Sends a password reset email to the user",
+                "parameters": [
+                    {
+                        "description": "Object containing user's email",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "id": "email",
+                                    "name": "email",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - Guest"
+                ]
+            }
+        },
+        "/user/register": {
+            "post": {
+                "description": "Registers a user",
+                "parameters": [
+                    {
+                        "description": "Object containing user information",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "id": "email",
+                                    "name": "email",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "password": {
+                                    "id": "password",
+                                    "name": "password",
+                                    "order": 1,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "confirm": {
+                                    "id": "confirm",
+                                    "name": "confirm",
+                                    "order": 2,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "firstName": {
+                                    "id": "firstName",
+                                    "name": "firstName",
+                                    "order": 3,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "lastName": {
+                                    "id": "lastName",
+                                    "name": "lastName",
+                                    "order": 4,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - Guest"
+                ]
+            }
+        },
+        "/user/resend-verification-email": {
+            "post": {
+                "description": "Resends the verification email to the use",
+                "parameters": [
+                    {
+                        "description": "Object containing user's email",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "id": "email",
+                                    "name": "email",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - Guest"
+                ]
+            }
+        },
+        "/user/reset-password": {
+            "post": {
+                "description": "Reset a user's password",
+                "parameters": [
+                    {
+                        "description": "Object containing user's new password and token allowing it",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "password": {
+                                    "id": "password",
+                                    "name": "password",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "confirm": {
+                                    "id": "confirm",
+                                    "name": "confirm",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "token": {
+                                    "id": "token",
+                                    "name": "token",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - Guest"
+                ]
+            }
+        },
+        "/user/send-password-reset-email": {
+            "post": {
+                "description": "Sends a password reset email to the user",
+                "parameters": [
+                    {
+                        "description": "Object containing user's email",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "id": "email",
+                                    "name": "email",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - Guest"
+                ]
+            }
+        },
+        "/user/change-password": {
+            "post": {
+                "description": "Changes a user's password from within a session",
+                "parameters": [
+                    {
+                        "description": "Object containing user's old and new passwords",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "oldPassword": {
+                                    "id": "oldPassword",
+                                    "name": "oldPassword",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "newPassword": {
+                                    "id": "newPassword",
+                                    "name": "newPassword",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "confirm": {
+                                    "id": "confirm",
+                                    "name": "confirm",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - User"
+                ]
+            }
+        },
+        "/user/logout": {
+            "get": {
+                "description": "Renders the apiKey expired",
+                "parameters": [
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - User"
+                ]
+            }
+        },
+        "/user/renew-token": {
+            "post": {
+                "description": "Renews a token before it expires",
+                "parameters": [
+                    {
+                        "description": "Object containing user id",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "id": "id",
+                                    "name": "id",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - User"
+                ]
+            }
+        },
+        "/user/revoke-token": {
+            "post": {
+                "description": "Revokes a token",
+                "parameters": [
+                    {
+                        "description": "Object containing token to revoke",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "token": {
+                                    "id": "token",
+                                    "name": "token",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - User"
+                ]
+            }
+        },
+        "/user/revive-token": {
+            "post": {
+                "description": "Revives an expired token with the refresh token",
+                "parameters": [
+                    {
+                        "description": "Object containing user id and the refresh token",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "id": "id",
+                                    "name": "id",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "refreshToken": {
+                                    "id": "refreshToken",
+                                    "name": "refreshToken",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - User"
+                ]
+            }
+        },
+        "/user/me": {
+            "get": {
+                "description": "Fetches the user with the apiKey",
+                "parameters": [
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - User"
+                ]
+            },
+            "put": {
+                "description": "Updates current user",
+                "parameters": [
+                    {
+                        "description": "Object containing user information",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "id": "email",
+                                    "name": "email",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "firstName": {
+                                    "id": "firstName",
+                                    "name": "firstName",
+                                    "order": 1,
+                                    "required": false,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "lastName": {
+                                    "id": "lastName",
+                                    "name": "lastName",
+                                    "order": 2,
+                                    "required": false,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "name": {
+                                    "id": "name",
+                                    "name": "name",
+                                    "order": 3,
+                                    "required": false,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - User"
+                ]
+            }
+        }
     }
 }

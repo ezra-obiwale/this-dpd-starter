@@ -106,5 +106,11 @@
             "order": 12
         }
     },
-    "swagger": {}
+	"swagger": {},
+	"queryKeys": [
+		"firstName",
+		"lastName",
+		"name",
+		"email"
+	]
 }

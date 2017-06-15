@@ -297,6 +297,9 @@ ctx.__proto__.me = function (callback) {
     return this.user.id ? dpd.users.get(this.user.id, callback) : callback(null, 'User not found!');
 };
 
+// setup validator
+ctx.__proto__.validator = require('validator');
+
 // update query for user=me
 if (query.user === 'me') {
     query.user = ctx.user.id;
