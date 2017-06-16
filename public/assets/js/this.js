@@ -24,8 +24,14 @@
             return this;
         }
     },
-            pageAssets = {js: {}, css: {}},
-            loadedPageJS = {first: {}, last: {}},
+            pageAssets = {
+                js: {},
+                css: {}
+            },
+            loadedPageJS = {
+                first: {},
+                last: {}
+            },
             containedEvents = {},
             crudConnectors = {
                 create: '+',
@@ -38,7 +44,8 @@
         function process(data, _key) {
             __.forEach(data, function (key, value) {
                 if (_key) // parsing for object
-                    key = _key + '[' + (__.isString(key) || !appendArray ? key : '') + ']';
+                    key = _key + '[' + (__.isString(key) || !appendArray ?
+                            key : '') + ']';
                 if (__.isObject(value, true)) {
                     process(value, key);
                 }
@@ -46,7 +53,8 @@
                     _this.append(key, value);
                 }
             });
-            if (_key && data && __.isObject(data, true) && !Object.keys(data).length)
+            if (_key && data && __.isObject(data, true) &&
+                    !Object.keys(data).length)
                 _this.append(_key, data);
         }
         process(object);
@@ -96,11 +104,13 @@
                 process = function (id, data, overwrite) {
                     if (!overwrite && __.isObject(data, true)) {
                         if (__.isArray(data)) {
-                            return __.extend(__.isObject(localData[id], true) ? localData[id] : [
+                            return __.extend(__.isObject(localData[id], true) ?
+                                    localData[id] : [
                             ], data);
                         }
                         else if (__.isObject(data)) {
-                            return __.extend(__.isObject(localData[id], true) ? localData[id] : {}, data);
+                            return __.extend(__.isObject(localData[id], true) ?
+                                    localData[id] : {}, data);
                         }
                     }
                     else {
@@ -174,7 +184,8 @@
                     if (__.isObject(w, true))
                         str += i + '[' + j + ']=' + parseData(w);
                     else if (('' + w).trim())
-                        str += i + '[' + j + ']=' + encodeURIComponent(('' + w).trim());
+                        str += i + '[' + j + ']=' + encodeURIComponent(('' +
+                                w).trim());
                 });
             }
             else {
@@ -366,54 +377,55 @@
     function updateLinkHrefs(elem) {
         var _this = this;
         // update links
-        elem.find('a[this-goto]:not(form)')
-                .each(function () {
-                    var _a = _this._(this), href, hrf = '', connector, _model;
-                    if (_a.attr('href') && _a.attr('href') !== '#')
-                        return;
-                    href = '#/' + _a.this('goto');
-                    _model = _a.closest('model,[this-type="model"],[this-model]');
-                    if (_a.hasThis('create')) {
-                        if (_a.this('create'))
-                            hrf += _a.this('create');
-                        else if (_model.length) {
-// get collection's url
-                            hrf += _model.hasThis('model') ? _model.this('url')
-                                    : _model.parent().this('url');
-                        }
-                        connector = 'create';
-                    }
-                    else if (_a.hasThis('read')) {
-                        if (_a.this('read'))
-                            hrf += _a.this('read');
-                        else if (_model.length) {
-                            hrf += _model.this('url');
-                        }
-                        connector = 'read';
-                    }
-                    else if (_a.hasThis('update')) {
-                        if (_a.this('update'))
-                            hrf += _a.this('update');
-                        else if (_model.length) {
-                            hrf += _model.this('url');
-                        }
-                        connector = 'update';
-                    }
-                    else if (_a.hasThis('delete')) {
-                        if (_a.this('delete'))
-                            hrf += _a.this('delete');
-                        else if (_model.length) {
-                            hrf += _model.this('url');
-                        }
-                        connector = 'delete';
-                    }
+        elem.find('a[this-goto]:not(form)').each(function () {
+            var _a = _this._(this), href, hrf = '', connector, _model;
+            if (_a.attr('href') && _a.attr('href') !== '#')
+                return;
+            href = '#/' + _a.this('goto');
+            _model = _a.closest('model,[this-type="model"],[this-model]');
+            if (_a.hasThis('create')) {
+                if (_a.this('create'))
+                    hrf += _a.this('create');
+                else if (_model.length) {
+                    // get collection's url
+                    hrf += _model.hasThis('model') ? _model.this('url')
+                            : _model.parent().this('url');
+                }
+                connector = 'create';
+            }
+            else if (_a.hasThis('read')) {
+                if (_a.this('read'))
+                    hrf += _a.this('read');
+                else if (_model.length) {
+                    hrf += _model.this('url');
+                }
+                connector = 'read';
+            }
+            else if (_a.hasThis('update')) {
+                if (_a.this('update'))
+                    hrf += _a.this('update');
+                else if (_model.length) {
+                    hrf += _model.this('url');
+                }
+                connector = 'update';
+            }
+            else if (_a.hasThis('delete')) {
+                if (_a.this('delete'))
+                    hrf += _a.this('delete');
+                else if (_model.length) {
+                    hrf += _model.this('url');
+                }
+                connector = 'delete';
+            }
 
-                    if (hrf) {
-                        href += '/' + crudConnectors[connector] + '/' + (_a.this('model')
-                                || _model.this('model') || _model.this('id')) + '/' + hrf;
-                    }
-                    _a.attr('href', href);
-                });
+            if (hrf) {
+                href += '/' + crudConnectors[connector] + '/' +
+                        (_a.this('model')
+                                || _model.this('model') ||
+                                _model.this('id')) + '/' + hrf;
+            }
+            _a.attr('href', href);
+        });
     }
     function forEach(items, callback) {
         if (__.isObject(items) && items instanceof _)
@@ -426,7 +438,8 @@
             for (var a in items) {
                 if (!items.hasOwnProperty(a))
                     continue;
-                if (false === __.callable(callback).call(items[a], a, items[a]))
+                if (false === __.callable(callback)
+                        .call(items[a], a, items[a]))
                     break;
             }
         }
@@ -451,21 +464,22 @@
                 },
                 additionalData = {};
         // read form data
-        _(form).find('input,select,button,textarea')
-                .each(function () {
-                    var _elem = _(this);
-                    // ensure name exists
-                    if (!_elem.attr('name')) return;
-                    // handle checkboxes and radios
-                    else if ((_elem.attr('type') === 'checkbox' || _elem.attr('type') === 'radio')
-                            && _elem.is(':checked')) {
-                        elemToData(_elem);
-                    }
-                    // handle others
-                    else if (_elem.val().trim()) {
-                        elemToData(_elem);
-                    }
-                });
+        _(form).find('input,select,button,textarea').each(function () {
+            var _elem = _(this);
+            // ensure name exists
+            if (!_elem.attr('name')) return;
+            // handle checkboxes and radios
+            else if ((_elem.attr('type') === 'checkbox' ||
+                    _elem.attr('type') === 'radio')
+                    && _elem.is(':checked')) {
+                elemToData(_elem);
+            }
+            // handle others
+            else if (_elem.val()
+                    .trim()) {
+                elemToData(_elem);
+            }
+        });
         // parse data to query string
         this.toQueryString = function () {
             var str = '';
@@ -473,7 +487,8 @@
             data.forEach(function (entry) {
                 if (str !== '')
                     str += '&';
-                str += entry.name + '=' + encodeURIComponent(entry.value);
+                str += entry.name + '=' +
+                        encodeURIComponent(entry.value);
             });
             if (str) str += '&';
             // parse additional data
@@ -506,7 +521,8 @@
                         }
                     }
                     else {
-                        if (!__.isObject(obj[last], true) || obj[last] === null) {
+                        if (!__.isObject(obj[last], true) ||
+                                obj[last] === null) {
                             obj[last] = {};
                         }
                         obj = obj[last];
@@ -538,7 +554,8 @@
                         }
                     }
                     else {
-                        if (!__.isObject(obj[last], true) || obj[last] === null) {
+                        if (!__.isObject(obj[last], true) ||
+                                obj[last] === null) {
                             obj[last] = {};
                         }
                         obj = obj[last];
@@ -557,8 +574,11 @@
         // fetches the form data in the best format and content type for the request
         this.forRequest = function (type, contentType) {
             if (type === 'get' ||
-                    _(form).attr('enctype') === 'application/x-www-form-urlencoded' ||
-                    contentType === 'application/x-www-form-urlencoded') {
+                    _(form)
+                    .attr('enctype') ===
+                    'application/x-www-form-urlencoded' ||
+                    contentType ===
+                    'application/x-www-form-urlencoded') {
                 return {
                     data: this.toQueryString(),
                     contentType: 'application/x-www-form-urlencoded'
@@ -578,7 +598,8 @@
     };
     /**
      * Creates an AJAX connection
-     * @param object config
+     * @param {object} config
+     * @param {_} app
      * @returns ajax object
      */
     var Ajax = function (config, app) {
@@ -609,7 +630,8 @@
                     data = {};
             if (false === __.callable(secureAPI || app.secap)
                     .call(app, headers, data, options)) {
-                return __.callable(config.error).call(httpRequest);
+                return __.callable(config.error)
+                        .call(httpRequest);
             }
             // update config
             if (__.isObject(options))
@@ -619,7 +641,8 @@
                 config.headers = __.extend(config.headers, headers);
             // update data
             if (__.isObject(data)) {
-                if (config.data instanceof Form || config.data instanceof FormData)
+                if (config.data instanceof Form ||
+                        config.data instanceof FormData)
                     config.data.fromObject(data);
                 else if (__.isObject(config.data))
                     config.data = __.extend(config.data, data);
@@ -629,33 +652,41 @@
         }
         httpRequest.onreadystatechange = function () {
             if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                if (httpRequest.status >= 200 && httpRequest.status < 400) {
-                    __.callable(config.success).call(httpRequest, httpRequest.response);
+                if (httpRequest.status >= 200 && httpRequest.status <
+                        400) {
+                    __.callable(config.success)
+                            .call(httpRequest, httpRequest.response);
                 }
                 else {
-                    __.callable(config.error).call(httpRequest, httpRequest.response);
+                    __.callable(config.error)
+                            .call(httpRequest, httpRequest.response);
                 }
-                __.callable(config.complete).call(httpRequest, httpRequest.response);
+                __.callable(config.complete)
+                        .call(httpRequest, httpRequest.response);
             }
         };
         // add time query to string to make it ignore cache
         if (config.ignoreCache)
-            config.url += ((/\?/).test(config.url) ? "&" : "?") + (new Date()).getTime();
+            config.url += ((/\?/).test(config.url) ? "&" : "?") +
+                    (new Date()).getTime();
         // set config data to best format base on the type of request this is
         if (config.data instanceof Form) {
             var form = config.data.forRequest(config.type.toLowerCase());
             contentType = form.contentType;
             config.data = form.data;
         }
-        else if (__.isObject(config.data) && !(config.data instanceof FormData)) {
+        else if (__.isObject(config.data) &&
+                !(config.data instanceof FormData)) {
             config.data = objToQStr(config.data);
         }
         // data is string but no content type has been set
         if (config.data && __.isString(config.data)) {
             if (config.type === 'get') {
-                if (config.data.startsWith('&') || config.data.startsWith('?'))
+                if (config.data.startsWith('&') ||
+                        config.data.startsWith('?'))
                     config.data = config.data.substr(1);
-                config.url += ((/\?/).test(config.url) ? "&" : "?") + config.data;
+                config.url += ((/\?/).test(config.url) ? "&" :
+                        "?") + config.data;
                 config.data = null;
             }
             if (!contentType)
@@ -677,7 +708,8 @@
         __.tryCatch(function () {
             httpRequest.upload.onprogress = function (e) {
                 if (e.lengthComputable) {
-                    __.callable(config.progress).call(httpRequest, e, e.loaded, e.total);
+                    __.callable(config.progress)
+                            .call(httpRequest, e, e.loaded, e.total);
                 }
             };
         });
@@ -759,7 +791,9 @@
                     if (!content)
                         return this;
                     var _content = content;
-                    if (this.isString(content) && !content.trim().startsWith('<'))
+                    if (this.isString(content) &&
+                            !content.trim()
+                            .startsWith('<'))
                         _content = this.createElement(null, 'span').items[0].innerHTML = content;
                     _content = _(content, this.debug);
                     if (!_content.length)
@@ -779,7 +813,8 @@
                  */
                 attr: function (attr, val) {
                     return this.tryCatch(function () {
-                        if (val !== undefined || __.isObject(attr)) {
+                        if (val !== undefined ||
+                                __.isObject(attr)) {
                             this.each(function () {
                                 if (__.isObject(attr)) {
                                     var __this = this;
@@ -796,7 +831,8 @@
                             return;
                         if (!attr)
                             return Array.from(this.items[0].attributes);
-                        if (this.items[0].getAttribute(attr) !== null)
+                        if (this.items[0].getAttribute(attr) !==
+                                null)
                             return this.items[0].getAttribute(attr);
                     });
                 },
@@ -832,14 +868,18 @@
                         return callback;
                     }
                     else if (this.isString(callback)) {
-                        var split = callback.split('.'), func = window;
-                        for (var i = 0; i < split.length; i++) {
+                        var split = callback.split('.'),
+                                func = window;
+                        for (var i = 0; i < split.length;
+                                i++) {
                             if (!func[split[i]]) {
                                 return this.callable(null, nullable);
                             }
                             func = func[split[i]];
                         }
-                        return func === window ? this.callable(null, nullable) : this.callable(func, nullable);
+                        return func === window ?
+                                this.callable(null, nullable) :
+                                this.callable(func, nullable);
                     }
                     else if (!nullable) {
                         return function () { };
@@ -855,15 +895,19 @@
                     var result = [];
                     this.each(function () {
                         if (selector) {
-                            var id = false, query = '', _this = this;
+                            var id = false, query = '',
+                                    _this = this;
                             if (!this.id) {
-                                this.id = 'rANd' + Math.ceil(Math.random() * 100);
+                                this.id = 'rANd' +
+                                        Math.ceil(Math.random() *
+                                                100);
                                 id = true;
                             }
                             __.forEach(selector.split(','), function (i, sel) {
                                 if (query)
                                     query += ',';
-                                query += '#' + _this.id + '>' + sel;
+                                query += '#' + _this.id + '>' +
+                                        sel;
                             });
                             result = result.concat(findElem.call(this, query));
                             if (id)
@@ -884,7 +928,8 @@
                     if (!len)
                         len = 6;
                     while (str.length < len) {
-                        str += alpha[Math.floor(Math.random() * 52)];
+                        str += alpha[Math.floor(Math.random() *
+                                52)];
                     }
                     return str + '-' + Date.now();
                 },
@@ -894,8 +939,10 @@
                  */
                 clone: function () {
                     return this.tryCatch(function () {
-                        return _(this.items.length ? this.items[0].cloneNode(true) : [
-                        ], this.debug);
+                        return _(this.items.length ?
+                                this.items[0].cloneNode(true) :
+                                [
+                                ], this.debug);
                     });
                 },
                 /**
@@ -908,7 +955,8 @@
                         var closest = null;
                         if (this.items.length) {
                             closest = this.items[0].closest(selector);
-                            if (closest === this.items[0])
+                            if (closest ===
+                                    this.items[0])
                                 closest = null;
                         }
                         return _(closest, this.debug);
@@ -936,7 +984,9 @@
                             return found;
                         }
                         if (this.isString(str))
-                            return _this.isString(item) && item.indexOf(str) !== -1;
+                            return _this.isString(item) &&
+                                    item.indexOf(str) !==
+                                    -1;
                         else if (this.isArray(str)) {
                             var found = true;
                             this.forEach(str, function (i, v) {
@@ -959,7 +1009,8 @@
                  * @returns _
                  */
                 createElement: function (str, tag) {
-                    var d = document.createElement(tag || 'div');
+                    var d = document.createElement(tag ||
+                            'div');
                     if (!str)
                         return _(d, this.debug);
                     d.innerHTML = str;
@@ -974,7 +1025,8 @@
                 css: function (attr, val) {
                     if (!attr && this.items.length)
                         return this.items[0].style;
-                    else if (val === undefined && this.items.length) {
+                    else if (val === undefined &&
+                            this.items.length) {
                         if (this.items[0].style[attr]) {
                             return this.items[0].style[attr];
                         }
@@ -995,7 +1047,8 @@
                  * @returns {mixed}
                  */
                 data: function (key, value) {
-                    if (value !== undefined || __.isObject(key)) {
+                    if (value !== undefined ||
+                            __.isObject(key)) {
                         this.each(function () {
                             privData.set(this, key, value);
                         });
@@ -1047,7 +1100,8 @@
                             _this = this,
                             deep = false;
                     // set to false
-                    if (this.isBoolean(args[args.length - 1]))
+                    if (this.isBoolean(args[args.length -
+                            1]))
                         deep = args.pop(args);
                     this.forEach(args, function (i, o) {
                         if (_this.isArray(o)) {
@@ -1056,17 +1110,27 @@
                                 // current is object but not the same as the one
                                 // from the existing array
                                 if (i && newArray[j]
-                                        && ((_this.isArray(newArray[j]) && !_this.isArray(v))
-                                                || (_this.isObject(newArray[j]) && !_this.isObject(v))
-                                                || (!_this.isObject(newArray[j], true) && !_this.isObject(v, true))
-                                                || !deep)) {
+                                        &&
+                                        ((_this.isArray(newArray[j]) &&
+                                                !_this.isArray(v))
+                                                ||
+                                                (_this.isObject(newArray[j]) &&
+                                                        !_this.isObject(v))
+                                                ||
+                                                (!_this.isObject(newArray[j], true)
+                                                        &&
+                                                        !_this.isObject(v, true))
+                                                ||
+                                                !deep)) {
                                     // overwrite existing value
                                     newArray[j] = v;
                                 }
                                 // current is not object or
                                 // it is an object but is the first array param
                                 // or is an object but not the first and deep not allowed
-                                else if (!_this.isObject(v, true) || !i || !deep) {
+                                else if (!_this.isObject(v, true) ||
+                                        !i ||
+                                        !deep) {
                                     // append to array
                                     newArray.push(v);
                                 }
@@ -1081,8 +1145,11 @@
                         else if (_this.isObject(o)) {
                             _this.forEach(o, function (i, v) {
                                 // extend if old and new are object but new isn't an array
-                                if (newObject[i] && _this.isObject(newObject[i]) &&
-                                        _this.isObject(v) && !_this.isArray(v) && deep)
+                                if (newObject[i] &&
+                                        _this.isObject(newObject[i]) &&
+                                        _this.isObject(v) &&
+                                        !_this.isArray(v) &&
+                                        deep)
                                     newObject[i] = _this.extend(newObject[i], v, deep);
                                 else
                                     newObject[i] = v;
@@ -1101,7 +1168,9 @@
                     var _this = this,
                             filtered = this.items.filter(function (v, i) {
                                 func = _this.callable(func);
-                                return func ? func.call(v, i, v) : true;
+                                return func ?
+                                        func.call(v, i, v) :
+                                        true;
                             });
                     return _(filtered, this.debug);
                 },
@@ -1143,7 +1212,8 @@
                  */
                 get: function (index, in_) {
                     var item = this.items[index];
-                    return in_ ? _(item, this.debug) : item;
+                    return in_ ? _(item, this.debug) :
+                            item;
                 },
                 /**
                  * Checks if an attribute exists
@@ -1152,7 +1222,10 @@
                  */
                 hasAttr: function (attr) {
                     return this.tryCatch(function () {
-                        return this.attr(attr) !== null && this.attr(attr) !== undefined;
+                        return this.attr(attr) !==
+                                null &&
+                                this.attr(attr) !==
+                                undefined;
                     });
                 },
                 /**
@@ -1172,7 +1245,8 @@
                                     found++;
                                 }
                             });
-                            if (found === classNames.length) {
+                            if (found ===
+                                    classNames.length) {
                                 has = true;
                                 return false;
                             }
@@ -1194,7 +1268,9 @@
                     var _this = this;
                     return this.each(function () {
                         var __this = _(this, _this.debug);
-                        if (__this.css('display') && __this.css('display') !== 'none')
+                        if (__this.css('display') &&
+                                __this.css('display') !==
+                                'none')
                             __this.data('display', this.style.display);
                         this.style.display = 'none';
                     });
@@ -1207,13 +1283,19 @@
                 html: function (content) {
                     if (content === undefined) {
                         return this.tryCatch(function () {
-                            return this.items.length ? this.items[0].innerHTML : '';
+                            return this.items.length ?
+                                    this.items[0].innerHTML :
+                                    '';
                         });
                     }
                     var _this = this;
-                    if (content instanceof _ || (content && _this.isObject(content)
-                            && content['outerHTML'])) {
-                        this.html('').append(content);
+                    if (content instanceof _ ||
+                            (content &&
+                                    _this.isObject(content)
+                                    &&
+                                    content['outerHTML'])) {
+                        this.html('')
+                                .append(content);
                         return this;
                     }
                     return this.each(function () {
@@ -1229,7 +1311,8 @@
                     var _this = this;
                     return this.each(function () {
                         var __this = _(this);
-                        __this.html(_(elem, _this.debug).html(__this.html()));
+                        __this.html(_(elem, _this.debug)
+                                .html(__this.html()));
                     });
                 },
                 /**
@@ -1241,12 +1324,18 @@
                 is: function (selector, checkIdOnly) {
                     if (!this.items.length)
                         return false;
-                    if (checkIdOnly && this.items[0].getAttribute('this-id') === selector)
+                    if (checkIdOnly &&
+                            this.items[0].getAttribute('this-id') ===
+                            selector)
                         return true;
                     var el = this.items[0];
-                    return (el.matches || el.matchesSelector || el.msMatchesSelector
-                            || el.mozMatchesSelector || el.webkitMatchesSelector
-                            || el.oMatchesSelector).call(el, selector);
+                    return (el.matches ||
+                            el.matchesSelector ||
+                            el.msMatchesSelector
+                            || el.mozMatchesSelector ||
+                            el.webkitMatchesSelector
+                            ||
+                            el.oMatchesSelector).call(el, selector);
                 },
                 /**
                  * Checks if the given value exists in the given array
@@ -1256,7 +1345,8 @@
                  */
                 inArray: function (value, array) {
                     var clone = this.extend(array);
-                    return this.removeArrayValue(clone, value).length > 0;
+                    return this.removeArrayValue(clone, value).length >
+                            0;
                 },
                 /**
                  * Checks if the given item is an array
@@ -1272,7 +1362,8 @@
                  * @returns {Boolean}
                  */
                 isBoolean: function (item) {
-                    return item === true || item === false;
+                    return item === true || item ===
+                            false;
                 },
                 /**
                  * Checks if the given item is a function
@@ -1289,7 +1380,9 @@
                  * @returns boolean
                  */
                 isObject: function (item, allowArray) {
-                    return item && typeof item === 'object' && (allowArray || !Array.isArray(item));
+                    return item && typeof item ===
+                            'object' && (allowArray ||
+                                    !Array.isArray(item));
                 },
                 /**
                  * Checks if the given item is a number
@@ -1297,7 +1390,8 @@
                  * @returns {Boolean}
                  */
                 isNumber: function (item) {
-                    return !isNaN(item) && !this.isString(item);
+                    return !isNaN(item) &&
+                            !this.isString(item);
                 },
                 /**
                  * Checks if the given item is a string
@@ -1369,19 +1463,23 @@
                  * @returns __
                  */
                 on: function (event, selector, callback) {
-                    if (this.isFunction(selector) && !callback) {
+                    if (this.isFunction(selector) &&
+                            !callback) {
                         callback = selector;
                         selector = null;
                     }
                     var _this = this;
                     return this.each(function () {
                         var target = this;
-                        _this.forEach(event.replace(',', ' ').split(' '), function (i, v) {
+                        _this.forEach(event.replace(/,/g, ' ')
+                                .split(' '), function (i, v) {
                             target.addEventListener(v.trim(), function (e) {
                                 // get target from event
                                 var _target = e.target;
                                 // target is not selector
-                                if (selector && _target && !_target.matches(selector)) {
+                                if (selector &&
+                                        _target &&
+                                        !_target.matches(selector)) {
                                     // find target from parents
                                     _target = _target.closest(selector);
                                     // target still not found
@@ -1389,7 +1487,8 @@
                                         return; // ignore callback
                                 }
                                 // apply callback on target
-                                _this.callable(callback).apply(_target, arguments);
+                                _this.callable(callback)
+                                        .apply(_target, arguments);
                             }, false);
                         });
                     });
@@ -1400,7 +1499,9 @@
                  */
                 outerHtml: function () {
                     return this.tryCatch(function () {
-                        return this.items.length ? this.items[0].outerHTML : '';
+                        return this.items.length ?
+                                this.items[0].outerHTML :
+                                '';
                     });
                 },
                 /**
@@ -1423,7 +1524,9 @@
                     if (!content)
                         return this;
                     var _content = content;
-                    if (this.isString(content) && !content.trim().startsWith('<'))
+                    if (this.isString(content) &&
+                            !content.trim()
+                            .startsWith('<'))
                         _content = this.createElement(null, 'span').items[0].innerHTML = content;
                     if (!(content instanceof _))
                         _content = _(content, this.debug);
@@ -1450,7 +1553,10 @@
                             });
                             return this;
                         }
-                        return prop && this.items.length ? this.items[0][prop] : null;
+                        return prop &&
+                                this.items.length ?
+                                this.items[0][prop] :
+                                null;
                     });
                 },
                 /**
@@ -1465,7 +1571,8 @@
                  * @returns {_}
                  */
                 ready: function (callback) {
-                    _(document, this.debug).on('DOMContentLoaded', callback);
+                    _(document, this.debug)
+                            .on('DOMContentLoaded', callback);
                     return this;
                 },
                 /**
@@ -1500,13 +1607,15 @@
                  */
                 removeArrayValue: function (array, value, all) {
                     return this.tryCatch(function () {
-                        var index = array.indexOf(value), retArr = [];
+                        var index = array.indexOf(value),
+                                retArr = [];
                         if (index < 0) {
                             index = array.indexOf(parseInt(value));
                         }
                         if (!all) {
                             return index > -1 ? [
-                                this.removeArrayIndex(array, index)] : [];
+                                this.removeArrayIndex(array, index)] :
+                                    [];
                         }
                         else {
                             while (index > -1) {
@@ -1573,7 +1682,8 @@
                  * Shortcut to removeAttr('this-*')
                  */
                 removeThis: function (attr) {
-                    return this.removeAttr('this-' + attr);
+                    return this.removeAttr('this-' +
+                            attr);
                 },
                 /**
                  * Replaces current items with the given content
@@ -1601,7 +1711,8 @@
                 siblings: function (selector) {
                     var siblings = [];
                     this.each(function () {
-                        var rId = false, query = '', _this = this;
+                        var rId = false, query = '',
+                                _this = this;
                         if (!this.id) {
                             this.id = __.randomString();
                             rId = true;
@@ -1610,11 +1721,14 @@
                             __.forEach(selector.split(','), function (i, sel) {
                                 if (query)
                                     query += ',';
-                                query += sel + ':not(#' + _this.id + ')';
+                                query += sel +
+                                        ':not(#' +
+                                        _this.id + ')';
                             });
                         }
                         else
-                            query = ':not(#' + _this.id + ')';
+                            query = ':not(#' +
+                                    _this.id + ')';
                         siblings = siblings.concat(_(this.parentElement, this.debug)
                                 .children(query).items);
                         if (rId)
@@ -1630,7 +1744,9 @@
                     var _this = this;
                     return this.each(function () {
                         var __this = _(this, _this.debug);
-                        if (__this.data('display') && __this.data('display') !== 'none') {
+                        if (__this.data('display') &&
+                                __this.data('display') !==
+                                'none') {
                             this.style.display = __this.data('display');
                             __this.removeData('display');
                         }
@@ -1647,7 +1763,9 @@
                 text: function (content) {
                     if (content === undefined) {
                         return this.tryCatch(function () {
-                            return this.items.length ? this.items[0].innerText : '';
+                            return this.items.length ?
+                                    this.items[0].innerText :
+                                    '';
                         });
                     }
                     return this.each(function () {
@@ -1658,7 +1776,8 @@
                  * Shortcut to calling attr('this-*')
                  */
                 this: function (attr, val) {
-                    return this.attr('this-' + attr, val);
+                    return this.attr('this-' +
+                            attr, val);
                 },
                 /**
                  * Toggles display of matched elements
@@ -1667,11 +1786,15 @@
                 toggle: function () {
                     var _this = this;
                     this.each(function () {
-                        if (_(this, _this.debug).css('display') === 'none') {
-                            _(this, _this.debug).show();
+                        if (_(this, _this.debug)
+                                .css('display') ===
+                                'none') {
+                            _(this, _this.debug)
+                                    .show();
                         }
                         else {
-                            _(this, _this.debug).hide();
+                            _(this, _this.debug)
+                                    .hide();
                         }
                     });
                     return this;
@@ -1721,7 +1844,8 @@
                         detail: detail,
                         cancelable: true,
                         bubbles: true
-                    }, ev = new CustomEvent(event, data);
+                    },
+                            ev = new CustomEvent(event, data);
                     return this.each(function () {
                         this.dispatchEvent(ev);
                     });
@@ -1735,7 +1859,8 @@
                  */
                 tryCatch: function (tryCallback, catchCallback) {
                     try {
-                        var res = this.callable(tryCallback).call(this);
+                        var res = this.callable(tryCallback)
+                                .call(this);
                         return res;
                     }
                     catch (e) {
@@ -1743,7 +1868,8 @@
                             this.error(e.message);
                         }
                         else
-                            return this.callable(catchCallback).call(this, e);
+                            return this.callable(catchCallback)
+                                    .call(this, e);
                     }
                 },
                 /**
@@ -1756,12 +1882,14 @@
                     this.each(function () {
                         if (value !== undefined) {
                             this.value = value;
-                            _(this).attr('value', value);
+                            _(this)
+                                    .attr('value', value);
                             return;
                         }
                         val = this.value;
                     });
-                    return value !== undefined ? this : val;
+                    return value !== undefined ? this :
+                            val;
                 },
                 /**
                  * A shortcut to method on()
@@ -1787,8 +1915,10 @@
                     var _this = this,
                             elem = _(elem, this.debug);
                     return this.each(function () {
-                        _(this, _this.debug).before(elem)
-                                .prev().html(this);
+                        _(this, _this.debug)
+                                .before(elem)
+                                .prev()
+                                .html(this);
                     });
                 }
             }),
@@ -1811,21 +1941,32 @@
                 }
                 else if (this.isObject(selector)) {
                     this.items = selector instanceof HTMLCollection ?
-                            Array.from(selector) : [selector];
+                            Array.from(selector) :
+                            [selector];
                 }
                 else if (this.isArray(selector)) {
                     this.items = selector;
                 }
                 else if (this.isString(selector)) {
                     var _this = this.createElement(selector);
-                    if (selector.trim().startsWith('<thead') || selector.trim().startsWith('<tbody')) {
+                    if (selector.trim()
+                            .startsWith('<thead') ||
+                            selector.trim()
+                            .startsWith('<tbody')) {
                         return this.createElement(selector, 'table');
                     }
-                    else if (selector.trim().startsWith('<tr')) {
-                        return this.createElement(selector, 'table').children();
+                    else if (selector.trim()
+                            .startsWith('<tr')) {
+                        return this.createElement(selector, 'table')
+                                .children();
                     }
-                    else if (selector.trim().startsWith('<td') || selector.trim().startsWith('<th')) {
-                        return this.createElement(selector, 'table').children().children();
+                    else if (selector.trim()
+                            .startsWith('<td') ||
+                            selector.trim()
+                            .startsWith('<th')) {
+                        return this.createElement(selector, 'table')
+                                .children()
+                                .children();
                     }
                     else if (_this.length) {
                         return _this;
@@ -1835,7 +1976,8 @@
                 else {
                     this.error('Invalid selector');
                 }
-                this.debug = debug !== false ? true : false;
+                this.debug = debug !== false ?
+                        true : false;
                 this.length = this.items.length;
                 return this;
             },
@@ -1854,14 +1996,17 @@
                 bindToElementModel: function (_target, _elem, childKey) {
                     _target = this._(_target);
                     _elem = this._(_elem);
-                    if (!_target.length || !_elem.length)
+                    if (!_target.length ||
+                            !_elem.length)
                         return Promise.reject('Target or Element not found');
                     else if (!_elem.this('mid') ||
-                            (!_elem.this('id') && !_elem.this('model'))) {
+                            (!_elem.this('id') &&
+                                    !_elem.this('model'))) {
                         this.error('Element to bind must be already bound to model.');
                         return Promise.reject('Element to bind must be already bound to model.');
                     }
-                    var model_name = _elem.this('model') || _elem.this('id'),
+                    var model_name = _elem.this('model') ||
+                            _elem.this('id'),
                             _tmpl = this.getCached(_target),
                             app = this;
                     if (_tmpl.length) {
@@ -1925,7 +2070,8 @@
                                     elem.trigger('model.binded', {
                                         data: object
                                     });
-                                    __.callable(callback).apply(this, arguments);
+                                    __.callable(callback)
+                                            .apply(this, arguments);
                                 }.bind(this));
                     }.bind(this),
                             elem.find('[this-component]:not([this-ignore])'));
@@ -1941,16 +2087,21 @@
                 canContinue: function (action, params, context) {
                     var response = true;
                     // check callback of page
-                    if (this.page && this.beforeCallbacks[this.page.this('id')]) {
+                    if (this.page &&
+                            this.beforeCallbacks[this.page.this('id')]) {
                         response = __.callable(this.beforeCallbacks[this.page.this('id')][action])
-                                .apply(context || this, params);
+                                .apply(context ||
+                                        this, params);
                     }
                     // check common callback only if page callback didn't return false or doesn't exist
-                    if (response !== false && this.beforeCallbacks['___common']) {
+                    if (response !== false &&
+                            this.beforeCallbacks['___common']) {
                         response = __.callable(this.beforeCallbacks['___common'][action])
-                                .apply(context || this, params);
+                                .apply(context ||
+                                        this, params);
                     }
-                    return response || response !== false;
+                    return response ||
+                            response !== false;
                 },
                 /**
                  * Check if container is a table's descendant tag
@@ -1969,15 +2120,18 @@
                         switch (child.tagName.toLowerCase()) {
                             case "td":
                                 level = 3;
-                                container = this._('<table />').html(container.outerHtml());
+                                container = this._('<table />')
+                                        .html(container.outerHtml());
                                 break;
                             case "tr":
                                 level = 2;
-                                container = this._('<table />').html(container.outerHtml());
+                                container = this._('<table />')
+                                        .html(container.outerHtml());
                                 break;
                             case "tbody":
                                 level = 1;
-                                container = this._('<table />').html(container.outerHtml());
+                                container = this._('<table />')
+                                        .html(container.outerHtml());
                         }
                     }
                     return {
@@ -1995,7 +2149,8 @@
                         if (filter.startsWith('({'))
                             filter = filter.substr(2);
                         if (filter.endsWith('})'))
-                            filter = filter.substr(0, filter.length - 2);
+                            filter = filter.substr(0, filter.length -
+                                    2);
                     }
                     return filter;
                 },
@@ -2010,10 +2165,12 @@
                         components = this.container.find('[this-component]');
                         remaining = components.length;
                         if (!remaining)
-                            return __.callable(callback).call(this);
+                            return __.callable(callback)
+                                    .call(this);
                     }
                     ext.loadComponent
-                            .call(this, components.get(components.length - remaining),
+                            .call(this, components.get(components.length -
+                                    remaining),
                                     function () {
                                         remaining--;
                                         ext.componentLoaded.call(this, components, callback, remaining);
@@ -2039,14 +2196,18 @@
                  * @returns ThisApp
                  */
                 doLoad: function (container, data, content, isModel, level, callback) {
-                    container = this._(container).hide();
+                    container = this._(container)
+                            .hide();
                     var idKey = container.this('model-id-key') ||
-                            container.this('id-key') || '',
+                            container.this('id-key') ||
+                            '',
                             id = ext.getUIDValue.call(this, data, idKey),
-                            url = container.this('url') || '',
+                            url = container.this('url') ||
+                            '',
                             url_parts = url.split('?');
                     url = url_parts[0];
-                    if (url && !url.endsWith('/'))
+                    if (url &&
+                            !url.endsWith('/'))
                         url += '/';
                     var _callback = function (_temp) {
                         ext.loadFormElements
@@ -2061,21 +2222,29 @@
                                     .this('type', 'model')
                                     .this('in-collection', '');
                             if (!_temp.this('url'))
-                                _temp.this('url', url + id);
+                                _temp.this('url', url +
+                                        id);
                             if (container.this('model'))
                                 _temp.this('id', container.this('model'));
                             container[container.hasThis('prepend')
-                                    ? 'prepend' : 'append'](_temp.show())
+                                    ?
+                                    'prepend' :
+                                    'append'](_temp.show())
                                     .removeThis('loading');
                         }
                         else {
-                            container.this('id-key', idKey).this('mid', id);
-                            container.html(_temp.html()).show();
+                            container.this('id-key', idKey)
+                                    .this('mid', id);
+                            container.html(_temp.html())
+                                    .show();
                         }
-                        __.callable(callback).call(this, container);
+                        __.callable(callback)
+                                .call(this, container);
                     }.bind(this);
                     ext.parseData
-                            .call(this, data, isModel ? container : content, false, isModel, _callback);
+                            .call(this, data, isModel ?
+                                    container :
+                                    content, false, isModel, _callback);
                     return this;
                 },
                 /**
@@ -2088,7 +2257,8 @@
                     elem = this._(elem);
                     if (!content)
                         content = elem.outerHtml();
-                    var child = this._(content).get(0),
+                    var child = this._(content)
+                            .get(0),
                             app = this,
                             level,
                             index = 0,
@@ -2118,14 +2288,18 @@
                                         if (!__.isObject(v, true))
                                             return;
                                         // do loop for repeater on current object
-                                        _content.find('[this-repeat-for="value.' + i + '"]')
+                                        _content.find('[this-repeat-for="value.'
+                                                +
+                                                i +
+                                                '"]')
                                                 .each(function () {
                                                     var __this = app._(this),
                                                             __filter = __this.this('filter'),
                                                             __content = __this.removeThis('muted')
                                                             .removeThis('this-repeat-for')
                                                             .removeThis('filter')
-                                                            .clone().outerHtml();
+                                                            .clone()
+                                                            .outerHtml();
                                                     ext.doLoop.call(app, v, this, __filter, __content, model);
                                                 });
                                     });
@@ -2139,15 +2313,23 @@
                         switch (child.tagName.toLowerCase()) {
                             case "td":
                                 level = 3;
-                                content = this._('<table />').html(content).outerHtml();
+                                content = this._('<table />')
+                                        .html(content)
+                                        .outerHtml();
                                 break;
                             case "tr":
                                 level = 2;
-                                content = this._('<table />').html(content).outerHtml();
+                                content = this._('<table />')
+                                        .html(content)
+                                        .outerHtml();
                                 break;
                         }
                     }
-                    content = '<div>' + this._(content).show().outerHtml() + '</div>';
+                    content = '<div>' +
+                            this._(content)
+                            .show()
+                            .outerHtml() +
+                            '</div>';
                     if (__.isObject(data, true)) {
                         __.forEach(data, function (key, value) {
                             process(key, value);
@@ -2178,13 +2360,20 @@
                             diff = Math.abs(diff);
 
                             // incrementing or not
-                            up = current < last;
+                            up = current <
+                                    last;
 
-                            while ((up && current <= last) ||
-                                    (!up && current >= last)) {
+                            while ((up &&
+                                    current <=
+                                    last) ||
+                                    (!up &&
+                                            current >=
+                                            last)) {
                                 process(current, current);
-                                if (up) current += diff;
-                                else current -= diff;
+                                if (up)
+                                    current += diff;
+                                else
+                                    current -= diff;
                             }
                         }
                         catch (e) {
@@ -2202,11 +2391,14 @@
                  */
                 doTar: function (__this, noShow) {
                     __this = this._(__this);
-                    var type = getElemType(__this) || '',
-                            tar = type + '#' + __this.this('id');
+                    var type = getElemType(__this) ||
+                            '',
+                            tar = type + '#' +
+                            __this.this('id');
                     if (this.tar[tar]) {
                         __.forEach(this.tar[tar], function (i, v) {
-                            __this.this('' + i, v);
+                            __this.this('' +
+                                    i, v);
                         });
                         delete this.tar[tar];
                     }
@@ -2215,7 +2407,8 @@
                             __this.this(key, val);
                         });
                     }
-                    if (!noShow && type !== 'page')
+                    if (!noShow && type !==
+                            'page')
                         __this.show();
                     return __this.removeThis('tar');
                 },
@@ -2231,9 +2424,12 @@
                     this._(elem)
                             .find(emptyLoaded ?
                                     'list,collection,[this-type="list"],[this-type="model"],[this-type="collection"]'
-                                    : 'list:not([this-loaded]),model:not([this-loaded])'
-                                    + ',collection:not([this-loaded]),[this-type="list"]:not([this-loaded])'
-                                    + ',[this-type="collection"]:not([this-loaded])')
+                                    :
+                                    'list:not([this-loaded]),model:not([this-loaded])'
+                                    +
+                                    ',collection:not([this-loaded]),[this-type="list"]:not([this-loaded])'
+                                    +
+                                    ',[this-type="collection"]:not([this-loaded])')
                             .each(function () {
                                 this.innerHTML = '';
                             });
@@ -2261,20 +2457,28 @@
                  * @returns {void}
                  */
                 extendLayout: function (_layout, replaceInState) {
-                    var __layout = _layout.clone(), app = this;
+                    var __layout = _layout.clone(),
+                            app = this;
                     // load layout assets (css)
                     ext.loadAssets.call(this, __layout);
                     // get existing layout in container
-                    _layout = this.reloadLayouts ? _() :
+                    _layout = this.reloadLayouts ?
+                            _() :
                             this.container.find('layout[this-id="'
-                                    + __layout.this('extends')
-                                    + '"],[this-type="layout"][this-id="'
-                                    + __layout.this('extends') + '"]');
+                                    +
+                                    __layout.this('extends')
+                                    +
+                                    '"],[this-type="layout"][this-id="'
+                                    +
+                                    __layout.this('extends') +
+                                    '"]');
                     // layout doesn't exist in container
                     if (!_layout.length)
                         // get from templates
                         _layout = this.getCached('[this-type="layouts"] [this-id="'
-                                + __layout.this('extends') + '"]', 'layout');
+                                +
+                                __layout.this('extends') +
+                                '"]', 'layout');
                     // doesn't exist in templates
                     if (!_layout.length) {
                         // get from filesystem
@@ -2282,7 +2486,8 @@
                                 function (_layout) {
                                     __layout.removeThis('extends');
                                     _layout.removeThis('url')
-                                            .find('[this-content]').html(__layout);
+                                            .find('[this-content]')
+                                            .html(__layout);
                                     if (_layout.this('extends'))
                                         ext.extendLayout
                                                 .call(app, _layout, replaceInState);
@@ -2291,8 +2496,10 @@
                                                 .call(app, _layout, replaceInState);
                                 },
                                 function () {
-                                    app.error('Layout [' + __layout.this('extends')
-                                            + '] not found!');
+                                    app.error('Layout [' +
+                                            __layout.this('extends')
+                                            +
+                                            '] not found!');
                                     __layout.removeThis('extends');
                                     ext.finalizePageLoad.call(app, __layout, replaceInState);
                                 });
@@ -2322,7 +2529,8 @@
                         }
                         else {
                             _layout.find('[this-content]')
-                                    .html(__layout.removeThis('extends').show());
+                                    .html(__layout.removeThis('extends')
+                                            .show());
                             if (_layout.this('extends')) {
                                 ext.extendLayout.call(this, _layout, replaceInState);
                             }
@@ -2342,11 +2550,13 @@
                     var app = this,
                             ids = [],
                             data_length = Object.keys(options.data).length,
-                            _dropdownList, selected = '';
+                            _dropdownList,
+                            selected = '';
                     if (options.dropdownList) {
                         _dropdownList = options.dropdownList;
                         var selected = _dropdownList
-                                .this('selected') || '';
+                                .this('selected') ||
+                                '';
                     }
                     // loop through data
                     __.forEach(options.data, function (i, v) {
@@ -2369,7 +2579,9 @@
                         // get unique id value
                         var id = ext.getUIDValue.call(app, v, options.idKey);
                         // don't render elem if already selected
-                        if (selected.indexOf(id + ',') !== -1) {
+                        if (selected.indexOf(id +
+                                ',') !==
+                                -1) {
                             data_length--;
                             return;
                         }
@@ -2378,22 +2590,32 @@
                         ext.bindToObject
                                 .call(app, app
                                         .getCached('[this-type="list"][this-id="'
-                                                + options.list.this('id') + '"],list[this-id="'
-                                                + options.list.this('id') + '"]')
+                                                +
+                                                options.list.this('id') +
+                                                '"],list[this-id="'
+                                                +
+                                                options.list.this('id') +
+                                                '"]')
                                         .children(), v,
                                         function (elem) {
                                             elem.show();
                                             options.list.append(elem
                                                     .this('index', i)
                                                     .this('type', 'listing')
-                                                    .this('id', id)).show();
+                                                    .this('id', id))
+                                                    .show();
                                         });
                     });
                     // add selected ids to the dropdown list for future refereces
                     if (ids.length) {
-                        if (_dropdownList && !options.ignoreIds)
-                            _dropdownList.this('selected', (_dropdownList.this('selected') || '')
-                                    + ids.join(',') + ',');
+                        if (_dropdownList &&
+                                !options.ignoreIds)
+                            _dropdownList.this('selected', (_dropdownList.this('selected')
+                                    ||
+                                    '')
+                                    +
+                                    ids.join(',') +
+                                    ',');
                         options.list.trigger('list.loaded');
                     }
                     else
@@ -2412,7 +2634,8 @@
                     if (variables && data && content) {
                         __.forEach(variables, function (i, v) {
                             var value = ext.getVariableValue.call(app, v, data);
-                            content = content.replace(v, value || value == 0 ? value : v);
+                            content = content.replace(v.trim(),
+                                    value || value == 0 ? value : v);
                         });
                     }
                     return content;
@@ -2427,11 +2650,13 @@
                     this.removedAssets = {};
                     ext.loadAssets.call(this, _layout);
                     var app = this;
-                    if (_layout && _layout.length) {
+                    if (_layout &&
+                            _layout.length) {
                         // add layout to container if not already loaded
                         if (!_layout.hasThis('loaded'))
                             this.container.html(_layout.show());
-                        _layout.trigger('layout.loaded').this('loaded', '');
+                        _layout.trigger('layout.loaded')
+                                .this('loaded', '');
                     }
                     else
                         this.container.html(this.page);
@@ -2439,32 +2664,46 @@
                     this.container.find('[this-content]')
                             .each(function () {
                                 var _this = _(this);
-                                if (_this.this('content')) return;
+                                if (_this.this('content'))
+                                    return;
                                 _this.this('content',
                                         _this.closest('layout,[this-type="layout"]')
                                         .this('id'));
                             });
                     this.page = this.container
-                            .find('page[this-id="' + this.page.this('id')
-                                    + '"]:not([this-dead]),'
-                                    + '[this-type="page"][this-id="'
-                                    + this.page.this('id')
-                                    + '"]:not([this-dead])')
+                            .find('page[this-id="' +
+                                    this.page.this('id')
+                                    +
+                                    '"]:not([this-dead]),'
+                                    +
+                                    '[this-type="page"][this-id="'
+                                    +
+                                    this.page.this('id')
+                                    +
+                                    '"]:not([this-dead])')
                             .this('current', '')
-                            .removeThis('layout').hide();
+                            .removeThis('layout')
+                            .hide();
                     this.container.find('[this-type]:not([this-type="page"]):not(page)'
-                            + ':not(layout):not([this-type="layout"])'
-                            + ':not(component):not([this-type="component"])').hide();
+                            +
+                            ':not(layout):not([this-type="layout"])'
+                            +
+                            ':not(component):not([this-type="component"])')
+                            .hide();
                     // delete pageModel for last page
                     delete this.pageModel;
                     this.pageIsLoaded = false;
                     // callback for when page assets have been loaded
                     var loadedAssets = function () {
                         ext.loadComponents.call(this, function () {
-                            this.page = ext.doTar.call(this, this.page).hide();
+                            this.page = ext.doTar.call(this, this.page)
+                                    .hide();
                             // load page as model if attached to a model
-                            if (this.page.this('url') && this.page.this('model')
-                                    && this.page.this('do') !== 'create') {
+                            if (this.page.this('url') &&
+                                    this.page.this('model')
+                                    &&
+                                    this.page.this('do') !==
+                                    'create') {
                                 // get page model's collection
                                 new Collection({
                                     app: this,
@@ -2474,7 +2713,8 @@
                                             return collection.model(this.page.this('mid'), {
                                                 url: this.page.this('url'),
                                                 ignoreCache: this.page.hasThis('ignore-cache')
-                                                        || !ext.config.call(this).cacheData
+                                                        ||
+                                                        !ext.config.call(this).cacheData
                                             });
                                         }.bind(this))
                                         .then(function (model) {
@@ -2482,7 +2722,8 @@
                                             // load page model. data provided
                                             ext.loadModel.call(this, this.page, function () {
                                                 ext.showPage.call(this, replaceInState);
-                                            }.bind(this), model.attributes || {});
+                                            }.bind(this), model.attributes ||
+                                                    {});
                                         }.bind(this))
                                         .catch(function () {
                                             // load page model. no data provided. request anew
@@ -2504,9 +2745,11 @@
                         this.request({
                             url: this.page.this('path'),
                             success: function (data) {
-                                app.page.html(data).show()
+                                app.page.html(data)
+                                        .show()
                                         .find('[this-type]'
-                                                + ':not(component):not([this-type="component"])')
+                                                +
+                                                ':not(component):not([this-type="component"])')
                                         .hide();
                                 ext.loadAssets.call(app, app.page, loadedAssets);
                             },
@@ -2529,16 +2772,21 @@
                  */
                 fullyFromURL: function (type, idOrPath, success, error) {
                     if (!ext.config.call(this).paths) {
-                        __.callable(error).call(this);
+                        __.callable(error)
+                                .call(this);
                         return;
                     }
                     var app = this,
-                            pathConfig = ext.config.call(this).paths[type + 's'];
+                            pathConfig = ext.config.call(this).paths[type +
+                            's'];
                     if (!__.isObject(pathConfig)) {
-                        this.__callable(error).call(this);
+                        this.__callable(error)
+                                .call(this);
                         return;
                     }
-                    var url = pathConfig.dir + idOrPath + pathConfig.ext;
+                    var url = pathConfig.dir +
+                            idOrPath +
+                            pathConfig.ext;
                     this.request({
                         url: url,
                         success: function (data) {
@@ -2547,68 +2795,102 @@
                                         var content = ext.removeComments.call(app, elem.html());
                                         elem.html(content);
                                         elem.find('[this-type="collection"]:not([this-model]),'
-                                                + 'collection:not([this-model])')
+                                                +
+                                                'collection:not([this-model])')
                                                 .each(function () {
-                                                    app._(this).this('model', app._(this).this('id'));
+                                                    app._(this)
+                                                            .this('model', app._(this)
+                                                                    .this('id'));
                                                 });
                                         elem.find('[this-autocomplete][this-list]')
                                                 .each(function () {
                                                     var __this = app._(this),
                                                             _dropdownList = elem.find('list[this-id="'
-                                                                    + __this.this('list')
-                                                                    + '"],[this-type="list"][this-id="' + __this.this('list')
-                                                                    + '"]')
+                                                                    +
+                                                                    __this.this('list')
+                                                                    +
+                                                                    '"],[this-type="list"][this-id="'
+                                                                    +
+                                                                    __this.this('list')
+                                                                    +
+                                                                    '"]')
                                                             .this('autocompleting', __this.this('id')),
                                                             _selectedList = elem.find('list[this-id="'
-                                                                    + _dropdownList.this('selection-list')
-                                                                    + '"],[this-type="list"][this-id="'
-                                                                    + _dropdownList.this('selection-list')
-                                                                    + '"]')
+                                                                    +
+                                                                    _dropdownList.this('selection-list')
+                                                                    +
+                                                                    '"],[this-type="list"][this-id="'
+                                                                    +
+                                                                    _dropdownList.this('selection-list')
+                                                                    +
+                                                                    '"]')
                                                             .this('parent-list', _dropdownList.this('id'));
                                                 });
-                                        elem.find('img[src]').each(function () {
-                                            var __this = app._(this);
-                                            if (!__this.attr('src'))
-                                                return;
-                                            __this.attr('this-src', __this.attr('src'))
-                                                    .removeAttr('src');
-                                        });
+                                        elem.find('img[src]')
+                                                .each(function () {
+                                                    var __this = app._(this);
+                                                    if (!__this.attr('src'))
+                                                        return;
+                                                    __this.attr('this-src', __this.attr('src'))
+                                                            .removeAttr('src');
+                                                });
                                     },
                                     done = function () {
-                                        __.callable(success).call(this, elem.clone());
+                                        __.callable(success)
+                                                .call(this, elem.clone());
                                     }.bind(this);
                             // components
-                            if (type === 'component') {
-                                if (elem.length > 1 || (elem.hasThis('type') && elem.this('type') !== 'component'))
-                                    elem = app._('<div/>').html(elem);
+                            if (type ===
+                                    'component') {
+                                if (elem.length >
+                                        1 ||
+                                        (elem.hasThis('type') &&
+                                                elem.this('type') !==
+                                                'component'))
+                                    elem = app._('<div/>')
+                                            .html(elem);
                                 elem.this('component-url', idOrPath);
                                 prep4Tmpl(elem);
                                 ext.loadCollections.call(app,
                                         function () {
                                             app.addToCache(app._('<div this-type="component"'
-                                                    + ' this-url="' + idOrPath + '" />')
-                                                    .html(elem.clone().removeThis('url')));
+                                                    +
+                                                    ' this-url="' +
+                                                    idOrPath +
+                                                    '" />')
+                                                    .html(elem.clone()
+                                                            .removeThis('url')));
                                             done();
                                         },
                                         elem.find('[this-type="collection"][this-static]:not([this-ignore]),'
-                                                + 'collection[this-static]:not([this-ignore])'));
+                                                +
+                                                'collection[this-static]:not([this-ignore])'));
                             }
                             // pages and layouts
                             else {
-                                if (!elem.length || elem.length > 1) {
-                                    elem = app._('<div this-type="' + type + '" />')
+                                if (!elem.length ||
+                                        elem.length >
+                                        1) {
+                                    elem = app._('<div this-type="' +
+                                            type +
+                                            '" />')
                                             .html(data);
                                 }
-                                else if (!elem.is(type) && elem.this('type') !== type) {
+                                else if (!elem.is(type) &&
+                                        elem.this('type') !==
+                                        type) {
                                     if (elem.this('type'))
-                                        elem = elem.wrap('<div this-type="page" />').parent();
+                                        elem = elem.wrap('<div this-type="page" />')
+                                                .parent();
                                     else
                                         elem.this('type', type);
                                 }
                                 // overwrite id from idOrPath
                                 elem.this('id', idOrPath.replace(/\/\\/g, '-'));
-                                if (type === 'page') {
-                                    if (idOrPath.indexOf('/') !== -1)
+                                if (type ===
+                                        'page') {
+                                    if (idOrPath.indexOf('/') !==
+                                            -1)
                                         elem.this('path', idOrPath);
                                     prep4Tmpl(elem);
                                 }
@@ -2617,7 +2899,8 @@
                             }
                         },
                         error: function (e) {
-                            __.callable(error).call(this, e);
+                            __.callable(error)
+                                    .call(this, e);
                         },
                         dataType: 'text'
                     });
@@ -2638,13 +2921,16 @@
                  */
                 getDeepValue: function (variable, data) {
                     var value = data,
-                            vars = __.isObject(variable, true) ? variable : variable.split('.');
+                            vars = __.isObject(variable, true) ?
+                            variable :
+                            variable.split('.');
                     __.forEach(vars, function (i, v) {
                         if (!value)
                             return false;
                         value = value[v];
                     });
-                    return value || value == 0 ? value : '';
+                    return value || value ==
+                            0 ? value : '';
                 },
                 /**
                  * Fetches all the expressions in the content
@@ -2656,7 +2942,9 @@
                     __.forEach(content.split('({'), function (i, v) {
                         if (!i)
                             return;
-                        exps.push('({' + v.split('})')[0] + '})');
+                        exps.push('({' +
+                                v.split('})')[0] +
+                                '})');
                     });
                     return exps;
                 },
@@ -2680,7 +2968,8 @@
                  * @returns {mixed}
                  */
                 getUIDValue: function (data, idKey) {
-                    return ext.getDeepValue.call(this, idKey || ext.config.call(this).idKey, data);
+                    return ext.getDeepValue.call(this, idKey ||
+                            ext.config.call(this).idKey, data);
                 },
                 /**
                  * Retrieves the value of the variable from the data and filters it if required
@@ -2697,20 +2986,25 @@
                             // replace escaped pipes
                             .replace(/\\\|/g, '__fpipe__')
                             .replace(/(\s*)?\|(\s*)?/g, '|')
-                            .trim().split('|'),
+                            .trim()
+                            .split('|'),
                             // the first element is the variable name
-                            varname = vars.shift(0).trim(),
+                            varname = vars.shift(0)
+                            .trim(),
                             // get the variable value
                             value = __.contains(varname, '.') ?
-                            ext.getDeepValue.call(null, varname, data) : data[varname];
+                            ext.getDeepValue.call(null, varname, data) :
+                            data[varname];
                     // go through filters
                     __.forEach(vars, function (i, v) {
                         // changed escaped pipes to real pipes
-                        v = v.trim().replace(/__fpipe__/g, '|');
+                        v = v.trim()
+                                .replace(/__fpipe__/g, '|');
                         // get filter parts
                         var parts = v.split('='),
                                 // the first element is the filter name
-                                filter = parts.shift(0).trim();
+                                filter = parts.shift(0)
+                                .trim();
                         // check filter exists
                         if (Filters[filter]) {
                             // run filter
@@ -2727,19 +3021,27 @@
                 hideNotWiths: function (elem) {
                     // hold not withs
                     var _not_with = elem.find('[this-not-with="'
-                            + elem.this('id') + '"]'),
+                            + elem.this('id') +
+                            '"]'),
                             cnt = 0,
                             notWiths = {};
                     if (!elem.this('id'))
                         elem.this('id', __.randomString());
                     while (_not_with.length) {
-                        var name = elem.this('id') + '-' + cnt;
+                        var name = elem.this('id') +
+                                '-' +
+                                cnt;
                         notWiths[name] = _not_with.get(0);
-                        this._(_not_with.get(0)).replaceWith('<div this-with="'
-                                + name + '" />');
+                        this._(_not_with.get(0))
+                                .replaceWith('<div this-with="'
+                                        +
+                                        name +
+                                        '" />');
                         // find next notWith
                         _not_with = elem.find('[this-not-with="'
-                                + elem.this('id') + '"]');
+                                +
+                                elem.this('id') +
+                                '"]');
                         cnt++;
                     }
                     return notWiths;
@@ -2756,7 +3058,8 @@
                     filter = ext.cleanFilter(filter);
                     /* evaluates filter */
                     var good = this.tryCatch(function () {
-                        if (filter && !eval(filter))
+                        if (filter &&
+                                !eval(filter))
                             return false;
                         return true;
                     }, function () {
@@ -2764,16 +3067,20 @@
                     });
                     if (!good)
                         return;
-                    content = this._('<div/>').html(content);
-                    var app = this, level = 0, matched = {};
+                    content = this._('<div/>')
+                            .html(content);
+                    var app = this, level = 0,
+                            matched = {};
                     content.find('collection,model,list,[this-repeat-for],'
-                            + '[this-type="collection"],[this-type="model"],[this-type="list"]')
+                            +
+                            '[this-type="collection"],[this-type="model"],[this-type="list"]')
                             .each(function () {
                                 var __this = app._(this);
                                 __this.html(__this.html());
                                 if (__this.this('this-repeat-for')) {
                                     __this.find('[this-if], [this-else-if], [this-else]')
-                                            .this('ignore', '').this('muted', '');
+                                            .this('ignore', '')
+                                            .this('muted', '');
                                 }
                             });
                     content.find('[this-if],[this-else-if],[this-else]')
@@ -2785,7 +3092,8 @@
                                     try {
                                         level++;
                                         matched[level] = false;
-                                        if (eval(__this.this('if').trim())) {
+                                        if (eval(__this.this('if')
+                                                .trim())) {
                                             __this.removeThis('if');
                                             matched[level] = true;
                                         }
@@ -2808,7 +3116,9 @@
                                             app.error('Branching error: Else-if without If!');
                                             return;
                                         }
-                                        if (matched[level] || !eval(__this.this('else-if').trim()))
+                                        if (matched[level] ||
+                                                !eval(__this.this('else-if')
+                                                        .trim()))
                                             __this.remove();
                                         else {
                                             __this.removeThis('else-if');
@@ -2846,9 +3156,12 @@
                                 }
                             });
                     content.find('[this-if][this-ignore],[this-else-if][this-ignore],'
-                            + '[this-else][this-ignore],[this-end-if][this-ignore]')
+                            +
+                            '[this-else][this-ignore],[this-end-if][this-ignore]')
                             .removeThis('ignore');
-                    return returnObject ? content.children() : content.html();
+                    return returnObject ?
+                            content.children() :
+                            content.html();
                 },
                 /**
                  * Checks that the type of container matches the given type
@@ -2857,7 +3170,11 @@
                  * @returns booean
                  */
                 is: function (type, container) {
-                    return this._(container).this('type') === type || this._(container).is(type);
+                    return this._(container)
+                            .this('type') ===
+                            type ||
+                            this._(container)
+                            .is(type);
                 },
                 /**
                  * Check if an app is running
@@ -2866,7 +3183,8 @@
                     var record;
                     if (this.container)
                         record = ext.record.call(this);
-                    return record && record.running;
+                    return record &&
+                            record.running;
                 },
                 /**
                  * Gets the configuration object for the app
@@ -2884,26 +3202,40 @@
                  */
                 loadAsset: function (type, name, elem, callback) {
                     name = name.trim();
-                    var url = (name.indexOf('://') !== -1 || name.startsWith('//')) ?
-                            name : ext.config.call(this).paths[type] + name,
+                    var url = (name.indexOf('://') !==
+                            -1 ||
+                            name.startsWith('//')) ?
+                            name :
+                            ext.config.call(this).paths[type] +
+                            name,
                             app = this,
                             load = function (url) {
-                                if (type === 'js') {
+                                if (type ===
+                                        'js') {
                                     eval(pageAssets['js'][url]);
                                 }
-                                else if (type === 'css') {
-                                    elem.prepend('<style type="text/css">' + pageAssets['css'][url] + '</style>');
+                                else if (type ===
+                                        'css') {
+                                    elem.prepend('<style type="text/css">' +
+                                            pageAssets['css'][url] +
+                                            '</style>');
                                 }
-                                __.callable(callback).call(this, pageAssets[type][url]);
+                                __.callable(callback)
+                                        .call(this, pageAssets[type][url]);
                             }.bind(this);
                     // ensure url ends with .type (.js|.css|...)
-                    if (!url.endsWith('.' + type))
+                    if (!url.endsWith('.' +
+                            type))
                         url += '.' + type;
                     if (!pageAssets[type])
                         pageAssets[type] = {};
-                    if (ext.record.call(this, 'debug') || !pageAssets[type][url]) {
+                    if (ext.record.call(this, 'debug') ||
+                            !pageAssets[type][url]) {
                         this.request({
-                            dataType: type === 'css' ? 'text/css' : 'text/javascript',
+                            dataType: type ===
+                                    'css' ?
+                                    'text/css' :
+                                    'text/javascript',
                             url: url,
                             success: function (content) {
                                 pageAssets[type][url] = content;
@@ -2925,50 +3257,68 @@
                  */
                 loadAssets: function (elem, callback) {
                     var app = this,
-                            elemType = getElemType(elem) || '',
+                            elemType = getElemType(elem) ||
+                            '',
                             leaveUnrequired,
                             loading = 0,
                             allChecked = false,
                             done = function () {
-                                if (allChecked && !loading) {
-                                    __.callable(callback).call(this);
+                                if (allChecked &&
+                                        !loading) {
+                                    __.callable(callback)
+                                            .call(this);
                                 }
                             }.bind(this);
-                    if (elem.this('load-css') && !elem.hasThis('with-css')) {
+                    if (elem.this('load-css') &&
+                            !elem.hasThis('with-css')) {
                         loading++;
-                        var csses = elem.this('load-css').split(',');
+                        var csses = elem.this('load-css')
+                                .split(',');
                         // load comma-separated css files
                         __.forEach(csses,
                                 function (i, css) {
                                     ext.loadAsset.call(app, 'css', css, elem, function () {
-                                        if (csses.length - 1 === i) {
+                                        if (csses.length -
+                                                1 ===
+                                                i) {
                                             loading--;
                                             done();
                                         }
                                     });
                                 });
-                        elem.this('with-css', '').removeThis('load-css');
+                        elem.this('with-css', '')
+                                .removeThis('load-css');
                     }
 
                     // mark all scripts as old by removing attribute `this-loaded`
                     if (!Object.keys(this.removedAssets).length)
-                        this._('script[this-app="' + this.container.this('id') + '"]')
+                        this._('script[this-app="' +
+                                this.container.this('id') +
+                                '"]')
                                 .removeThis('loaded');
-                    if (elem.this('load-js-first') && !loadedPageJS.first[this.page.this('id')]) {
+                    if (elem.this('load-js-first') &&
+                            !loadedPageJS.first[this.page.this('id')]) {
                         leaveUnrequired = true;
                         loading++;
-                        var jses = elem.this('load-js-first').split(','),
+                        var jses = elem.this('load-js-first')
+                                .split(','),
                                 removedAssets = this.removedAssets[elemType];
                         // load comma-separated css files
                         __.forEach(jses, function (i, js) {
                             ext.loadAsset.call(app, 'js', js, elem, function () {
                                 // loaded js is last js
-                                if (jses.length - 1 === i) {
+                                if (jses.length -
+                                        1 ===
+                                        i) {
                                     // remove elem-type css and js files that don't belong to
                                     // the elem type
                                     if (!removedAssets)
-                                        app._('script[this-app="' + app.container.this('id')
-                                                + '"][this-for="' + elemType + '"]:not([this-loaded])')
+                                        app._('script[this-app="' +
+                                                app.container.this('id')
+                                                +
+                                                '"][this-for="' +
+                                                elemType +
+                                                '"]:not([this-loaded])')
                                                 .remove();
                                     loading--;
                                     done();
@@ -2978,9 +3328,14 @@
                         loadedPageJS.first[this.page.this('id')] = true;
                     }
                     // remove elem-type js files that don't belong to the elem type
-                    if (!leaveUnrequired && !this.removedAssets[elemType])
-                        this._('script[this-app="' + this.container.this('id')
-                                + '"][this-for="' + elemType + '"]:not([this-loaded])')
+                    if (!leaveUnrequired &&
+                            !this.removedAssets[elemType])
+                        this._('script[this-app="' +
+                                this.container.this('id')
+                                +
+                                '"][this-for="' +
+                                elemType +
+                                '"]:not([this-loaded])')
                                 .remove();
                     // indicate that unrequired js have been removed to avoid removal of currently
                     // required assets
@@ -2999,30 +3354,31 @@
                  * @returns {void}
                  */
                 loadCollection: function (__this, callback, data, replaceState) {
-                    __this = this._(__this).this('loading', '');
+                    __this = this._(__this)
+                            .this('loading', '');
                     // collection must have id
                     if (!__this.this('id')) {
                         __this.removeThis('loading');
-                        __.callable(callback).call(this);
+                        __.callable(callback)
+                                .call(this);
                         return;
                     }
                     if (!__this.this('model'))
                         __this.this('model', __this.this('id'));
-                    // ensure collection content is grouped together
-                    if (!__this.hasThis('loaded') && __this.children().length > 1) {
-                        __this.innerWrap('<div/>');
-                    }
                     // get collection content
                     var _cached = this.getCached('[this-id="'
                             + __this.this('id') + '"]', 'collection'),
-                            emptyContent = _cached.children('[this-on-empty]').remove()
-                            .removeThis('on-empty').outerHtml(),
-                            content = _cached.children(':not([this-on-emptied])').outerHtml(),
+                            emptyContent = _cached.children('[this-on-empty]')
+                            .remove().removeThis('on-empty')
+                            .removeThis('on-emptied').outerHtml(),
+                            content = _cached.children(':not([this-on-emptied])')
+                            .get(0, true).outerHtml(),
                             app = this,
                             model_name = __this.this('model');
                     __this = ext.doTar.call(this, __this, true);
                     if (!__this.hasThis('paginate') ||
-                            !__this.children(':first-child').this('mid')) {
+                            !__this.children(':first-child')
+                            .this('mid')) {
                         __this.html('');
                     }
                     var requestData = {},
@@ -3042,14 +3398,18 @@
                             __this.this('pagination-page', 0);
                         }
                         // add request data with pagination info
-                        if (__this.this('pagination-page') !== undefined) {
-                            requestData['page'] = parseInt(__this.this('pagination-page')) + 1;
+                        if (__this.this('pagination-page') !==
+                                undefined) {
+                            requestData['page'] = parseInt(__this.this('pagination-page'))
+                                    +
+                                    1;
                             __this.this('pagination-page', requestData['page']);
                             // add limit
                             if (__this.this('paginate')) {
                                 requestData['limit'] = __this.this('paginate');
                             }
-                            else if (ext.config.call(this).pagination && ext.config.call(this).pagination.limit) {
+                            else if (ext.config.call(this).pagination &&
+                                    ext.config.call(this).pagination.limit) {
                                 requestData['limit'] = ext.config.call(this).pagination.limit;
                             }
                         }
@@ -3058,19 +3418,24 @@
                     success = function (data, idKey, handled) {
                         if (idKey)
                             __this.this('model-id-key', idKey);
-                        if (handled) {
-                            __.callable(callback).call(app, data);
-                            return;
-                        }
-                        if (!data || (__.isArray(data) && data.length === 0)) {
+                        if (!data || (__.isObject(data, true)
+                                && !Object.keys(data).length)) {
                             __this.html(emptyContent)
                                     .this('loaded', '')
                                     .removeThis('loading')
                                     .show()
                                     .trigger('collection.loaded');
-                            __.callable(callback).call(this, data);
+                            __.callable(callback)
+                                    .call(this, data);
+                            data = false;
                         }
-                        else {
+
+                        if (handled) {
+                            __.callable(callback)
+                                    .call(app, data || {});
+                            return;
+                        }
+                        else if (data) {
                             ext.loadData
                                     .call(app, __this, data, content, false, save,
                                             function (elem) {
@@ -3079,17 +3444,22 @@
                                                             .removeThis('loading')
                                                             .trigger('collection.loaded');
                                                 }
-                                                __.callable(callback).call(this, data);
+                                                __.callable(callback)
+                                                        .call(this, data);
                                             }.bind(app));
                         }
                     },
                             error = function () {
                                 // revert pagination page to former page count
-                                if (__this.this('pagination-page') !== undefined) {
-                                    __this.this('pagination-page', parseInt(__this.this('pagination-page')) - 1);
+                                if (__this.this('pagination-page') !==
+                                        undefined) {
+                                    __this.this('pagination-page', parseInt(__this.this('pagination-page'))
+                                            -
+                                            1);
                                 }
                                 __this.removeThis('loading');
-                                __.callable(callback).call(app);
+                                __.callable(callback)
+                                        .call(app);
                             };
                     ext.loadOrRequestData.call(this, {
                         elem: __this,
@@ -3098,7 +3468,9 @@
                         success: success,
                         error: error,
                         replaceState: replaceState,
-                        requestData: Object.keys(requestData).length ? requestData : null
+                        requestData: Object.keys(requestData).length ?
+                                requestData :
+                                null
                     });
                     return this;
                 },
@@ -3109,19 +3481,26 @@
                  */
                 loadCollections: function (callback, collections, replaceState) {
                     var app = this,
-                            chain = collections === null,
-                            collections = collections || this.container.find('collection:not([this-loaded])'
-                                    + ':not([this-data]):not([this-loading]):not([this-ignore]),'
-                                    + '[this-type="collection"]:not([this-loaded])'
-                                    + ':not([this-data]):not([this-loading]):not([this-ignore])'),
+                            chain = collections ===
+                            null,
+                            collections = collections ||
+                            this.container.find('collection:not([this-loaded])'
+                                    +
+                                    ':not([this-data]):not([this-loading]):not([this-ignore]),'
+                                    +
+                                    '[this-type="collection"]:not([this-loaded])'
+                                    +
+                                    ':not([this-data]):not([this-loading]):not([this-ignore])'),
                             length = collections.length,
                             done = function () {
-                                if (length) return;
+                                if (length)
+                                    return;
                                 if (chain) {
                                     ext.loadForms.call(this, null, null, replaceState, chain);
                                 }
                                 else {
-                                    __.callable(callback).call(app);
+                                    __.callable(callback)
+                                            .call(app);
                                 }
                             }.bind(this);
                     if (!length)
@@ -3147,12 +3526,17 @@
                     __this = this._(__this);
                     var app = this;
                     // component does not exist
-                    if (!component || !this._(component).length) {
+                    if (!component ||
+                            !this._(component).length) {
                         if (__this.this('url')) {
                             var cached = this
-                                    .getCached('[this-url="' + __this.this('url') + '"]', 'component');
+                                    .getCached('[this-url="' +
+                                            __this.this('url') +
+                                            '"]', 'component');
                             if (cached.length)
-                                ext.loadComponent.call(this, __this, callback, cached.children().clone().show());
+                                ext.loadComponent.call(this, __this, callback, cached.children()
+                                        .clone()
+                                        .show());
                             else {
                                 ext.fullyFromURL
                                         .call(app, 'component', __this.this('url'),
@@ -3163,30 +3547,39 @@
                                                 },
                                                 function () {
                                                     __this.remove();
-                                                    __.callable(callback).call(app);
+                                                    __.callable(callback)
+                                                            .call(app);
                                                 });
                             }
                         }
                         else {
                             component = this.getCached('[this-id="'
-                                    + __this.this('component') + '"]', 'component');
+                                    +
+                                    __this.this('component') +
+                                    '"]', 'component');
                             if (!component.length) {
-                                __.callable(callback).call(this);
+                                __.callable(callback)
+                                        .call(this);
                             }
                             else
                                 ext.loadComponent.call(this, __this, callback, component);
                         }
                         return ext;
                     }
-                    component = this._(component).clone();
-                    if (component.is('component') || component.this('type') === 'component')
+                    component = this._(component)
+                            .clone();
+                    if (component.is('component') ||
+                            component.this('type') ===
+                            'component')
                         component.removeThis('url');
                     // load component
-                    __this.replaceWith(component.show()).trigger('component.loaded');
+                    __this.replaceWith(component.show())
+                            .trigger('component.loaded');
                     // call post load if loading component after page has been loaded
                     if (this.pageIsLoaded)
                         ext.postLoad.call(this, __this, true);
-                    __.callable(callback).call(this);
+                    __.callable(callback)
+                            .call(this);
                 },
                 /**
                  * Loads all components in the current page
@@ -3195,10 +3588,12 @@
                  */
                 loadComponents: function (callback, components) {
                     var app = this,
-                            components = components || this.container.find('[this-component]:not([this-ignore])'),
+                            components = components ||
+                            this.container.find('[this-component]:not([this-ignore])'),
                             length = components.length;
                     if (!length) {
-                        __.callable(callback).call(this);
+                        __.callable(callback)
+                                .call(this);
                     }
                     else {
                         ext.loadComponent.call(app, components.get(0), function () {
@@ -3226,68 +3621,96 @@
                         if (container.hasThis('paginate')) {
                             // next button
                             var selector = '[this-paginate-next="'
-                                    + container.this('id')
-                                    + '"],[this-paginate-previous="'
-                                    + container.this('id') + '"]',
+                                    +
+                                    container.this('id')
+                                    +
+                                    '"],[this-paginate-previous="'
+                                    +
+                                    container.this('id') +
+                                    '"]',
                                     selector2 = '[this-paginate-next=""],[this-paginate-previous=""]';
                             setTimeout(function () {
                                 // hide pagination button selector 
-                                this.container.find(selector).hide();
+                                this.container.find(selector)
+                                        .hide();
                                 // hide sibling buttons
-                                container.siblings(selector2).hide();
+                                container.siblings(selector2)
+                                        .hide();
                             }.bind(this));
                             // reset page index to previous
-                            container.this('pagination-page', parseInt(container.this('pagination-page')) - 1);
+                            container.this('pagination-page', parseInt(container.this('pagination-page'))
+                                    -
+                                    1);
                         }
                     }.bind(this);
                     // trigger invalid.response trigger if no data
                     if (!data) {
                         hidePaginationBtns();
                         container.trigger('invalid.response');
-                        __.callable(callback).call(this);
+                        __.callable(callback)
+                                .call(this);
                         return;
                     }
                     // default data structure
                     var _data = {
                         data: {},
                         // set expiration timestamp to 24 hours
-                        expires: new Date().setMilliseconds(1000 * 3600 * 24)
+                        expires: new Date().setMilliseconds(1000 *
+                                3600 *
+                                24)
                     },
-                            dataKey = container.this('data-key') || ext.config.call(this).dataKey,
+                            dataKey = container.this('data-key') ||
+                            ext.config.call(this).dataKey,
                             real_data = getRealData.call(this, data, dataKey);
                     // get expiration if set and data from dataKey if specified
                     if (dataKey) {
                         // set data expiration timestamp too.
                         if (!isNaN(data.expires))
                             // expiration is a number. Must be milliseconds
-                            _data.expires = new Date().setMilliseconds(1000 * data.expires);
+                            _data.expires = new Date().setMilliseconds(1000 *
+                                    data.expires);
                         else if (__.isString(data.expires))
                             // expiration is a string. Must be date
                             _data.expires = new Date(data.expires).getTime();
                         data = real_data;
                     }
                     // trigger empty.response trigger if no data
-                    if (!data || !__.isObject(data, true) || !Object.keys(data).length) {
+                    if (!data ||
+                            !__.isObject(data, true) ||
+                            !Object.keys(data).length) {
                         hidePaginationBtns();
                         container.trigger('empty.response');
-                        __.callable(callback).call(this);
+                        __.callable(callback)
+                                .call(this);
                         return;
                     }
-                    var save_as = container.this('model') || container.this('id'),
+                    var save_as = container.this('model') ||
+                            container.this('id'),
                             _callback = function () {
-                                container.removeThis('filter').show();
+                                container.removeThis('filter')
+                                        .show();
                                 if (container.hasThis('static')) {
                                     var id = container.this('id'),
                                             type = getElemType(container);
                                     // replace template with the loaded element
-                                    this.replaceCached(type + '[this-id="' + id
-                                            + '"],[this-type="' + type + '"][this-id="'
-                                            + id + '"]', container.this('loaded', ''));
+                                    this.replaceCached(type +
+                                            '[this-id="' +
+                                            id
+                                            +
+                                            '"],[this-type="' +
+                                            type +
+                                            '"][this-id="'
+                                            +
+                                            id +
+                                            '"]', container.this('loaded', ''));
                                 }
-                                __.callable(callback).apply(this, arguments);
+                                __.callable(callback)
+                                        .apply(this, arguments);
                             }.bind(this);
                     // loading a collection
-                    if (__.isArray(data) || isModel === false) {
+                    if (__.isArray(data) ||
+                            isModel ===
+                            false) {
                         // check if can continue with rendering
                         var __data = ext.canContinue
                                 .call(this, 'collection.render', [data], container.get(0));
@@ -3302,38 +3725,55 @@
                                 // filter for the collection
                                 filter = container.this('filter'),
                                 // unique id key for models
-                                idKey = container.this('model-id-key') || ext.config.call(this).idKey,
+                                idKey = container.this('model-id-key') ||
+                                ext.config.call(this).idKey,
                                 tab_cont = ext.checkTableContent.call(this, content),
                                 level = tab_cont.level,
                                 content = tab_cont.container.outerHtml();
-                        this.collectionData = Object.keys(this.cacheTargets || data).length;
+                        this.collectionData = Object.keys(this.cacheTargets ||
+                                data).length;
                         var done = function () {
                             // was paginating
                             if (container.hasThis('paginate')) {
                                 // next button
                                 var selector = '[this-paginate-next="'
-                                        + container.this('id')
+                                        +
+                                        container.this('id')
                                         + '"]',
                                         selector2 = '[this-paginate-next=""]';
                                 // overwrite is on
                                 if ((container.hasThis('paginate-overwrite')
-                                        && container.this('paginate-overwrite') === 'true')
-                                        || (!container.hasThis('paginate-overwrite')
-                                                && ext.config.call(this).pagination
-                                                && ext.config.call(this).pagination.overwrite)
+                                        &&
+                                        container.this('paginate-overwrite')
+                                        ===
+                                        'true')
+                                        ||
+                                        (!container.hasThis('paginate-overwrite')
+                                                &&
+                                                ext.config.call(this).pagination
+                                                &&
+                                                ext.config.call(this).pagination.overwrite)
                                         // and current page is the first
-                                        && container.this('pagination-page') === 1) {
+                                        &&
+                                        container.this('pagination-page') ===
+                                        1) {
                                     // hide previous button too
                                     selector += ',[this-paginate-previous="'
-                                            + container.this('id') + '"]';
+                                            +
+                                            container.this('id') +
+                                            '"]';
                                     selector2 += ',[this-paginate-previous=""]';
                                 }
                                 // hide pagination button selector 
-                                this.container.find(selector).hide();
+                                this.container.find(selector)
+                                        .hide();
                                 // hide sibling buttons
-                                container.siblings(selector2).hide();
+                                container.siblings(selector2)
+                                        .hide();
                                 // reset page index to previous
-                                container.this('pagination-page', parseInt(container.this('pagination-page')) - 1);
+                                container.this('pagination-page', parseInt(container.this('pagination-page'))
+                                        -
+                                        1);
                             }
                         }.bind(this);
                         // data is not empty
@@ -3341,12 +3781,14 @@
                             // inline overwrite command exist
                             if (container.hasThis('paginate-overwrite')) {
                                 // empty collection element if true
-                                if (container.this('paginate-overwrite') === 'true') {
+                                if (container.this('paginate-overwrite') ===
+                                        'true') {
                                     container.html('');
                                 }
                             }
                             // inline command not exist. check config pagination command
-                            else if (ext.config.call(this).pagination && ext.config.call(this).pagination.overwrite) {
+                            else if (ext.config.call(this).pagination &&
+                                    ext.config.call(this).pagination.overwrite) {
                                 container.html('');
                             }
                             // the indices of the all models in collection
@@ -3354,119 +3796,162 @@
                                     doneLoading = function () {
                                         if (!--this.collectionData) {
                                             delete this.collectionData;
-                                            __.callable(_callback).call(this, container);
+                                            __.callable(_callback)
+                                                    .call(this, container);
                                         }
                                     }.bind(this);
                             // needed for subsequent pagination attempts
-                            __.forEach(this.cacheTargets || data, function (_index, _model) {
-                                var index, model;
-                                if (app.cacheTargets) {
-                                    index = _model;
-                                    model = data[index];
-                                }
-                                else {
-                                    model = _model;
-                                    index = ext.getUIDValue.call(app, _model);
-                                }
-                                var _tmpl = app._(content),
-                                        __data = ext.canContinue
-                                        .call(app, 'collection.model.render',
-                                                [model, container.get(0)],
-                                                _tmpl.get(0));
-                                // remove model if already exists in collection element
-                                container.children('[this-mid="' + index + '"]').remove();
-                                // get id from model with idKey
-                                var id = ext.getUIDValue.call(app, model, idKey);
-                                // keep index for later cached pagination
-                                indices.push(id || index);
-                                if (!__data) {
-                                    doneLoading();
-                                    return;
-                                }
-                                else if (__.isObject(__data))
-                                    model = __data;
-                                // if saving data is allowed
-                                if (save !== false) {
-                                    // set model into data to save. use id if available,
-                                    // or else index
-                                    if (container.hasThis('paginate')) {
-                                        model.__page = container.this('pagination-page');
-                                    }
-                                    _data.data[id || index] = model;
-                                }
-                                // process content as being in a loop
-                                var _content = ext.inLoop.call(app, {
-                                    index: index,
-                                    model: model
-                                }, filter,
-                                        _tmpl.outerHtml().replace(/{{_index}}/g, index));
-                                // if there's no content, go to the next model
-                                if (!_content) {
-                                    __.callable(callback).call(app);
-                                    return;
-                                }
-                                // process expressions in content
-                                _content = app._(ext.processExpressions.call(app,
-                                        _content, {
+                            __.forEach(this.cacheTargets ||
+                                    data, function (_index, _model) {
+                                        var index,
+                                                model;
+                                        if (app.cacheTargets) {
+                                            index = _model;
+                                            model = data[index];
+                                        }
+                                        else {
+                                            model = _model;
+                                            index = ext.getUIDValue.call(app, _model);
+                                        }
+                                        var _tmpl = app._(content),
+                                                __data = ext.canContinue
+                                                .call(app, 'collection.model.render',
+                                                        [model, container.get(0)],
+                                                        _tmpl.get(0));
+                                        // remove model if already exists in collection element
+                                        container.children('[this-mid="' +
+                                                index +
+                                                '"]')
+                                                .remove();
+                                        // get id from model with idKey
+                                        var id = ext.getUIDValue.call(app, model, idKey);
+                                        // keep index for later cached pagination
+                                        indices.push(id ||
+                                                index);
+                                        if (!__data) {
+                                            doneLoading();
+                                            return;
+                                        }
+                                        else if (__.isObject(__data))
+                                            model = __data;
+                                        // if saving data is allowed
+                                        if (save !==
+                                                false) {
+                                            // set model into data to save. use id if available,
+                                            // or else index
+                                            if (container.hasThis('paginate')) {
+                                                model.__page = container.this('pagination-page');
+                                            }
+                                            _data.data[id ||
+                                                    index] = model;
+                                        }
+                                        // process content as being in a loop
+                                        var _content = ext.inLoop.call(app, {
                                             index: index,
                                             model: model
-                                        }), model);
-                                if (!idKey)
-                                    idKey = ext.config.call(app).idKey;
-                                var idKey_parts = idKey.split('.').reverse(),
-                                        _id = {},
-                                        top_idKey = idKey_parts.pop();
-                                // idKey must exist in model
-                                if (!model[top_idKey]) {
-                                    $.each(idKey_parts, function (i, v) {
-                                        if (!i)
-                                            _id[v] = id || index;
-                                        else
-                                            _id[v] = _id;
+                                        }, filter,
+                                                _tmpl.outerHtml()
+                                                .replace(/{{_index}}/g, index));
+                                        // if there's no content, go to the next model
+                                        if (!_content) {
+                                            __.callable(callback)
+                                                    .call(app);
+                                            return;
+                                        }
+                                        // process expressions in content
+                                        _content = app._(ext.processExpressions.call(app,
+                                                _content, {
+                                                    index: index,
+                                                    model: model
+                                                }), model);
+                                        if (!idKey)
+                                            idKey = ext.config.call(app).idKey;
+                                        var idKey_parts = idKey.split('.')
+                                                .reverse(),
+                                                _id = {},
+                                                top_idKey = idKey_parts.pop();
+                                        // idKey must exist in model
+                                        if (!model[top_idKey]) {
+                                            $.each(idKey_parts, function (i, v) {
+                                                if (!i)
+                                                    _id[v] = id ||
+                                                            index;
+                                                else
+                                                    _id[v] = _id;
+                                            });
+                                            model[top_idKey] = _id;
+                                        }
+                                        // continue loading
+                                        ext.doLoad.call(app, container, model, _content,
+                                                false, level, doneLoading);
                                     });
-                                    model[top_idKey] = _id;
-                                }
-                                // continue loading
-                                ext.doLoad.call(app, container, model, _content,
-                                        false, level, doneLoading);
-                            });
                             delete this.cacheTargets;
                             var pageIndex = container.this('pagination-page');
-                            if (pageIndex !== undefined) {
+                            if (pageIndex !==
+                                    undefined) {
                                 // first page loaded
-                                if (pageIndex == 1) {
+                                if (pageIndex ==
+                                        1) {
                                     // hide previous button
                                     this.container.find('[this-paginate-previous="'
-                                            + container.this('id') + '"]').hide();
-                                    container.siblings('[this-paginate-previous=""]').hide();
+                                            +
+                                            container.this('id') +
+                                            '"]')
+                                            .hide();
+                                    container.siblings('[this-paginate-previous=""]')
+                                            .hide();
                                 }
                                 // overwrite is one
                                 else if ((container.hasThis('paginate-overwrite')
-                                        && container.this('paginate-overwrite') === 'true')
-                                        || (!container.hasThis('paginate-overwrite')
-                                                && ext.config.call(this).pagination
-                                                && ext.config.call(this).pagination.overwrite)) {
+                                        &&
+                                        container.this('paginate-overwrite')
+                                        ===
+                                        'true')
+                                        ||
+                                        (!container.hasThis('paginate-overwrite')
+                                                &&
+                                                ext.config.call(this).pagination
+                                                &&
+                                                ext.config.call(this).pagination.overwrite)) {
                                     // show previous button
                                     this.container.find('[this-paginate-previous="'
-                                            + container.this('id') + '"]').show();
-                                    container.siblings('[this-paginate-previous=""]').show();
+                                            +
+                                            container.this('id') +
+                                            '"]')
+                                            .show();
+                                    container.siblings('[this-paginate-previous=""]')
+                                            .show();
                                 }
                                 // show next button
                                 this.container.find('[this-paginate-next="'
-                                        + container.this('id') + '"]').show();
-                                container.siblings('[this-paginate-next=""]').show();
+                                        +
+                                        container.this('id') +
+                                        '"]')
+                                        .show();
+                                container.siblings('[this-paginate-next=""]')
+                                        .show();
                             }
                             // if saving data is allowed
-                            if (save !== false && container.hasThis('paginate')) {
+                            if (save !==
+                                    false &&
+                                    container.hasThis('paginate')) {
                                 // save pagination index
                                 _data.pagination = {};
                                 _data.pagination[pageIndex] = indices;
                             }
                             // mark pagination done if length of last result is not
                             // equal to the expected limit
-                            if ((container.this('paginate') && indices.length != container.this('paginate'))
-                                    || (!container.this('paginate') && ext.config.call(this).pagination
-                                            && ext.config.call(this).pagination.limit && indices.length != ext.config.call(this).pagination.limit)) {
+                            if ((container.this('paginate') &&
+                                    indices.length !=
+                                    container.this('paginate'))
+                                    ||
+                                    (!container.this('paginate') &&
+                                            ext.config.call(this).pagination
+                                            &&
+                                            ext.config.call(this).pagination.limit
+                                            &&
+                                            indices.length !=
+                                            ext.config.call(this).pagination.limit)) {
                                 done();
                             }
                         }
@@ -3475,22 +3960,28 @@
                             done();
                             save = false;
                             delete this.collectionData;
-                            __.callable(_callback).call(this, container);
+                            __.callable(_callback)
+                                    .call(this, container);
                         }
                         if (container.hasThis('paginate')) {
                             this.container.find('[this-paginate-next="'
-                                    + container.this('id')
-                                    + '"],[this-paginate-previous="'
-                                    + container.this('id') + '"]')
+                                    +
+                                    container.this('id')
+                                    +
+                                    '"],[this-paginate-previous="'
+                                    +
+                                    container.this('id') +
+                                    '"]')
                                     .removeAttr('disabled');
                             container.siblings('[this-paginate-next=""],[this-paginate-previous=""]')
                                     .removeAttr('disabled');
                         }
                         // saving is allowed
                         if (save !== false) {
-                            ext.store.call(this, save_as).saveMany(_data.data, idKey);
-                            ext.expirationStore.save(_data.expires, save_as);
-                            ext.paginationStore.save(_data.pagination, save_as);
+                            ext.store.call(this, save_as)
+                                    .saveMany(_data.data, idKey);
+                            ext.record.call(this).expirationStore.save(_data.expires, save_as);
+                            ext.record.call(this).paginationStore.save(_data.pagination, save_as);
                         }
                     }
                     // loading a model
@@ -3509,7 +4000,8 @@
                         if (save !== false) {
                             var id = ext.getUIDValue
                                     .call(this, data, container.this('id-key'));
-                            ext.store.call(this, save_as).save(data, id);
+                            ext.store.call(this, save_as)
+                                    .save(data, id);
                         }
                         // add url to model data for parsing
                         data['_url'] = container.this('url');
@@ -3527,7 +4019,8 @@
                  * @returns ThisApp
                  */
                 loadFormElements: function (elements, model) {
-                    if (elements.length && model) {
+                    if (elements.length &&
+                            model) {
                         var app = this;
                         __.forEach(elements, function () {
                             var __this = app._(this),
@@ -3537,42 +4030,68 @@
                             var data = ext.getVariableValue.call(app, key, model);
                             if (!data)
                                 return;
-                            if (!__this.hasThis('autocomplete') && __.isObject(data)) {
+                            if (!__this.hasThis('autocomplete') &&
+                                    __.isObject(data)) {
                                 data = ext.getUIDValue.call(app, data);
                             }
                             __this.removeThis('is');
-                            if (__this.attr('type') === 'radio' || __this.attr('type') === 'checkbox') {
+                            if (__this.attr('type') ===
+                                    'radio' ||
+                                    __this.attr('type') ===
+                                    'checkbox') {
                                 // using attribute so that redumping content 
                                 // would still work fine
-                                if (__this.attr('value') == data || data == on)
+                                if (__this.attr('value') ==
+                                        data ||
+                                        data ==
+                                        on)
                                     __this.attr('checked', 'checked');
                             }
                             else if (__this.is('select')) {
-                                __this.children().each(function () {
-                                    var val = app._(this).attr('value') || app._(this).html().trim();
-                                    if (val == data)
-                                        app._(this).attr('selected', 'selected');
-                                    else
-                                        app._(this).removeAttr('selected');
-                                });
+                                __this.children()
+                                        .each(function () {
+                                            var val = app._(this)
+                                                    .attr('value') ||
+                                                    app._(this)
+                                                    .html()
+                                                    .trim();
+                                            if (val ==
+                                                    data)
+                                                app._(this)
+                                                        .attr('selected', 'selected');
+                                            else
+                                                app._(this)
+                                                        .removeAttr('selected');
+                                        });
                                 // using attribute so that redumping content 
                                 // would still work fine
-                                __this.find('[value="' + data + '"]').attr('selected', 'selected');
+                                __this.find('[value="' +
+                                        data +
+                                        '"]')
+                                        .attr('selected', 'selected');
                             }
                             else if (__this.is('textarea')) {
                                 __this.html(data);
                             }
                             else if (__this.hasThis('autocomplete')) {
                                 var _dropDownList = app.container
-                                        .find('list[this-id="' + __this.this('list')
-                                                + '"],[this-type="list"][this-id="'
-                                                + __this.this('list') + '"]'),
+                                        .find('list[this-id="' +
+                                                __this.this('list')
+                                                +
+                                                '"],[this-type="list"][this-id="'
+                                                +
+                                                __this.this('list') +
+                                                '"]'),
                                         _selectedList = app.container
                                         .find('list[this-id="'
-                                                + _dropDownList.this('selection-list')
-                                                + '"],[this-type="list"][this-id="'
-                                                + _dropDownList.this('selection-list')
-                                                + '"]');
+                                                +
+                                                _dropDownList.this('selection-list')
+                                                +
+                                                '"],[this-type="list"][this-id="'
+                                                +
+                                                _dropDownList.this('selection-list')
+                                                +
+                                                '"]');
                                 var gotData = function (data) {
                                     var ids = [];
                                     if (data) {
@@ -3587,7 +4106,8 @@
                                             // create an object with the idKey => the data
                                             var id = data;
                                             data = {};
-                                            data[ext.config.call(app).idKey || 'id'] = id;
+                                            data[ext.config.call(app).idKey ||
+                                                    'id'] = id;
                                         }
                                         if (!__this.hasThis('multiple')) {
                                             // ensure data is an array
@@ -3614,7 +4134,9 @@
                                         dataType: 'json',
                                         type: 'POST',
                                         url: _selectedList.this('refill-url'),
-                                        data: {ids: data},
+                                        data: {
+                                            ids: data
+                                        },
                                         success: function (data) {
                                             gotData(getRealData.call(app, data));
                                         }
@@ -3622,7 +4144,8 @@
                                 }
                                 gotData(data);
                             }
-                            else if (__this.get(0).tagName.toLowerCase() === 'img')
+                            else if (__this.get(0).tagName.toLowerCase() ===
+                                    'img')
                                 __this.attr('src', data);
                             else {
                                 // using attribute so that redumping content 
@@ -3640,30 +4163,39 @@
                  * @returns {ThisApp}
                  */
                 loadForms: function (forms, model, replaceState, chain) {
-                    var app = this, isPage = false;
+                    var app = this,
+                            isPage = false;
                     // load all forms in container or page
                     if (!forms) {
                         isPage = this.page.is('form');
-                        forms = isPage ? this.page : this.container.find('form');
+                        forms = isPage ?
+                                this.page :
+                                this.container.find('form');
                     }
                     forms.each(function () {
                         var __this = app._(this);
                         if (__this.is('form')) {
                             // pass form action type from page to form if not exist on form                 
-                            if (!__this.hasThis('do') && app.page.this('do'))
+                            if (!__this.hasThis('do') &&
+                                    app.page.this('do'))
                                 __this.this('do', app.page.this('do'));
                             // is search form. no need loading except for search field
-                            if ((__this.this('do') === 'search' ||
-                                    app.page.this('do') === 'search') &&
+                            if ((__this.this('do') ===
+                                    'search' ||
+                                    app.page.this('do') ===
+                                    'search') &&
                                     app.page.this('query')) {
-                                __this.find('[this-search]').attr('value', app.page.this('query'));
+                                __this.find('[this-search]')
+                                        .attr('value', app.page.this('query'));
                                 return;
                             }
                             // parse tar
                             ext.doTar.call(app, __this, true);
                         }
-                        var mid = __this.this('mid') || app.page.this('mid'),
-                                model_name = __this.this('model') || app.page.this('model');
+                        var mid = __this.this('mid') ||
+                                app.page.this('mid'),
+                                model_name = __this.this('model') || __this.this('id') ||
+                                app.page.this('model');
                         if (!mid)
                             return;
                         if (!model)
@@ -3682,25 +4214,36 @@
                  * @returns {void}
                  */
                 loadLayouts: function (replaceInState) {
-                    var _layout = _(), app = this;
+                    var _layout = _(),
+                            app = this;
                     if (!this.page.hasThis('no-layout') &&
-                            (ext.config.call(this).layout || this.page.this('layout'))) {
-                        var layout = this.page.this('layout') || ext.config.call(this).layout;
+                            (ext.config.call(this).layout ||
+                                    this.page.this('layout'))) {
+                        var layout = this.page.this('layout') ||
+                                ext.config.call(this).layout;
                         // get existing layout in container if not asked to reload layouts
-                        _layout = this.reloadLayouts ? _layout :
-                                this.container.find('layout[this-id="' + layout
-                                        + '"],[this-type="layout"][this-id="'
-                                        + layout + '"]');
+                        _layout = this.reloadLayouts ?
+                                _layout :
+                                this.container.find('layout[this-id="' +
+                                        layout
+                                        +
+                                        '"],[this-type="layout"][this-id="'
+                                        +
+                                        layout +
+                                        '"]');
                         // layout does not exist in container
                         if (!_layout.length) {
                             // get layout template
-                            _layout = this.getCached('[this-id="' + layout + '"]', 'layout');
+                            _layout = this.getCached('[this-id="' +
+                                    layout +
+                                    '"]', 'layout');
                             // layout doesn't exist
                             if (!_layout.length) {
                                 ext.fullyFromURL.call(this, 'layout', layout,
                                         function (_layout) {
                                             _layout.removeThis('url')
-                                                    .find('[this-content]').html(app.page);
+                                                    .find('[this-content]')
+                                                    .html(app.page);
                                             if (_layout.this('extends'))
                                                 ext.extendLayout
                                                         .call(app, _layout, replaceInState);
@@ -3711,7 +4254,9 @@
 
                                         },
                                         function () {
-                                            app.error('Layout [' + layout + '] not found!');
+                                            app.error('Layout [' +
+                                                    layout +
+                                                    '] not found!');
                                             ext.finalizePageLoad.call(app, _layout,
                                                     replaceInState);
                                         });
@@ -3734,7 +4279,9 @@
                                             }
                                         },
                                         error: function () {
-                                            app.error('Layout [' + layout + '] not found!');
+                                            app.error('Layout [' +
+                                                    layout +
+                                                    '] not found!');
                                             ext.finalizePageLoad.call(app, _layout,
                                                     replaceInState);
                                         },
@@ -3742,7 +4289,8 @@
                                     });
                                 }
                                 else {
-                                    _layout.find('[this-content]').html(app.page);
+                                    _layout.find('[this-content]')
+                                            .html(app.page);
                                     if (_layout.this('extends'))
                                         ext.extendLayout.call(this, _layout, replaceInState);
                                     else {
@@ -3755,7 +4303,8 @@
                             if (!this.page.hasThis('loaded')) {
                                 _layout.find('[this-content="' +
                                         _layout.this('id')
-                                        + '"]').html(this.page);
+                                        + '"]')
+                                        .html(this.page);
                             }
                             _layout.this('loaded', '');
                             ext.finalizePageLoad.call(this, _layout, replaceInState);
@@ -3783,20 +4332,28 @@
                     __this.this('loading', '')
                             // mark model's collections as loading
                             .find('collection:not([this-ignore]),'
-                                    + '[this-type="collection"]:not([this-ignore])')
+                                    +
+                                    '[this-type="collection"]:not([this-ignore])')
                             .this('loading', '');
                     if (__this.this('id'))
-                        common_selector += '[this-id="' + __this.this('id') + '"]';
+                        common_selector += '[this-id="' +
+                                __this.this('id') +
+                                '"]';
                     else if (__this.this('model'))
-                        common_selector += '[this-model="' + __this.this('model') + '"]';
+                        common_selector += '[this-model="' +
+                                __this.this('model') +
+                                '"]';
                     __this = ext.doTar.call(this, __this, true);
-                    if (!data && !__this.this('url')) {
-                        __.callable(callback).call(this);
+                    if (!data &&
+                            !__this.this('url')) {
+                        __.callable(callback)
+                                .call(this);
                         return;
                     }
                     if (type !== 'page') {
                         // necessary in case of binding and target has already been used
-                        __this.html(this.getCached(common_selector, type).hide()
+                        __this.html(this.getCached(common_selector, type)
+                                .hide()
                                 .html());
                     }
                     function loadedComponents(content) {
@@ -3807,7 +4364,8 @@
                         var success = function (data, idKey, handled) {
                             __this.removeThis('loading');
                             if (handled) {
-                                __.callable(callback).call(app, data);
+                                __.callable(callback)
+                                        .call(app, data);
                                 return;
                             }
                             ext.loadData.call(app, __this, data, content, true,
@@ -3816,7 +4374,10 @@
                                     // cache so that saving forms can work fine:
                                     // cache would be cleared when the collection is
                                     // rendered again
-                                    type !== 'page' || ext.config.call(app).cacheData === false,
+                                    type !==
+                                    'page' ||
+                                    ext.config.call(app).cacheData ===
+                                    false,
                                     function (elem) {
                                         if (elem) {
                                             elem.this('loaded', '')
@@ -3824,12 +4385,14 @@
                                                     .trigger('model.loaded')
                                                     .show();
                                         }
-                                        __.callable(callback).call(this, data);
+                                        __.callable(callback)
+                                                .call(this, data);
                                     }.bind(app));
                         },
                                 error = function () {
                                     __this.removeThis('loading');
-                                    __.callable(callback).call(app);
+                                    __.callable(callback)
+                                            .call(app);
                                 };
                         if (data) {
                             success(data);
@@ -3860,7 +4423,8 @@
                     var app = this;
                     var models = this.page
                             .find('model:not([this-in-collection]):not([this-ignore]),'
-                                    + '[this-type="model"]:not([this-in-collection]):not([this-ignore])'),
+                                    +
+                                    '[this-type="model"]:not([this-in-collection]):not([this-ignore])'),
                             length = models.length;
                     if (chain && !length)
                         ext.loadCollections.call(this, null, null, replaceState);
@@ -3868,7 +4432,8 @@
                         ext.loadModel.call(app, this,
                                 function () {
                                     length--;
-                                    if (chain && !length) {
+                                    if (chain &&
+                                            !length) {
                                         ext.loadCollections.call(this, null, null, replaceState);
                                     }
                                 }.bind(app),
@@ -3884,29 +4449,43 @@
                 loadOrRequestData: function (config) {
                     var app = this,
                             isCollection = ext.is.call(this, 'collection', config.elem),
-                            type = isCollection ? 'collection' : 'model',
-                            ignore = app.page.this('ignore-cache') || '',
-                            model_name = config.elem.this('model') || config.elem.this('id'),
-                            expires = ext.expirationStore.find(model_name),
-                            cache_expired = (expires && expires < Date.now()) || !expires,
+                            type = isCollection ?
+                            'collection' :
+                            'model',
+                            ignore = app.page.this('ignore-cache') ||
+                            '',
+                            model_name = config.elem.this('model') ||
+                            config.elem.this('id'),
+                            expires = ext.record.call(this).expirationStore.find(model_name),
+                            cache_expired = (expires &&
+                                    expires <
+                                    Date.now()) ||
+                            !expires,
                             cache, fromCache;
                     if (ext.config.call(this).cacheData) {
                         if (!isCollection) {
-                            cache = ext.store.call(app, model_name).find(config.elem.this('mid'));
+                            cache = ext.store.call(app, model_name)
+                                    .find(config.elem.this('mid'));
                         }
                         else {
-                            cache = ext.store.call(app, model_name).find();
+                            cache = ext.store.call(app, model_name)
+                                    .find();
                             // check pagination page data exists in cached data for collection
                             if (config.elem.hasThis('paginate') &&
                                     // cached data exists and no pagination exists already
                                     cache) {
-                                var pagination = ext.paginationStore.find(model_name);
+                                var pagination = ext.record.call(app).paginationStore.find(model_name);
                                 if ((!pagination
                                         // or paginaion exists but the page meta doesn't exist yet
-                                        || pagination[config.elem.this('pagination-page')] === undefined
+                                        ||
+                                        pagination[config.elem.this('pagination-page')]
+                                        ===
+                                        undefined
                                         // or paginaion exists and page meta exists but limit has changed
-                                        || pagination[config.elem.this('pagination-page')].length
-                                        !== config.requestData.limit))
+                                        ||
+                                        pagination[config.elem.this('pagination-page')].length
+                                        !==
+                                        config.requestData.limit))
                                     cache = null;
                                 else
                                     this.cacheTargets = pagination[config.elem.this('pagination-page')];
@@ -3934,16 +4513,19 @@
                             loadDataOrCache = function (config, isError) {
                                 // if no data and no explicit ignore-cache on collection config.elem
                                 // and cache exists
-                                if (!config.data && cache) {
+                                if (!config.data &&
+                                        cache) {
                                     if (config.looping)
-                                        this.__proto__[type + 's']--;
+                                        this.__proto__[type +
+                                                's']--;
                                     config.data = cache;
                                     fromCache = true;
                                 }
                                 // if data exists/found
                                 if (config.data) {
                                     var _data = {},
-                                            dataKey = config.elem.this('data-key') ||
+                                            dataKey = config.elem.this('data-key')
+                                            ||
                                             ext.config.call(this).dataKey;
                                     // use dataKey if available
                                     if (dataKey) {
@@ -3955,37 +4537,50 @@
                                     // loads the data
                                     ext.loadData.call(this, config.elem, config.data, config.content,
                                             !isCollection, false, function (elem) {
-                                                if (elem && fromCache) {
+                                                if (elem &&
+                                                        fromCache) {
                                                     // trigger expired.cache.loaded event
                                                     if (cache_expired) {
-                                                        elem.trigger('expired.' + type + '.cache.loaded');
+                                                        elem.trigger('expired.'
+                                                                +
+                                                                type +
+                                                                '.cache.loaded');
                                                     }
                                                     // trigger cache.loaded event
                                                     else {
-                                                        elem.trigger(type + '.cache.loaded');
+                                                        elem.trigger(type +
+                                                                '.cache.loaded');
                                                     }
                                                     // mark as loaded and trigger event
-                                                    elem.removeThis('loading').this('loaded', '');
+                                                    elem.removeThis('loading')
+                                                            .this('loaded', '');
                                                 }
-                                                __.callable(success).call(this, config.data, null, true);
+                                                __.callable(success)
+                                                        .call(this, config.data, null, true);
                                             }.bind(this));
                                     return true;
                                 }
                                 // Cannot load type. Move on.
                                 else if (!isError) {
-                                    __.callable(config.error).call(this);
+                                    __.callable(config.error)
+                                            .call(this);
                                 }
                                 return false;
                             }.bind(this);
                     // if no data is provided and collection has url 
                     if (!config.data
                             // and no cache or cache exists but is expired
-                            && (!cache || (cache && cache_expired) ||
+                            && (!cache ||
+                                    (cache &&
+                                            cache_expired) ||
                                     // or page says ignore cache
-                                    __.contains(ignore, type + '#'
-                                            + config.elem.this('id'))
+                                    __.contains(ignore, type +
+                                            '#'
+                                            +
+                                            config.elem.this('id'))
                                     // or elem itself says ignore cache
-                                    || config.elem.hasThis('ignore-cache'))) {
+                                    ||
+                                    config.elem.hasThis('ignore-cache'))) {
                         var type;
                         try {
                             type = ext.config.call(app).crud.methods.read;
@@ -3996,7 +4591,8 @@
 
                         return ext.request.call(this, config.elem,
                                 function () {
-                                    if (!config.elem.hasThis('no-updates') && this.watchCallback)
+                                    if (!config.elem.hasThis('no-updates') &&
+                                            this.watchCallback)
                                         ext.watch.call(this, config.elem);
                                     config.elem.removeThis('no-updates');
                                     return {
@@ -4033,7 +4629,8 @@
                  */
                 log: function (method, param) {
                     if (ext.record.call(this, 'debug')) {
-                        console[method].apply(null, __.isArray(param) ? param : [param]);
+                        console[method].apply(null, __.isArray(param)
+                                ? param : [param]);
                     }
                     return this;
                 },
@@ -4051,16 +4648,20 @@
                     var _each = container.find('[this-repeat-for]');
                     while (_each.length) {
                         var __this = _each.get(0, true),
-                                each = __this.this('repeat-for').trim(),
+                                each = __this.this('repeat-for')
+                                .trim(),
                                 _data = ext.getVariableValue.call(this, each, data, false),
                                 filter = __this.this('filter'),
-                                content = __this.removeThis('muted').removeThis('filter')
-                                .removeThis('repeat-for').outerHtml(),
+                                content = __this.removeThis('muted')
+                                .removeThis('filter')
+                                .removeThis('repeat-for')
+                                .outerHtml(),
                                 ignoreDataCheck = false;
                         __this.html('');
                         // this-repeat-for is not a model key
                         if (!_data) {
-                            if (each.indexOf('...') !== -1) {
+                            if (each.indexOf('...') !==
+                                    -1) {
                                 ignoreDataCheck = true;
                                 _data = each;
                             }
@@ -4072,13 +4673,15 @@
                             // do each on an expression
                             else {
                                 if (each.startsWith('({')) {
-                                    each = each.substr(1, each.length - 2);
+                                    each = each.substr(1, each.length -
+                                            2);
                                 }
                                 _data = ext.eval
                                         .call(this, each, data);
                             }
                         }
-                        if (ignoreDataCheck || __.isObject(_data, true)) {
+                        if (ignoreDataCheck ||
+                                __.isObject(_data, true)) {
                             ext.doLoop.call(this, _data, __this, filter, content, data);
                         }
                         else {
@@ -4095,8 +4698,10 @@
                  */
                 modelFromStore: function (model_id, model_name) {
                     return this.tryCatch(function () {
-                        var model = ext.store.call(this, model_name).find(model_id),
-                                expires = ext.expirationStore.find(model_name);
+                        var model = ext.store.call(this, model_name)
+                                .find(model_id),
+                                expires = ext.record.call(this).expirationStore
+                                .find(model_name);
                         return expires && expires < Date.now() ? null : model;
                     });
                 },
@@ -4111,14 +4716,17 @@
                     return this.tryCatch(function () {
                         var modelStore = ext.store.call(this, options.modelName);
                         if (options.expireCollection) {
-                            ext.expirationStore.save(Date.now(), options.modelName);
-                            ext.paginationStore.remove(options.modelName);
+                            ext.record.call(this).expirationStore.save(Date.now(), options.modelName);
+                            ext.record.call(this).paginationStore.remove(options.modelName);
                         }
                         var model = modelStore.save(options.model, options.modelId
-                                || ext.getUIDValue.call(this, options.model));
+                                ||
+                                ext.getUIDValue.call(this, options.model));
                         // create entries to update dom
                         if (!options.ignoreDOM) {
-                            var store_name = options.isNew ? 'createdStore' : 'updatedStore',
+                            var store_name = options.isNew ?
+                                    'createdStore' :
+                                    'updatedStore',
                                     actionStore = ext[store_name],
                                     action = actionStore.find(options.modelName);
                             // saved existing options.model for dom update
@@ -4151,22 +4759,30 @@
                  * @returns {ThisApp}
                  */
                 notAPage: function (page) {
-                    this.error('Page [' + page + '] not found');
+                    this.error('Page [' +
+                            page +
+                            '] not found');
                     this.container.trigger('page.not.found', {
                         pageId: page
                     });
                     if (__.isString(this.notFound)) {
                         page = this.getCached(ext.selector.call(this, this.notFound
-                                .startsWith('page#') ? this.notFound : 'page#' + this.notFound));
+                                .startsWith('page#') ?
+                                this.notFound :
+                                'page#' +
+                                this.notFound));
                         if (!page.length) {
-                            return this.error('Page [' + this.notFound + '] also not found');
+                            return this.error('Page [' +
+                                    this.notFound +
+                                    '] also not found');
                         }
                         ext.pageFound.call(this, page, true);
                         return this;
                     }
                     else {
                         delete this._params;
-                        return __.callable(this.notFound).call(this, page);
+                        return __.callable(this.notFound)
+                                .call(this, page);
                     }
                 },
                 /**
@@ -4179,17 +4795,21 @@
                         if (this.page) {
                             this.oldPage = this.page.this('dead', '')
                                     .trigger('page.leave');
-                            if (this.oldPage.this('id') === page.this('id'))
+                            if (this.oldPage.this('id') ===
+                                    page.this('id'))
                                 replaceInState = true;
                         }
-                        this.page = page.clone().show();
-                        this.__proto__.modelParams = this._params || [];
+                        this.page = page.clone()
+                                .show();
+                        this.__proto__.modelParams = this._params ||
+                                [];
                         delete this._params;
                         ext.loadLayouts.call(this, replaceInState);
                     }
                     else {
                         delete this._params;
-                        this.error('Load page failed: ' + page.this('id'));
+                        this.error('Load page failed: ' +
+                                page.this('id'));
                         page.trigger('page.load.failed');
                     }
                 },
@@ -4204,8 +4824,10 @@
                         this.linkAnalytics[link] = analyzeLink(link);
                     var analytics = this.linkAnalytics[link],
                             id = analytics.page;
-                    this._params = analytics.url ? analytics.url.split('/') : [
-                    ];
+                    this._params = analytics.url ?
+                            analytics.url.split('/') :
+                            [
+                            ];
                     if (analytics.model)
                         this._params.unshift(analytics.model);
                     if (prepParams) {
@@ -4215,7 +4837,9 @@
                         if (parts.length > 1) {
                             this.params = qStrToObj(parts[1]);
                         }
-                        this.GETParams = location.search ? qStrToObj(location.search.substr(1)) : {};
+                        this.GETParams = location.search ?
+                                qStrToObj(location.search.substr(1)) :
+                                {};
                         return parts[0];
                     }
                     return id;
@@ -4232,16 +4856,6 @@
                         // still loading. can't mark as loaded
                         return this;
                     var app = this;
-                    // load required if not already loaded js
-                    if (this.page.this('load-js')
-                            && !loadedPageJS.last[this.page.this('id')]) {
-                        var jses = this.page.this('load-js').split(',');
-                        // load comma-separated css files
-                        __.forEach(jses, function (i, js) {
-                            ext.loadAsset.call(app, 'js', js, app.page);
-                        });
-                        loadedPageJS.last[this.page.this('id')] = true;
-                    }
                     this.loadedPartial = !this.firstPage;
                     delete this.linkAnalytics;
                     // page was just loaded and not restored from history
@@ -4253,7 +4867,8 @@
                         }
                         ext.postLoad.call(this, this.container);
                         this.page = this.container.find('[this-type="page"],page');
-                        this.page.find('[this-type="template"]').remove();
+                        this.page.find('[this-type="template"]')
+                                .remove();
                         this.page.trigger('page.loaded');
                         ext.store.call(this, '___cache')
                                 .save(this.templates.html(), ext.getTemplatePath.call(this), true);
@@ -4266,7 +4881,8 @@
                         this.restored = true;
                         this.page.trigger('page.loaded');
                         // clear cache of collections and models if not to cacheData
-                        if (ext.config.call(this).cacheData === false) {
+                        if (ext.config.call(this).cacheData ===
+                                false) {
                             this.clearPageCache();
                         }
                     }
@@ -4276,23 +4892,37 @@
                             // watch collections and models on current page
                             this.container.find('collection[this-loaded],[this-type="collection"]'
                                     + '[this-loaded],model[this-loaded],[this-type="model"]'
-                                    + '[this-loaded]').each(function () {
-                                ext.watch.call(app, this);
-                            });
+                                    + '[this-loaded]')
+                                    .each(function () {
+                                        ext.watch.call(app, this);
+                                    });
                         // get all previously watched collections and models
-                        var watching = ext.recordsStore.find('watching');
+                        var watching = ext.record.call(this).store.find('watching');
                         if (watching) {
                             // watch collections and models not on page
                             __.forEach(watching, function (id, obj) {
                                 ext.watch.call(app, app._('<div this-id="' + id
-                                        + '" this-type="' + obj.type + '" this-url="'
-                                        + obj.url + '" this-mid="' + obj.mid + '" />'));
+                                        + '" this-type="' + obj.type
+                                        + '" this-url="'
+                                        + obj.url + '" this-mid="' + obj.mid
+                                        + '" />'));
                             });
                         }
                         delete this.firstPage;
                     }
+                    // load required if not already loaded js
+                    if (this.page.this('load-js')
+                            && !loadedPageJS.last[this.page.this('id')]) {
+                        var jses = this.page.this('load-js')
+                                .split(',');
+                        // load comma-separated css files
+                        __.forEach(jses, function (i, js) {
+                            ext.loadAsset.call(app, 'js', js, app.page);
+                        });
+                        loadedPageJS.last[this.page.this('id')] = true;
+                    }
 
-                    ext.recordsStore.save(this.watching, 'watching');
+                    ext.record.call(this).store.save(this.watching, 'watching');
                     this.pageIsLoaded = true;
                     return this;
                 },
@@ -4307,8 +4937,8 @@
                     if (!content)
                         return [];
                     return __.tryCatch(function () {
-                        return content.match(new RegExp(oBrace + '\\s*[^' + cBrace + ']+\\s*'
-                                + cBrace, 'gi')) || [];
+                        return content.match(new RegExp(oBrace + '\\s*[^' +
+                                cBrace + ']+\\s*' + cBrace, 'gi')) || [];
                     });
                 },
                 /**
@@ -4321,9 +4951,13 @@
                  * @returns ThisApp
                  */
                 parseData: function (data, container, forCollection, isModel, callback) {
-                    var app = this, custom = false, tab_cont, level;
+                    var app = this,
+                            custom = false,
+                            tab_cont,
+                            level;
                     if (__.isString(container)) {
-                        container = this._('<div/>').html(container);
+                        container = this._('<div/>')
+                                .html(container);
                         custom = true;
                     }
                     else {
@@ -4350,25 +4984,32 @@
                     ext.loop.call(this, container, data);
                     var content = ext.processExpressions.call(this, container.outerHtml(), prObj, data);
                     var variables = ext.parseBrackets.call(this, '{{', '}}',
-                            __.isString(content) ? content : content.outerHtml());
+                            __.isString(content) ?
+                            content :
+                            content.outerHtml());
                     content = ext.fillVariables.call(this, variables, data, content);
                     container.replaceWith(content);
                     var done = function () {
                         if (custom)
                             container = container.children();
-                        container.find('[this-muted]').removeThis('muted');
+                        container.find('[this-muted]')
+                                .removeThis('muted');
                         while (level) {
                             container = container.children();
                             level--;
                         }
                         ext.renderSrc.call(this, container);
-                        __.callable(callback).call(this, container);
+                        __.callable(callback)
+                                .call(this, container);
                     }.bind(this);
                     if (isModel) {
                         var collections = container.find('collection:not([this-loaded])'
-                                + ':not([this-data]):not([this-loading]):not([this-ignore]),'
-                                + '[this-type="collection"]:not([this-loaded]):not([this-data])'
-                                + ':not([this-loading]):not([this-ignore])');
+                                +
+                                ':not([this-data]):not([this-loading]):not([this-ignore]),'
+                                +
+                                '[this-type="collection"]:not([this-loaded]):not([this-data])'
+                                +
+                                ':not([this-loading]):not([this-ignore])');
                         if (collections.length) {
                             this.__proto__.modelCollections = collections.length;
                             collections.each(function () {
@@ -4376,7 +5017,8 @@
                                 data = ext.getVariableValue.call(app,
                                         __this.this('data'), data, true);
                                 ext.loadCollection.call(app, __this, function () {
-                                    __this.removeThis('loading').this('loaded', '');
+                                    __this.removeThis('loading')
+                                            .this('loaded', '');
                                     if (!--this.__proto__.modelCollections) {
                                         delete this.__proto__.modelCollections;
                                         done();
@@ -4397,27 +5039,36 @@
                     elem = this._(elem);
                     var app = this;
                     ext.renderSrc.call(this, elem);
-                    elem.find('[this-inline-code]').each(function () {
-                        var __this = app._(this);
-                        __this.replaceWith(app._('<code this-code />').html(__this.html()));
-                    });
-                    elem.find('[this-block-code]').each(function () {
-                        var __this = app._(this);
-                        __this.replaceWith(app._('<pre />').html(__this.html()))
-                                .innerWrap('<code this-code />');
-                    });
-                    elem.find('[this-code]').each(function () {
-                        var __this = app._(this),
-                                tags = ext.parseBrackets.call(app, '<', '>', __this.html()),
-                                content = __this.html();
-                        __.forEach(tags, function (i, v) {
-                            content = content
-                                    .replace(v, '&lt;' + v.substr(1, v.length - 2) + '&gt;');
-                        });
-                        content = content.replace(/\n/g, '<br/>').replace(/\s/g, '&nbsp;');
-                        __this.html(content).removeThis('code');
-                    });
-                    elem.find('[this-hidden],[this-type="list"]').hide()
+                    elem.find('[this-inline-code]')
+                            .each(function () {
+                                var __this = app._(this);
+                                __this.replaceWith(app._('<code this-code />')
+                                        .html(__this.html()));
+                            });
+                    elem.find('[this-block-code]')
+                            .each(function () {
+                                var __this = app._(this);
+                                __this.replaceWith(app._('<pre />')
+                                        .html(__this.html()))
+                                        .innerWrap('<code this-code />');
+                            });
+                    elem.find('[this-code]')
+                            .each(function () {
+                                var __this = app._(this),
+                                        tags = ext.parseBrackets.call(app, '<', '>', __this.html()),
+                                        content = __this.html();
+                                __.forEach(tags, function (i, v) {
+                                    content = content
+                                            .replace(v, '&lt;'
+                                                    + v.substr(1, v.length - 2)
+                                                    + '&gt;');
+                                });
+                                content = content.replace(/\n/g, '<br/>')
+                                        .replace(/\s/g, '&nbsp;');
+                                __this.html(content).removeThis('code');
+                            });
+                    elem.find('[this-hidden],[this-type="list"]')
+                            .hide()
                             .removeThis('hidden');
                     // remove comments
                     var content = ext.removeComments.call(this, elem.html());
@@ -4426,9 +5077,12 @@
                     if (!isComponent) {
                         ext.loop.call(this, elem, {});
                         // remove unresolved repeat-for
-                        elem.find('[this-repeat-for]').remove();
+                        elem.find('[this-repeat-for]')
+                                .remove();
                         // clear cache of collections and models if not to cacheData
-                        if (!this.pageIsLoaded && ext.config.call(this).cacheData === false) {
+                        if (!this.pageIsLoaded &&
+                                ext.config.call(this).cacheData ===
+                                false) {
                             this.clearPageCache();
                         }
                     }
@@ -4440,14 +5094,20 @@
                 prepareDOMCache: function (startPage) {
                     // create templates container if not exists
                     if (!this._('[this-type="templates"][this-app="' +
-                            this.container.this('id') + '"]').length)
-                        this._('body').append('<div this-type="templates" this-app="' +
-                                this.container.this('id') + '" style="display:none"/>');
+                            this.container.this('id') +
+                            '"]').length)
+                        this._('body')
+                                .append('<div this-type="templates" this-app="'
+                                        +
+                                        this.container.this('id') +
+                                        '" style="display:none"/>');
                     var loaded = '';
                     // mark all container children as such
-                    this.container.children('[this-type]').this('in-container', '')
+                    this.container.children('[this-type]')
+                            .this('in-container', '')
                             .each(function () {
-                                if (loaded) loaded += ',';
+                                if (loaded)
+                                    loaded += ',';
                                 loaded += elemToSelector(this, {
                                     ignore: ['tag'],
                                     attrs: ['this-id', 'this-type', 'this-model']
@@ -4456,12 +5116,15 @@
                     var _layout = this.container.find('[this-default-page]')
                             .closest('layout,[this-type="layout"]');
                     // not the topmost container: add all page layouts to template
-                    while (_layout.length && !_layout.hasThis('in-container')) {
+                    while (_layout.length &&
+                            !_layout.hasThis('in-container')) {
                         var _clone = _layout.clone();
-                        _clone.find('[this-content]').html('');
+                        _clone.find('[this-content]')
+                                .html('');
                         this.templates.append(_clone.this('in-container', ''));
                         // add to loaded string
-                        if (loaded) loaded += ',';
+                        if (loaded)
+                            loaded += ',';
                         loaded += elemToSelector(_layout, {
                             ignore: ['tag'],
                             attrs: ['this-id', 'this-type']
@@ -4473,40 +5136,59 @@
                     var templates = ext.store.call(this, '___cache')
                             .find(ext.getTemplatePath.call(this));
                     if (!templates) {
-                        this.templates = this._('[this-type="templates"][this-app="' +
-                                this.container.this('id') + '"]')
+                        this.templates = this._('[this-type="templates"][this-app="'
+                                +
+                                this.container.this('id') +
+                                '"]')
                                 // put all unloaded element into templates
                                 .append(
                                         // hide all types not loaded or default page
                                         //  (models, collections, layouts,
                                         // components, etc)
                                         this.container.find('page:not([this-default-page]),model:not([this-loaded]),'
-                                                + 'collection:not([this-loaded]),layout:not([this-loaded]),list:not([this-loaded]),'
-                                                + 'component:not([this-loaded]),'
-                                                + '[this-type="page"]:not([this-default-page]),'
-                                                + '[this-type="model"]:not([this-loaded]),'
-                                                + '[this-type="collection"]:not([this-loaded]),'
-                                                + '[this-type="layout"]:not([this-loaded]),'
-                                                + '[this-type="list"]:not([this-loaded]),'
-                                                + '[this-type="component"]:not([this-loaded])'
-                                                + '[this-paginate-next],[this-paginate-previous]')
+                                                +
+                                                'collection:not([this-loaded]),layout:not([this-loaded]),list:not([this-loaded]),'
+                                                +
+                                                'component:not([this-loaded]),'
+                                                +
+                                                '[this-type="page"]:not([this-default-page]),'
+                                                +
+                                                '[this-type="model"]:not([this-loaded]),'
+                                                +
+                                                '[this-type="collection"]:not([this-loaded]),'
+                                                +
+                                                '[this-type="layout"]:not([this-loaded]),'
+                                                +
+                                                '[this-type="list"]:not([this-loaded]),'
+                                                +
+                                                '[this-type="component"]:not([this-loaded])'
+                                                +
+                                                '[this-paginate-next],[this-paginate-previous]')
                                         .hide()
                                         );
                     }
                     else {
-                        templates = this._('<div>').html(templates);
+                        templates = this._('<div>')
+                                .html(templates);
                         // remove loaded templates from cached one
                         if (loaded)
-                            templates.find(loaded).remove();
-                        this.templates = this._('[this-type="templates"][this-app="' +
-                                this.container.this('id') + '"]').html(templates.children());
+                            templates.find(loaded)
+                                    .remove();
+                        this.templates = this._('[this-type="templates"][this-app="'
+                                +
+                                this.container.this('id') +
+                                '"]')
+                                .html(templates.children());
                     }
                     // add the remaining page and layouts to cache
                     this.addToCache(this.container
                             .find('page,[this-type="page"],layout,[this-type="layout"]')
-                            .removeThis('loaded').removeThis('default-page').this('in-container', ''));
+                            .removeThis('loaded')
+                            .removeThis('default-page')
+                            .this('in-container', ''));
                     // remove templates
-                    this.container.find('[this-type="templates"]').remove();
+                    this.container.find('[this-type="templates"]')
+                            .remove();
                 },
                 /**
                  * Processes all expressions in the content
@@ -4518,8 +5200,9 @@
                     var app = this,
                             exps = ext.getExpressions.call(this, content);
                     __.forEach(exps, function (i, v) {
+                        v = v.trim();
                         app.tryCatch(function () {
-                            content = content.replace(v, eval(v.trim().substr(2, v.trim().length - 4)));
+                            content = content.replace(v, eval(v.substr(2, v.length - 4)));
                         }, function (e) {
                             ext.log.call(app, 'error', e.message);
                             if (removeUnresolved)
@@ -4534,22 +5217,32 @@
                 processLink: function (link) {
                     var analytics = analyzeLink(link),
                             target_page = analytics.page,
-                            params = analytics.url ? analytics.url.split('/') : null;
+                            params = analytics.url ?
+                            analytics.url.split('/') :
+                            null;
                     if (analytics.model) {
                         // keep attributes for page
-                        this.tar['page#' + target_page] = {
+                        this.tar['page#' +
+                                target_page] = {
                             model: analytics.model,
                             url: analytics.url
                         };
                         if (analytics.url) {
-                            this.tar['page#' + target_page]['url'] = analytics.url;
-                            this.tar['page#' + target_page]['mid'] = params[params.length - 1];
+                            this.tar['page#' +
+                                    target_page]['url'] = analytics.url;
+                            this.tar['page#' +
+                                    target_page]['mid'] = params[params.length
+                                    -
+                                    1];
                         }
-                        if (analytics.action === 'read') {
-                            this.tar['page#' + target_page]['reading'] = '';
+                        if (analytics.action ===
+                                'read') {
+                            this.tar['page#' +
+                                    target_page]['reading'] = '';
                         }
                         else {
-                            this.tar['page#' + target_page]['do'] = analytics.action;
+                            this.tar['page#' +
+                                    target_page]['do'] = analytics.action;
                         }
                     }
                     return target_page;
@@ -4562,12 +5255,20 @@
                  */
                 record: function (key, value) {
                     // set a record
-                    if (key && value !== undefined && this.container) {
+                    if (key &&
+                            value !==
+                            undefined &&
+                            this.container) {
                         ext.records[this.container.this('id')][key] = value;
                         return this;
                     }
-                    var records = this.container ? ext.records[this.container.this('id')] : null;
-                    return records && key ? records[key] : records;
+                    var records = this.container ?
+                            ext.records[this.container.this('id')] :
+                            null;
+                    return records &&
+                            key ?
+                            records[key] :
+                            records;
                 },
                 /**
                  * Escapes a regex string
@@ -4585,7 +5286,7 @@
                 removeComments: function (content) {
                     var exps = ext.getComments.call(this, content);
                     __.forEach(exps, function (i, v) {
-                        content = content.replace(v, '');
+                        content = content.replace(new RegExp(v, 'g'), '');
                     });
                     return content;
                 },
@@ -4595,13 +5296,17 @@
                  */
                 renderSrc: function (container) {
                     var app = this;
-                    this._(container).find('img[this-src]').each(function () {
-                        var __this = app._(this);
-                        if (__this.attr('this-src').indexOf('{{') !== -1)
-                            return;
-                        __this.attr('src', __this.attr('this-src'))
-                                .removeAttr('this-src');
-                    });
+                    this._(container)
+                            .find('img[this-src]')
+                            .each(function () {
+                                var __this = app._(this);
+                                if (__this.attr('this-src')
+                                        .indexOf('{{') !==
+                                        -1)
+                                    return;
+                                __this.attr('src', __this.attr('this-src'))
+                                        .removeAttr('this-src');
+                            });
                 },
                 /**
                  * Decides which transporter to run
@@ -4617,13 +5322,16 @@
                 request: function (elem, custom, def, neither) {
                     elem = this._(elem);
                     // Data transport exists
-                    if (!elem.hasThis('default-transport') && this.dataTransport) {
+                    if (!elem.hasThis('default-transport') &&
+                            this.dataTransport) {
                         return __.callable(this.dataTransport)
-                                .call(this, __.callable(custom).call(this));
+                                .call(this, __.callable(custom)
+                                        .call(this));
                     }
                     else {
                         // get default request config
-                        var config = __.callable(def).call(this);
+                        var config = __.callable(def)
+                                .call(this);
                         // url exists
                         if (config.url) {
                             // load request
@@ -4632,7 +5340,8 @@
                         // url does not exist:
                         else {
                             // run neither function
-                            return __.callable(neither).call(this);
+                            return __.callable(neither)
+                                    .call(this);
                         }
                     }
 
@@ -4645,7 +5354,8 @@
                     var app = this;
                     this._(form)
                             .find('input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="hidden"])'
-                                    + ',textarea,select,[this-resettable]')
+                                    +
+                                    ',textarea,select,[this-resettable]')
                             .each(function () {
                                 var __this = app._(this);
                                 if (__this.this('resettable')) {
@@ -4653,16 +5363,23 @@
                                         __this.attr(key, val);
                                     });
                                 }
-                                if (this.type === 'radio' || this.type === 'checkbox') {
-                                    app._(this).prop('checked', false)
+                                if (this.type ===
+                                        'radio' ||
+                                        this.type ===
+                                        'checkbox') {
+                                    app._(this)
+                                            .prop('checked', false)
                                             .removeAttr('checked');
                                 }
                                 this.value = '';
-                                if (this.tagName.toLowerCase() === 'select') {
-                                    app._(this).children(':nth-child(1)')
+                                if (this.tagName.toLowerCase() ===
+                                        'select') {
+                                    app._(this)
+                                            .children(':nth-child(1)')
                                             .prop('selected', true)
                                             .attr('selected', 'selected')
-                                            .siblings('[selected="selected"]').
+                                            .siblings('[selected="selected"]')
+                                            .
                                             prop('selected', false)
                                             .removeAttr('selected');
                                 }
@@ -4677,12 +5394,17 @@
                 restoreState: function (state) {
                     var app = this;
                     this.container.html(state.content);
-                    this.page = this.container.find('page[this-id="' + state.id
-                            + '"],[this-type="page"][this-id="'
-                            + state.id + '"]').removeThis('dead');
+                    this.page = this.container.find('page[this-id="' +
+                            state.id
+                            +
+                            '"],[this-type="page"][this-id="'
+                            +
+                            state.id +
+                            '"]')
+                            .removeThis('dead');
                     if (ext.config.call(this).titleContainer)
                         ext.config.call(this).titleContainer.html(state.title);
-                    ext.recordsStore.save(state.url, 'last_page');
+                    ext.record.call(this).store.save(state.url, 'last_page');
                     this.removedAssets = {};
                     this.container.find('[this-type="layout"]')
                             .each(function () {
@@ -4713,21 +5435,25 @@
                  * @returns ThisApp
                  */
                 saveState: function (replace) {
+                    if (!this.page) return;
                     var action = 'pushState';
                     if (replace || this.firstPage)
                         action = 'replaceState';
                     var url = '#/' + this.page.this('id');
-                    if (ext.config.call(this).keepParamsInURL && Object.keys(this.params).length)
+                    if (ext.config.call(this).keepParamsInURL &&
+                            Object.keys(this.params).length)
                         url += '?' + objToQStr(this.params);
-                    if (this.__proto__.modelParams && this.__proto__.modelParams.length)
-                        url += '/' + crudConnectors[this.pageAction] + '/' + this.__proto__.modelParams.join('/');
+                    if (this.__proto__.modelParams &&
+                            this.__proto__.modelParams.length)
+                        url += '/' + crudConnectors[this.pageAction] + '/'
+                                + this.__proto__.modelParams.join('/');
                     history[action]({
                         id: this.page.this('id'),
                         title: this.page.this('title'),
                         content: this.container.html(),
                         url: url
                     }, this.page.this('title'), url);
-                    ext.recordsStore.save(url, 'last_page');
+                    ext.record.call(this).store.save(url, 'last_page');
                     return this;
                 },
                 /**
@@ -4754,12 +5480,32 @@
                     id = id.split('#');
                     if (!append)
                         append = '';
-                    var attrs = id[id.length - 1].split('[');
-                    id[id.length - 1] = attrs[0];
+                    var attrs = id[id.length -
+                            1].split('[');
+                    id[id.length -
+                            1] = attrs[0];
                     __.removeArrayIndex(attrs, 0);
                     if (attrs.length)
-                        append += '[' + attrs.join('[');
-                    return id.length > 1 ? '[this-type="' + id[0] + '"][this-id="' + id[1] + '"]' + append + ',' + id[0] + '[this-id="' + id[1] + '"]' + append : '[this-id="' + id[0] + '"]' + append;
+                        append += '[' +
+                                attrs.join('[');
+                    return id.length >
+                            1 ?
+                            '[this-type="' +
+                            id[0] +
+                            '"][this-id="' +
+                            id[1] +
+                            '"]' +
+                            append +
+                            ',' +
+                            id[0] +
+                            '[this-id="' +
+                            id[1] +
+                            '"]' +
+                            append :
+                            '[this-id="' +
+                            id[0] +
+                            '"]' +
+                            append;
                 },
                 /**
                  * Setups the app events
@@ -4773,16 +5519,19 @@
                             ext.saveState.call(app, true);
                         });
                         // save page state before leaving
-                        this._(window).on('beforeunload', function () {
-                            ext.saveState.call(app, true);
-                        });
+                        this._(window)
+                                .on('beforeunload', function () {
+                                    ext.saveState.call(app, true);
+                                });
                         // ensure paths end with /
                         if (this.config.paths) {
                             __.forEach(this.config.paths, function (i, v) {
-                                if (__.isString(v) && !v.endsWith('/'))
+                                if (__.isString(v) &&
+                                        !v.endsWith('/'))
                                     app.config.paths[i] += '/';
                                 else if (__.isObject(v))
-                                    if (v.dir && !v.dir.endsWith('/'))
+                                    if (v.dir &&
+                                            !v.dir.endsWith('/'))
                                         app.config.paths[i].dir += '/';
                             });
                         }
@@ -4790,15 +5539,17 @@
                         if (!this.notFound)
                             this.notFound = function () {
                                 if (app.firstPage) {
-                                    var last_page = ext.recordsStore.find('last_page');
+                                    var last_page = ext.record.call(app).store.find('last_page');
                                     if (last_page) {
-                                        ext.recordsStore.remove('last_page');
+                                        ext.record.call(app).store.remove('last_page');
                                         app.loadPage(last_page);
                                     }
                                     else if (app.config.startWith) {
                                         if (this.getCached('[this-id="'
-                                                + app.config.startWith
-                                                + '"]', 'page').length)
+                                                +
+                                                app.config.startWith
+                                                +
+                                                '"]', 'page').length)
                                             app.loadPage(app.config.startWith);
                                     }
                                     else {
@@ -4810,12 +5561,16 @@
                             };
                         // look for the app container
                         this.container = this.config.container ?
-                                this._('[this-id="' + this.config.container + '"]') :
+                                this._('[this-id="' +
+                                        this.config.container +
+                                        '"]') :
                                 this._('[this-app-container]');
                         // use the body tag if no container is set
-                        if (!this.container.length || this.container.is('body')) {
+                        if (!this.container.length ||
+                                this.container.is('body')) {
                             // always use an app container and not the body
-                            this._('body').append('<div this-app-container />');
+                            this._('body')
+                                    .append('<div this-app-container />');
                             this.container = this._('[this-app-container]');
                         }
                         else if (!this.container.this('id'))
@@ -4826,21 +5581,25 @@
                         // setup record for this app
                         ext.records[this.container.this('id')] = {
                             running: true,
-                            secureAPI: this.secap || function () {},
-                            uploader: this.setup || null,
-                            config: this.config
+                            secureAPI: this.secap ||
+                                    function () {},
+                            uploader: this.setup ||
+                                    null,
+                            config: this.config,
+                            // get necessary stores up
+                            store: ext.store.call(this, '___records'),
+                            createdStore: ext.store.call(this, '___created'),
+                            updatedStore: ext.store.call(this, '___updated'),
+                            deletedStore: ext.store.call(this, '___deleted'),
+                            expirationStore: ext.store.call(this, '___expiration'),
+                            paginationStore: ext.store.call(this, '___pagination')
                         };
                         delete this.secap;
                         delete this.setup;
                         // set debug mode
-                        ext.record.call(this, 'debug', ext.config.call(this).debug || false);
-                        // get necessary stores up
-                        ext.recordsStore = ext.store.call(this, '___records');
-                        ext.createdStore = ext.store.call(this, '___created');
-                        ext.updatedStore = ext.store.call(this, '___updated');
-                        ext.deletedStore = ext.store.call(this, '___deleted');
-                        ext.expirationStore = ext.store.call(this, '___expiration');
-                        ext.paginationStore = ext.store.call(this, '___pagination');
+                        ext.record.call(this, 'debug', ext.config.call(this).debug
+                                ||
+                                false);
 
                         // mark layouts in container as loaded
                         this.container.find('layout,[this-type="layout"]')
@@ -4858,7 +5617,9 @@
                         var autocomplete_timeout;
                         this.container
                                 .on('click', 'a', function (e) {
-                                    if (_(this).attr('href').startsWith('#'))
+                                    if (_(this)
+                                            .attr('href')
+                                            .startsWith('#'))
                                         e.preventDefault();
                                 })
                                 /* reload current page or loaded collection|model */
@@ -4931,13 +5692,13 @@
                                     var __this = app._(this),
                                             _model = __this
                                             .closest('model,[this-type="model"],[this-model][this-binding]'),
-                                            model_id = __this.this('model-id') ||
-                                            _model.this('mid'),
-                                            model_name = __this.this('model') ||
-                                            _model.this('model') || _model.this('id'),
+                                            model_id = __this.this('model-id')
+                                            || _model.this('mid'),
+                                            model_name = __this.this('model')
+                                            || _model.this('model') ||
+                                            _model.this('id'),
                                             url = __this.this('read')
-                                            || _model.this('url')
-                                            || '#',
+                                            || _model.this('url') || '#',
                                             goto = analyzeLink(__this.this('goto')).page,
                                             // necessary in case goto is a url and not an id
                                             pageId = goto.replace(/\/\\/g, '-');
@@ -4948,7 +5709,8 @@
                                         model: model_name
                                     };
                                     app.tar['page#' + pageId]['mid'] = model_id;
-                                    __this.this('goto', goto + '/#/' + model_name + '/' + url);
+                                    __this.this('goto', goto + '/#/' + model_name
+                                            + '/' + url);
                                 })
                                 /*
                                  * UPDATE event
@@ -4964,8 +5726,8 @@
                                 .on('click', '[this-goto][this-update]', function () {
                                     var __this = app._(this),
                                             model = __this.closest('model,[this-type="model"]'),
-                                            model_id = __this.this('model-id') ||
-                                            model.this('mid'),
+                                            model_id = __this.this('model-id')
+                                            || model.this('mid'),
                                             model_name = __this.this('model')
                                             || model.this('id'),
                                             url = __this.this('update')
@@ -4980,10 +5742,11 @@
                                         model: model_name
                                     };
                                     if (__this.this('model-id-key'))
-                                        app.tar['page#' + pageId]['model-id-key'] =
-                                                __this.this('model-id-key');
+                                        app.tar['page#'
+                                                + pageId]['model-id-key'] = __this.this('model-id-key');
                                     else if (model.this('id-key'))
-                                        app.tar['page#' + pageId]['model-id-key'] = model
+                                        app.tar['page#' +
+                                                pageId]['model-id-key'] = model
                                                 .this('id-key');
                                     __this.this('goto', __this.attr('href'));
                                 })
@@ -4999,19 +5762,23 @@
                                  */
                                 .on('click', '[this-goto][this-create]', function () {
                                     var __this = app._(this),
-                                            url = __this.this('create') || '#';
+                                            url = __this.this('create') ||
+                                            '#';
                                     var goto = analyzeLink(__this.this('goto')).page,
                                             // necessary in case goto is a url and not an id
                                             pageId = goto.replace(/\/\\/g, '-');
-                                    app.tar['page#' + pageId] = {
+                                    app.tar['page#' +
+                                            pageId] = {
                                         "do": "create",
                                         action: url
                                     };
                                     if (__this.this('model'))
-                                        app.tar['page#' + pageId]['model'] = __this
+                                        app.tar['page#' +
+                                                pageId]['model'] = __this
                                                 .this('model');
                                     if (__this.this('model-id-key'))
-                                        app.tar['page#' + pageId]['model-id-key'] = __this
+                                        app.tar['page#' +
+                                                pageId]['model-id-key'] = __this
                                                 .this('model-id-key');
                                     __this.this('goto', __this.attr('href'));
                                 })
@@ -5028,7 +5795,9 @@
                                 .on('click', '[this-create][this-form]', function () {
                                     var __this = app._(this),
                                             selector = 'form[this-id="'
-                                            + __this.this('form') + '"]',
+                                            +
+                                            __this.this('form') +
+                                            '"]',
                                             _target = app.container.find(selector)
                                             .removeAttr([
                                                 "this-binding", "this-mid",
@@ -5042,10 +5811,15 @@
                                         _target.attr({
                                             "this-do": "create",
                                             "this-action": __this.this('create'),
-                                            "this-model": __this.this('model') || '',
-                                            "this-model-id-key": __this.this('model-id-key') || '',
+                                            "this-model": __this.this('model')
+                                                    ||
+                                                    '',
+                                            "this-model-id-key": __this.this('model-id-key')
+                                                    ||
+                                                    '',
                                             "this-binding": ""
-                                        }).show();
+                                        })
+                                                .show();
                                         ext.resetForm.call(this, _target.get(0));
                                         _target.trigger('create.form.cleared');
                                     }.bind(app));
@@ -5064,22 +5838,29 @@
                                     var __this = app._(this),
                                             _model = __this.closest('model,[this-type="model"]'),
                                             url = __this.this('delete')
-                                            || _model.this('url') || '#',
+                                            ||
+                                            _model.this('url') ||
+                                            '#',
                                             model_name = __this.this('model')
-                                            || _model.this('id'),
+                                            ||
+                                            _model.this('id'),
                                             idKey = _model.this('id-key'),
                                             goto = analyzeLink(__this.this('goto')).page,
                                             // necessary in case goto is a url and not an id
                                             pageId = goto.replace(/\/\\/g, '-');
-                                    app.tar['page#' + pageId] = {
+                                    app.tar['page#' +
+                                            pageId] = {
                                         "do": "delete",
                                         action: url,
                                         "id-key": idKey
                                     };
                                     if (_model) {
-                                        app.tar['page#' + pageId]['model'] = model_name;
-                                        __this.this('goto', goto + '/#/' +
-                                                (_model.this('mid') || __this.this('model-id')));
+                                        app.tar['page#' +
+                                                pageId]['model'] = model_name;
+                                        __this.this('goto', goto +
+                                                '/#/' +
+                                                (_model.this('mid') ||
+                                                        __this.this('model-id')));
                                     }
                                     __this.this('goto', __this.attr('href'));
                                 })
@@ -5098,13 +5879,17 @@
                                     var goto = analyzeLink(__this.this('goto')).page,
                                             // necessary in case goto is a url and not an id
                                             pageId = goto.replace(/\/\\/g, '-');
-                                    if (!app.tar['page#' + pageId])
-                                        app.tar['page#' + pageId] = {};
+                                    if (!app.tar['page#' +
+                                            pageId])
+                                        app.tar['page#' +
+                                                pageId] = {};
                                     if (__this.this('page-title'))
-                                        app.tar['page#' + pageId]['title'] =
+                                        app.tar['page#' +
+                                                pageId]['title'] =
                                                 __this.this('page-title');
                                     if (__this.this('ignore-cache'))
-                                        app.tar['page#' + pageId]['ignore-cache'] =
+                                        app.tar['page#' +
+                                                pageId]['ignore-cache'] =
                                                 __this.this('ignore-cache');
                                     ext.processLink.call(app, __this.this('goto'));
                                     app.loadPage(__this.this('goto'));
@@ -5119,38 +5904,55 @@
                                     var __this = app._(this),
                                             bind = __this.this('bind-to'),
                                             _model = __this.closest('model,'
-                                                    + '[this-type="model"],'
-                                                    + '[this-model]');
-                                    if (!bind || !_model.length)
+                                                    +
+                                                    '[this-type="model"],'
+                                                    +
+                                                    '[this-model]');
+                                    if (!bind ||
+                                            !_model.length)
                                         return;
                                     var _target = app.container.find(ext.selector
                                             .call(app, bind, ':not([this-in-collection])'));
                                     if (!_target.length)
                                         return;
                                     _target.this('model', _model.this('model')
-                                            || _model.this('id'))
+                                            ||
+                                            _model.this('id'))
                                             .this('binding', '')
-                                            .this('id-key', _model.this('id-key') || '')
-                                            .this('url', _model.this('url') || '')
+                                            .this('id-key', _model.this('id-key')
+                                                    ||
+                                                    '')
+                                            .this('url', _model.this('url') ||
+                                                    '')
                                             .removeThis('action');
-                                    var tar = _model.this('url') ? 'url:' + _model.this('url') : '';
+                                    var tar = _model.this('url') ?
+                                            'url:' +
+                                            _model.this('url') :
+                                            '';
                                     if (__this.hasThis('read')) {
                                         if (__this.this('read'))
-                                            tar = 'url:' + __this.this('read');
+                                            tar = 'url:' +
+                                                    __this.this('read');
                                         app.container.find('[this-model="'
-                                                + (_model.this('model')
-                                                        || _model.this('id'))
-                                                + '"][this-binding]').hide();
+                                                +
+                                                (_model.this('model')
+                                                        ||
+                                                        _model.this('id'))
+                                                +
+                                                '"][this-binding]')
+                                                .hide();
                                         _target.removeThis('do');
                                     }
                                     else if (__this.hasThis('update')) {
                                         if (__this.this('update'))
-                                            tar = 'url:' + __this.this('update');
+                                            tar = 'url:' +
+                                                    __this.this('update');
                                         tar += ';do:update';
                                     }
                                     else if (__this.hasThis('delete')) {
                                         if (__this.this('delete'))
-                                            tar = 'url:' + __this.this('delete');
+                                            tar = 'url:' +
+                                                    __this.this('delete');
                                         tar += ';do:delete';
                                         __this.this('treated', '');
                                         setTimeout(function () {
@@ -5180,9 +5982,11 @@
                                     if (__this.hasThis('treated'))
                                         return;
                                     var _model = __this.closest('model,[this-type="model"],'
-                                            + '[this-model]'),
+                                            +
+                                            '[this-model]'),
                                             _do = __this.closest('[this-do="delete"]'),
-                                            model_url = __this.this('delete') ||
+                                            model_url = __this.this('delete')
+                                            ||
                                             _model.this('url') ||
                                             _do.this('action'),
                                             model_id = _model.this('mid') ||
@@ -5224,16 +6028,27 @@
                                             .then(function (data) {
                                                 var crudStatus = ext.config.call(app).crud.status;
                                                 if ((crudStatus &&
-                                                        data[crudStatus.key] === crudStatus.successValue)
-                                                        || !crudStatus) {
-                                                    if (app.page.this('do') === 'delete'
-                                                            || _model.this('type') === 'page')
+                                                        data[crudStatus.key]
+                                                        ===
+                                                        crudStatus.successValue)
+                                                        ||
+                                                        !crudStatus) {
+                                                    if (app.page.this('do') ===
+                                                            'delete'
+                                                            ||
+                                                            _model.this('type')
+                                                            ===
+                                                            'page')
                                                         app.back();
                                                     else {
                                                         app.container.find('[this-model="'
-                                                                + (_model.this('model')
-                                                                        || _model.this('id'))
-                                                                + '"][this-binding]').hide();
+                                                                +
+                                                                (_model.this('model')
+                                                                        ||
+                                                                        _model.this('id'))
+                                                                +
+                                                                '"][this-binding]')
+                                                                .hide();
                                                         ext.updatePage.call(app, true);
                                                     }
                                                     data = getRealData.call(app, data);
@@ -5266,7 +6081,9 @@
                                 .on('click', '[this-toggle]', function (e) {
                                     e.preventDefault();
                                     app.container.find(ext.selector.call(app,
-                                            app._(this).this('toggle'))).toggle();
+                                            app._(this)
+                                            .this('toggle')))
+                                            .toggle();
                                 })
                                 /*
                                  * Hides target elements
@@ -5274,8 +6091,12 @@
                                 .on('click', '[this-hide]', function (e) {
                                     e.preventDefault();
                                     __.forEach(app._(this)
-                                            .this('hide').split(','), function (i, v) {
-                                        app.container.find('[this-id="' + v.trim() + '"]').hide();
+                                            .this('hide')
+                                            .split(','), function (i, v) {
+                                        app.container.find('[this-id="' +
+                                                v.trim() +
+                                                '"]')
+                                                .hide();
                                     });
                                 })
                                 /*
@@ -5284,19 +6105,25 @@
                                 .on('click', '[this-show]', function (e) {
                                     e.preventDefault();
                                     var __this = app._(this);
-                                    __.forEach(__this.this('show').split(','),
+                                    __.forEach(__this.this('show')
+                                            .split(','),
                                             function (i, v) {
                                                 var _target = app.container
                                                         .find(ext.selector.call(app,
                                                                 v.trim()));
                                                 if (__this.this('create')) {
                                                     var form = _target.is('form[this-model="'
-                                                            + __this.this('model')
-                                                            + '"]') ? _target :
+                                                            +
+                                                            __this.this('model')
+                                                            +
+                                                            '"]') ?
+                                                            _target :
                                                             _target.find('form[this-model="'
-                                                                    + __this
+                                                                    +
+                                                                    __this
                                                                     .this('model')
-                                                                    + '"]');
+                                                                    +
+                                                                    '"]');
                                                     if (form.length) {
                                                         form.this('do', 'create')
                                                                 .this('url',
@@ -5319,45 +6146,65 @@
                                  */
                                 .on('keyup', '[this-autocomplete][this-list]', function (e) {
                                     var __this = app._(this),
-                                            val = __this.val().trim(),
-                                            min_chars = __this.this('min-chars') || 3,
+                                            val = __this.val()
+                                            .trim(),
+                                            min_chars = __this.this('min-chars')
+                                            ||
+                                            3,
                                             url = __this.this('autocomplete')
-                                            || __this.this('url'),
+                                            ||
+                                            __this.this('url'),
                                             _list = app.container
                                             .find('[this-type="list"][this-id="'
-                                                    + __this.this('list')
-                                                    + '"],list[this-id="'
-                                                    + __this.this('list')
-                                                    + '"]');
+                                                    +
+                                                    __this.this('list')
+                                                    +
+                                                    '"],list[this-id="'
+                                                    +
+                                                    __this.this('list')
+                                                    +
+                                                    '"]');
                                     // list element must exist
                                     if (!_list.length) {
-                                        app.error('List #' + __this.this('list')
-                                                + ' not found');
+                                        app.error('List #' +
+                                                __this.this('list')
+                                                +
+                                                ' not found');
                                         return;
                                     }
 
                                     // do nothing if chars are less than required
-                                    if (val.length < min_chars) {
+                                    if (val.length <
+                                            min_chars) {
                                         var _list = app.container
                                                 .find('[this-type="list"][this-id="'
-                                                        + __this.this('list')
-                                                        + '"],list[this-id="'
-                                                        + __this.this('list')
-                                                        + '"]');
+                                                        +
+                                                        __this.this('list')
+                                                        +
+                                                        '"],list[this-id="'
+                                                        +
+                                                        __this.this('list')
+                                                        +
+                                                        '"]');
                                         _list.hide();
                                         if (_list.children().length)
-                                            _list.html('').trigger('list.emptied');
+                                            _list.html('')
+                                                    .trigger('list.emptied');
                                         __this.removeThis('last-query');
-                                        ext.recordsStore.remove('autocompleting');
+                                        ext.record.call(app).store.remove('autocompleting');
                                         clearTimeout(autocomplete_timeout);
                                         return;
                                     }
                                     // block searching for same thing multiple times
-                                    else if (val === __this.this('last-query')) {
+                                    else if (val ===
+                                            __this.this('last-query')) {
                                         // enter button pressed
-                                        if (e.keyCode === 13 && _list.children().length) {
+                                        if (e.keyCode ===
+                                                13 &&
+                                                _list.children().length) {
                                             // select the first result from the dropdown list
-                                            _list.children(':first-child').trigger('click');
+                                            _list.children(':first-child')
+                                                    .trigger('click');
                                             e.preventDefault();
                                             e.stopPropagation();
                                         }
@@ -5380,7 +6227,8 @@
                                             if (!__this.this('id'))
                                                 __this.this('id', __.randomString());
                                             _list.this('autocompleting', __this.this('id'))
-                                                    .html('').trigger('list.emptied');
+                                                    .html('')
+                                                    .trigger('list.emptied');
                                             ext.fillAutocompleteList
                                                     .call(app, {
                                                         list: _list,
@@ -5389,7 +6237,7 @@
                                                         dropdownList: _list,
                                                         ignoreIds: true
                                                     });
-                                            ext.recordsStore.save(data, 'autocompleting');
+                                            ext.record.call(app).store.save(data, 'autocompleting');
                                         },
                                                 config = {
                                                     type: type,
@@ -5397,7 +6245,8 @@
                                                     success: success,
                                                     data: {}
                                                 };
-                                        config.data[__this.this('query-key') || 'q'] = val;
+                                        config.data[__this.this('query-key') ||
+                                                'q'] = val;
                                         ext.request.call(app, __this,
                                                 function () {
                                                     return config;
@@ -5406,7 +6255,8 @@
                                                     return config;
                                                 });
                                     },
-                                            __this.this('delay') || 300);
+                                            __this.this('delay') ||
+                                            300);
                                 })
                                 .on('click', '[this-autocompleting]>*', function () {
                                     var __this = app._(this),
@@ -5415,30 +6265,39 @@
                                             _dropDownList = __this.parent(),
                                             _input = app.container
                                             .find('[this-autocomplete][this-id="'
-                                                    + _dropDownList
+                                                    +
+                                                    _dropDownList
                                                     .this('autocompleting') +
                                                     '"]'),
                                             selectionList = _dropDownList.this('selection-list'),
                                             valueKey = _input.this('value-key'),
                                             // get the saved data from the autcompletion
-                                            list = ext.recordsStore.find('autocompleting') || {},
+                                            list = ext.record.call(app).store.find('autocompleting')
+                                            ||
+                                            {},
                                             // get the data for the currnt selection
-                                            data = list[index] || {};
+                                            data = list[index] ||
+                                            {};
                                     if (!selectionList) {
                                         if (valueKey) {
                                             // set value of autocomplete as the value of valueKey in data
                                             _input.val(ext.getVariableValue.call(app, valueKey, data));
                                             // selection made: empty the list
-                                            _dropDownList.html('').trigger('list.emptied');
+                                            _dropDownList.html('')
+                                                    .trigger('list.emptied');
                                             // remove autocompletion data
-                                            ext.recordsStore.remove('autocompleting');
+                                            ext.record.call(app).store.remove('autocompleting');
                                         }
                                         // don't process
                                         return;
                                     }
                                     var selectedListSelector = '[this-type="list"][this-id="'
-                                            + selectionList + '"],list[this-id="'
-                                            + selectionList + '"]',
+                                            +
+                                            selectionList +
+                                            '"],list[this-id="'
+                                            +
+                                            selectionList +
+                                            '"]',
                                             _selectedList = app.container
                                             .find(selectedListSelector),
                                             elem = app.getCached(selectedListSelector)
@@ -5454,9 +6313,14 @@
                                                         .this('id', id)
                                                         .show();
                                                 _dropDownList.this('selected',
-                                                        (_dropDownList.this('selected') || '')
-                                                        + id + ',');
-                                                _selectedList.append(elem).show();
+                                                        (_dropDownList.this('selected')
+                                                                ||
+                                                                '')
+                                                        +
+                                                        id +
+                                                        ',');
+                                                _selectedList.append(elem)
+                                                        .show();
                                                 __this.trigger('list.option.selected', {
                                                     data: data,
                                                     option: elem.get(0),
@@ -5474,27 +6338,37 @@
                                             });
                                 })
                                 .on('click', 'list [this-remove],'
-                                        + '[this-type="list"] [this-remove]',
+                                        +
+                                        '[this-type="list"] [this-remove]',
                                         function () {
-                                            var __this = app._(this).closest('[this-type="listing"]'),
+                                            var __this = app._(this)
+                                                    .closest('[this-type="listing"]'),
                                                     _list = __this.parent(),
                                                     _dropDownList = app.container
                                                     .find('[this-type="list"][this-selection-list="'
-                                                            + _list.this('id')
-                                                            + '"],list[this-selection-list="'
-                                                            + _list.this('id') + '"]');
+                                                            +
+                                                            _list.this('id')
+                                                            +
+                                                            '"],list[this-selection-list="'
+                                                            +
+                                                            _list.this('id') +
+                                                            '"]');
                                             _dropDownList.this('selected',
                                                     _dropDownList.this('selected')
                                                     .replace(__this.this('id')
                                                             + ',', '')).show();
                                             var _input = app.container
                                                     .find('[this-autocomplete][this-id="'
-                                                            + _dropDownList
-                                                            .this('autocompleting') +
-                                                            '"]').show();
+                                                            +
+                                                            _dropDownList
+                                                            .this('autocompleting')
+                                                            +
+                                                            '"]')
+                                                    .show();
                                             __this.trigger('list.option.removed', {
                                                 option: __this.get(0)
-                                            }).remove();
+                                            })
+                                                    .remove();
                                             if (!_list.children().length)
                                                 _list.trigger('list.emptied');
                                             if (_input.hasThis('multiple')) {
@@ -5508,27 +6382,35 @@
                                  * 
                                  */
                                 .on('submit', 'form[this-do="create"]:not([this-ignore-submit]),'
-                                        + ' form[this-do="update"]:not([this-ignore-submit])',
+                                        +
+                                        ' form[this-do="update"]:not([this-ignore-submit])',
                                         function (e) {
                                             e.preventDefault();
                                             var __this = app._(this),
                                                     creating = __this.this('do')
-                                                    === 'create',
+                                                    ===
+                                                    'create',
                                                     method = __this.this('method')
-                                                    || (creating ? 'post' : 'put');
+                                                    ||
+                                                    (creating ?
+                                                            'post' :
+                                                            'put');
                                             if (!this.reportValidity()) {
                                                 __this.trigger('form.invalid.submission');
                                                 return;
                                             }
                                             __this.trigger('form.valid.submission');
-                                            var id = null, _model;
+                                            var id = null,
+                                                    _model;
                                             if (__this.this('mid'))
                                                 id = __this.this('mid');
                                             new Collection({
                                                 app: app,
                                                 name: __this.this('model')
-                                                        || __this.this('id')
-                                                        || app.page.this('model')
+                                                        ||
+                                                        __this.this('id')
+                                                        ||
+                                                        app.page.this('model')
                                             })
                                                     // got collection
                                                     .then(function (collection) {
@@ -5539,9 +6421,12 @@
                                                         _model = model;
                                                         return model.save({
                                                             form: __this.get(0),
-                                                            url: __this.this('url') ||
-                                                                    __this.this('action') ||
-                                                                    app.page.this('url') ||
+                                                            url: __this.this('url')
+                                                                    ||
+                                                                    __this.this('action')
+                                                                    ||
+                                                                    app.page.this('url')
+                                                                    ||
                                                                     app.page.this('action'),
                                                             ignoreDOM: __this.hasThis('ignore-dom'),
                                                             method: method,
@@ -5561,12 +6446,16 @@
                                                         var model = getRealData.call(app, data),
                                                                 crudStatus = ext.config.call(app).crud.status;
                                                         if (((crudStatus &&
-                                                                data[crudStatus.key] ===
+                                                                data[crudStatus.key]
+                                                                ===
                                                                 crudStatus.successValue)
-                                                                || !crudStatus) && model) {
+                                                                ||
+                                                                !crudStatus) &&
+                                                                model) {
                                                             if (creating) {
                                                                 ext.resetForm.call(app, __this.get(0));
-                                                                if (!__this.hasThis('binding') &&
+                                                                if (!__this.hasThis('binding')
+                                                                        &&
                                                                         !__this.closest('[this-binding]')
                                                                         .length)
                                                                     app.back();
@@ -5616,7 +6505,8 @@
                                         return;
                                     }
                                     _form.trigger('form.valid.submission');
-                                    var fd = new Form(this), headers = {};
+                                    var fd = new Form(this),
+                                            headers = {};
                                     var data = ext.canContinue
                                             .call(app, 'form.send', [headers], this);
                                     if (!data) {
@@ -5678,32 +6568,53 @@
                                         app.error('Invalid search target');
                                         return;
                                     }
-                                    var exp = _search.this('search').split(':'),
-                                            selector = 'collection[this-id="' + exp[0]
-                                            + '"],[this-type="collection"][this-id="' + exp[0] + '"]',
+                                    var exp = _search.this('search')
+                                            .split(':'),
+                                            selector = 'collection[this-id="' +
+                                            exp[0]
+                                            +
+                                            '"],[this-type="collection"][this-id="'
+                                            +
+                                            exp[0] +
+                                            '"]',
                                             keys = exp[1],
-                                            page = _form.this('type') === 'page' ?
-                                            _form : _form.closest('page,[this-type="page"]'),
-                                            goto = _form.attr('goto') || page.this('id'),
-                                            filter = '', _collection,
+                                            page = _form.this('type') ===
+                                            'page' ?
+                                            _form :
+                                            _form.closest('page,[this-type="page"]'),
+                                            goto = _form.attr('goto') ||
+                                            page.this('id'),
+                                            filter = '',
+                                            _collection,
                                             /* same page and query. don't duplicate state */
-                                            replaceState = app.page.this('id') === goto &&
-                                            app.page.this('query') === _search.val().trim();
+                                            replaceState = app.page.this('id')
+                                            ===
+                                            goto &&
+                                            app.page.this('query') ===
+                                            _search.val()
+                                            .trim();
                                     if (keys)
                                         keys = keys.split(',');
                                     __.forEach(keys, function (i, key) {
                                         if (filter)
                                             filter += ' || ';
-                                        filter += '__.contains(filters.lcase(model#' + key
-                                                + '),filters.lcase("' + _search.val() + '"))';
+                                        filter += '__.contains(filters.lcase(model#'
+                                                +
+                                                key
+                                                +
+                                                '),filters.lcase("' +
+                                                _search.val() +
+                                                '"))';
                                     });
                                     // reload only the collection
                                     if (_form.this('reload')) {
                                         _collection = page.find(ext.selector.call(app,
                                                 _form.this('reload')));
-                                        _collection.this('filter', filter).this('search',
-                                                keys.join(','));
-                                        page.this('query', _search.val().trim());
+                                        _collection.this('filter', filter)
+                                                .this('search',
+                                                        keys.join(','));
+                                        page.this('query', _search.val()
+                                                .trim());
                                         ext.loadCollection.call(app, _collection, null, null, replaceState);
                                     }
                                     // load a page and the collection in it
@@ -5712,21 +6623,37 @@
                                                 // necessary in case _goto is a url and not an id
                                                 pageId = _goto.replace(/\/\\/g, '-'),
                                                 _page = app.getCached('[this-id="'
-                                                        + _goto + '"]', 'page'),
+                                                        +
+                                                        _goto +
+                                                        '"]', 'page'),
                                                 _component = _page.find('[this-component="'
-                                                        + exp[0] + '"]');
-                                        _component.this('filter', 'collection#' + exp[0] + ':'
-                                                + filter).this('search', 'collection#'
-                                                + exp[0] + ':' + keys.join(','));
-                                        app.tar['page#' + pageId] = {
-                                            query: _search.val().trim()
+                                                        +
+                                                        exp[0] +
+                                                        '"]');
+                                        _component.this('filter', 'collection#'
+                                                +
+                                                exp[0] +
+                                                ':'
+                                                +
+                                                filter)
+                                                .this('search', 'collection#'
+                                                        +
+                                                        exp[0] +
+                                                        ':' +
+                                                        keys.join(','));
+                                        app.tar['page#' +
+                                                pageId] = {
+                                            query: _search.val()
+                                                    .trim()
                                         };
                                         if (_search.this('ignore-cache'))
-                                            app.tar['page#' + pageId]['ignore-cache'] =
+                                            app.tar['page#' +
+                                                    pageId]['ignore-cache'] =
                                                     _search.this('ignore-cache');
                                         _collection = _page.find(selector);
-                                        _collection.this('filter', filter).this('search',
-                                                keys.join(','));
+                                        _collection.this('filter', filter)
+                                                .this('search',
+                                                        keys.join(','));
                                         app.loadPage(goto, replaceState);
                                     }
                                 })
@@ -5743,9 +6670,13 @@
                                     // collection is specified. get it
                                     else
                                         _collection = app.container.find('collection[this-id="'
-                                                + __this.this('paginate-next')
-                                                + '"],[this-type="collection"][this-id="'
-                                                + __this.this('paginate-next') + '"]');
+                                                +
+                                                __this.this('paginate-next')
+                                                +
+                                                '"],[this-type="collection"][this-id="'
+                                                +
+                                                __this.this('paginate-next') +
+                                                '"]');
                                     // collection must have attribute `this-paginate`
                                     if (!_collection.hasThis('paginate'))
                                         return;
@@ -5767,22 +6698,33 @@
                                     // collection is specified. get it
                                     else
                                         _collection = app.container.find('collection[this-id="'
-                                                + __this.this('paginate-previous')
-                                                + '"],[this-type="collection"][this-id="'
-                                                + __this.this('paginate-previous') + '"]');
+                                                +
+                                                __this.this('paginate-previous')
+                                                +
+                                                '"],[this-type="collection"][this-id="'
+                                                +
+                                                __this.this('paginate-previous')
+                                                +
+                                                '"]');
                                     // if page is 0, can't before to previous anymore
-                                    if (_collection.this('pagination-page') == 0
+                                    if (_collection.this('pagination-page') ==
+                                            0
                                             // collection must have attribute `this-paginate`
-                                            || !_collection.hasThis('paginate'))
+                                            ||
+                                            !_collection.hasThis('paginate'))
                                         return;
                                     __this.attr('disabled', 'disabled');
                                     // reduce page by 2
-                                    _collection.this('pagination-page', parseInt(_collection.this('pagination-page')) - 2);
+                                    _collection.this('pagination-page', parseInt(_collection.this('pagination-page'))
+                                            -
+                                            2);
                                     // load collection
                                     app.load(_collection);
                                 })
                                 .on('click', '[this-clear-page-cache]', function () {
-                                    app.clearPageCache(app._(this).this('clear-page-cache') === 'true');
+                                    app.clearPageCache(app._(this)
+                                            .this('clear-page-cache') ===
+                                            'true');
                                 });
                         this.when('page.loaded', 'page', function () {
                             if (!app.page.hasThis('restored'))
@@ -5800,23 +6742,25 @@
                                     }
                                 })
                                 .when('list.emptied, list.no.data', 'list', function () {
-                                    _(this).hide();
+                                    _(this)
+                                            .hide();
                                 });
                         /*
                          * State resuscitation
                          */
-                        this._(window).on('popstate', function (e) {
-                            if (e.state) {
-                                if (this.page) {
-                                    this.page.trigger('page.leave');
-                                }
-                                location.replace(e.state.url);
-                                ext.pageIDFromLink.call(this, e.state.url, true);
-                                this.__proto__.modelParams = this._params;
-                                delete this._params;
-                                ext.restoreState.call(this, e.state);
-                            }
-                        }.bind(this));
+                        this._(window)
+                                .on('popstate', function (e) {
+                                    if (e.state) {
+                                        if (this.page) {
+                                            this.page.trigger('page.leave');
+                                        }
+                                        location.replace(e.state.url);
+                                        ext.pageIDFromLink.call(this, e.state.url, true);
+                                        this.__proto__.modelParams = this._params;
+                                        delete this._params;
+                                        ext.restoreState.call(this, e.state);
+                                    }
+                                }.bind(this));
                         /*
                          * Container events activation
                          */
@@ -5862,7 +6806,9 @@
                         if (this.oldPage)
                             this.oldPage.remove();
                         delete this.oldPage;
-                    }.bind(this), __.isNumber(wait) ? wait : 0);
+                    }.bind(this), __.isNumber(wait) ?
+                            wait :
+                            0);
                     if (ext.config.call(this).titleContainer)
                         ext.config.call(this).titleContainer.html(this.page.this('title'));
                     // this ensures that only expressions and variables for the page
@@ -5871,9 +6817,13 @@
                     var content = ext.inLoop.call(this, {}, true, this.container.html());
                     content = ext.processExpressions.call(this, content, {}, {});
                     this.container.html(content);
-                    this.page = this.container.find('page[this-id="' + this.page.this('id')
-                            + '"]:not([this-dead]),[this-type="page"][this-id="'
-                            + this.page.this('id') + '"]:not([this-dead])');
+                    this.page = this.container.find('page[this-id="' +
+                            this.page.this('id')
+                            +
+                            '"]:not([this-dead]),[this-type="page"][this-id="'
+                            +
+                            this.page.this('id') +
+                            '"]:not([this-dead])');
                     // load models
                     ext.loadModels.call(this, replaceInState, true);
                 },
@@ -5883,7 +6833,9 @@
                  */
                 showNotWiths: function (elem, notWiths) {
                     __.forEach(notWiths, function (i, v) {
-                        elem.find('[this-with="' + i + '"]')
+                        elem.find('[this-with="' +
+                                i +
+                                '"]')
                                 .replaceWith(v);
                     });
                 },
@@ -5892,17 +6844,28 @@
                  * @returns {Store}
                  */
                 store: function (name) {
-                    return name ? new Store(name) : null;
+                    // container has its own id
+                    if (!this.container.hasThis('auto-id'))
+                        // use the id with the name
+                        name = this.container.this('id') +
+                                '.' +
+                                name;
+                    return name ?
+                            new Store(name) :
+                            null;
                 },
                 /**
                  * Updates a retrieved saved page
                  * @returns ThisApp
                  */
                 updatePage: function () {
-                    var deleted = ext.deletedStore.find() || {},
-                            created = ext.createdStore.find() || {},
-                            updated = ext.updatedStore.find() || {},
-                            app = this,
+                    var app = this,
+                            deleted = ext.record.call(this).deletedStore.find()
+                            || {},
+                            created = ext.record.call(this).createdStore.find()
+                            || {},
+                            updated = ext.record.call(this).updatedStore.find()
+                            || {},
                             _collections = this.container.find('collection,'
                                     + '[this-type="collection"]'),
                             _models = this.container.find('model,[this-type="model"],'
@@ -5925,22 +6888,23 @@
                                 return;
                             // remove the empty marker
                             _collection.children(':not([this-id="' +
-                                    _collection.this('id')
-                                    + '"])').remove();
+                                    _collection.this('id') + '"])')
+                                    .remove();
                             touched.created = true;
                             var __collection = ext.store.call(app, model_name),
                                     idKey = __collection.idKey || '';
                             __.forEach(arr, function (i, v) {
                                 var _clone = app.getCached('[this-id="'
-                                        + _collection.this('id')
-                                        + '"]', 'collection'),
+                                        + _collection.this('id') +
+                                        '"]', 'collection'),
                                         action = _collection.this('prepend-new') ?
                                         'prepend' : 'append',
                                         data = __collection.find(v),
                                         idKey = _collection.this('id-key') ||
                                         ext.config.call(app).idKey || 'id',
                                         _data = {};
-                                var idKeyParts = idKey.split('.').reverse(),
+                                var idKeyParts = idKey.split('.')
+                                        .reverse(),
                                         _id = data,
                                         topIdKey = idKeyParts.pop();
                                 // add idKey to data
@@ -5953,46 +6917,51 @@
                                 _data[topIdKey] = _id;
                                 ext.loadCollection.call(app, _clone, function () {
                                     __.removeArrayIndex(arr, i);
-                                    _collection[action](_clone.children().show());
+                                    _collection[action](_clone.children()
+                                            .show());
                                     ext.postLoad.call(app, _clone.children());
                                 }, _data);
                             });
                             if (!created[model_name].length) {
-                                ext.createdStore.remove(model_name);
+                                ext.record.call(app).createdStore.remove(model_name);
                                 if (!ext.config.call(app).cacheData)
-                                    ext.store.call(app, model_name).drop();
+                                    ext.store.call(app, model_name)
+                                            .drop();
                             }
                             else
-                                ext.createdStore.save(arr, model_name, true);
+                                ext.record.call(app).createdStore.save(arr, model_name, true);
                         });
                     }
                     if (_models.length) {
                         // update object elements, whether in collection or standalone
                         __.forEach(updated, function (model_name, arr) {
-                            var _model = app.container.find('model[this-id="' + model_name
-                                    + '"],[this-type="model"][this-id="'
-                                    + model_name + '"],'
-                                    + 'collection[this-model="' + model_name
-                                    + '"]>model,'
-                                    + '[this-type="collection"][this-model="' + model_name
-                                    + '"]>[this-type="model"],'
-                                    + 'page[this-model="' + model_name + '"],'
-                                    + '[this-type="page"][this-model="' + model_name + '"]'),
+                            var _model = app.container.find('model[this-id="' +
+                                    model_name +
+                                    '"],[this-type="model"][this-id="'
+                                    + model_name + '"],' +
+                                    'collection[this-model="' + model_name
+                                    + '"]>model,' +
+                                    '[this-type="collection"][this-model="' +
+                                    model_name + '"]>[this-type="model"],'
+                                    + 'page[this-model="' + model_name +
+                                    '"],' + '[this-type="page"][this-model="' +
+                                    model_name + '"]'),
                                     in_collection = false;
                             if (!_model.length)
                                 return;
                             touched.updated = true;
                             __.forEach(arr, function (id, v) {
                                 // update page model if part of update models
-                                if (app.pageModel && app.pageModel.name === model_name
-                                        && app.pageModel.id === id) {
+                                if (app.pageModel &&
+                                        app.pageModel.name === model_name &&
+                                        app.pageModel.id === id) {
                                     app.pageModel.__proto__.attributes = __.extend(app.pageModel.attributes, v.data);
                                 }
                                 _model.filter(function () {
                                     var __model = app._(this);
                                     // render if model id is the updated id
-                                    return (__model.this('mid') == id
-                                            // and not updated before
+                                    return (__model.this('mid')
+                                            == id // and not updated before
                                             && (!__model.hasThis('updated')
                                                     // or updated before
                                                     || (__model.hasThis('updated')
@@ -6006,36 +6975,49 @@
                                                 in_collection = true;
                                                 var _collection = __model.parent();
                                                 _clone = app.getCached('[this-id="'
-                                                        + _collection.this('id')
-                                                        + '"]', 'collection');
-                                                var idKey = _collection.this('id-key') ||
-                                                        ext.config.call(app).idKey || 'id',
+                                                        +
+                                                        _collection.this('id')
+                                                        +
+                                                        '"]', 'collection');
+                                                var idKey = _collection.this('id-key')
+                                                        ||
+                                                        ext.config.call(app).idKey
+                                                        ||
+                                                        'id',
                                                         _data = {};
-                                                var idKeyParts = idKey.split('.').reverse(),
+                                                var idKeyParts = idKey.split('.')
+                                                        .reverse(),
                                                         _id = v.data,
                                                         topIdKey = idKeyParts.pop();
                                                 // add idKey to data
                                                 $.each(idKeyParts, function (i, v) {
                                                     if (!i)
-                                                        _id[v] = id || index;
+                                                        _id[v] = id ||
+                                                                index;
                                                     else
                                                         _id[v] = _id;
                                                 });
                                                 _data[topIdKey] = _id;
                                                 ext.loadCollection.call(app, _clone, function () {
                                                     delete arr[id];
-                                                    __model.html(_clone.children().html()).show()
+                                                    __model.html(_clone.children()
+                                                            .html())
+                                                            .show()
                                                             .this('updated', v.timestamp)
-                                                            .this('url', _clone.children().this('url'));
+                                                            .this('url', _clone.children()
+                                                                    .this('url'));
                                                     ext.postLoad.call(app, __model);
                                                 }, _data);
                                             }
                                             else {
                                                 _clone = app.getCached('[this-id="'
-                                                        + __model.this('id')
-                                                        + '"]', getElemType(__model));
+                                                        +
+                                                        __model.this('id')
+                                                        +
+                                                        '"]', getElemType(__model));
                                                 ext.loadModel.call(app, _clone, function () {
-                                                    __model.html(_clone.html()).show()
+                                                    __model.html(_clone.html())
+                                                            .show()
                                                             .this('updated', v.timestamp)
                                                             .this('url', _clone.this('url'));
                                                     ext.postLoad.call(app, __model);
@@ -6044,19 +7026,21 @@
                                         });
                             });
                             if (!Object.keys(updated[model_name]).length) {
-                                ext.updatedStore.remove(model_name);
+                                ext.record.call(app).updatedStore.remove(model_name);
                             }
                             else
-                                ext.updatedStore.save(arr, model_name, true);
+                                ext.record.call(app).updatedStore.save(arr, model_name, true);
                         });
                         // delete object elements
                         __.forEach(deleted, function (model_name, arr) {
                             __.forEach(arr, function (i, mid) {
                                 var _model = app.container
                                         .find('[this-id="' + model_name
-                                                + '"][this-mid="' + mid + '"],'
-                                                + '[this-model="' + model_name
-                                                + '"][this-mid="' + mid + '"]');
+                                                + '"][this-mid="' + mid
+                                                + '"],' + '[this-model="'
+                                                + model_name
+                                                + '"][this-mid="' + mid
+                                                + '"]');
                                 if (!_model.length)
                                     return;
                                 touched.deleted = true;
@@ -6068,7 +7052,9 @@
                                             _collection.html(app.getCached('[this-id="'
                                                     + _collection.this('id')
                                                     + '"]', 'collection')
-                                                    .children('[this-on-emptied]'));
+                                                    .children('[this-on-emptied]')
+                                                    .removeThis('on-emptied')
+                                                    .removeThis('on-empty'));
                                         }
                                         __model.remove();
                                         __.removeArrayIndex(arr, i);
@@ -6078,8 +7064,11 @@
                                         // delete page model read from another 
                                         // page's collection
                                         if (!__model.hasThis('binding')
-                                                && app.page.this('reading')
-                                                && _models.length === 1) {
+                                                &&
+                                                app.page.this('reading')
+                                                &&
+                                                _models.length ===
+                                                1) {
                                             touched.back = true;
                                             return false;
                                         }
@@ -6092,10 +7081,10 @@
                                 });
                             });
                             if (!deleted[model_name].length) {
-                                ext.deletedStore.remove(model_name);
+                                ext.record.call(app).deletedStore.remove(model_name);
                             }
                             else
-                                ext.deletedStore.save(arr, model_name, true);
+                                ext.record.call(app).deletedStore.save(arr, model_name, true);
                         });
                     }
 
@@ -6113,8 +7102,8 @@
                  */
                 watch: function (elem) {
                     elem = this._(elem);
-                    if (!elem.this('id') || this.watching[elem.this('id')]
-                            || !elem.this('url'))
+                    if (!elem.this('id') || this.watching[elem.this('id')] ||
+                            !elem.this('url'))
                         return this;
                     var isCollection = ext.is.call(this, 'collection', elem),
                             model_name = elem.this('model') || elem.this('id');
@@ -6128,13 +7117,12 @@
                                 // save model to collection
                                 switch (resp.event) {
                                     case 'created':
-                                        ext.modelToStore
-                                                .call(this, {
-                                                    modelName: model_name,
-                                                    modelId: resp.id,
-                                                    model: resp.data,
-                                                    isNew: true
-                                                });
+                                        ext.modelToStore.call(this, {
+                                            modelName: model_name,
+                                            modelId: resp.id,
+                                            model: resp.data,
+                                            isNew: true
+                                        });
                                         /* Remove model idKey if exists to avoid duplicates */
                                         break;
                                     case 'updated':
@@ -6149,18 +7137,19 @@
                                             data = _data;
                                             id = elem.this('mid');
                                         }
-                                        data = ext.modelToStore
-                                                .call(this, {
-                                                    modelName: model_name,
-                                                    modelId: id,
-                                                    model: data,
-                                                    isNew: false
-                                                });
+                                        data = ext.modelToStore.call(this, {
+                                            modelName: model_name,
+                                            modelId: id,
+                                            model: data,
+                                            isNew: false
+                                        });
                                         break;
                                     case 'deleted': // XXX use removeFromStore()
                                         var actionStore = ext[resp.event + 'Store'],
-                                                action = actionStore.find(model_name) || [];
-                                        ext.store.call(this, model_name).remove(resp.id);
+                                                action = actionStore.find(model_name)
+                                                || [];
+                                        ext.store.call(this, model_name)
+                                                .remove(resp.id);
                                         /* Indicate model as deleted */
                                         __.removeArrayValue(action, resp.id, true);
                                         action.push(resp.id);
@@ -6196,10 +7185,12 @@
                     else if (!__.isArray(str)) {
                         options = options ? this.__opts(options) : null;
                         return __.tryCatch(function () {
-                            return __.callable(funcA).call(this, str, options);
+                            return __.callable(funcA)
+                                    .call(this, str, options);
                         }.bind(this),
                                 function () {
-                                    return __.callable(funcB).call(this, str, options);
+                                    return __.callable(funcB)
+                                            .call(this, str, options);
                                 }.bind(this));
                     }
                 },
@@ -6218,8 +7209,10 @@
                     var finalOptions;
                     __.forEach(options, function (i, v) {
                         // parts also have parts: options would be an object
-                        if (v.indexOf(':') !== -1) {
-                            if (!finalOptions) finalOptions = {};
+                        if (v.indexOf(':') !==
+                                -1) {
+                            if (!finalOptions)
+                                finalOptions = {};
                             // in case the previous value(s) doesn't have :
                             if (__.isArray(finalOptions)) {
                                 var obj = {};
@@ -6238,7 +7231,8 @@
                         }
                         // options would be an array
                         else {
-                            if (!finalOptions) finalOptions = [];
+                            if (!finalOptions)
+                                finalOptions = [];
                             v = v.replace(/__fsemicolon__/g, ';')
                                     .replace(/__colon__/g, ':');
                             if (__.isArray(finalOptions))
@@ -6256,9 +7250,12 @@
                  */
                 camelToHyphen: function (item) {
                     return this.__factory(item, null, function (item) {
-                        if (!item || !__.isString(item)) return item;
+                        if (!item ||
+                                !__.isString(item))
+                            return item;
                         var _item = item.replace(/([A-Z])/g, function (i) {
-                            return '-' + i.toLowerCase();
+                            return '-' +
+                                    i.toLowerCase();
                         });
                         return this.lcfirst(_item);
                     });
@@ -6270,9 +7267,12 @@
                  */
                 camelToSnake: function (item) {
                     return this.__factory(item, null, function (item) {
-                        if (!item || !__.isString(item)) return item;
+                        if (!item ||
+                                !__.isString(item))
+                            return item;
                         var _item = item.replace(/([A-Z])/g, function (i) {
-                            return '_' + i.toLowerCase();
+                            return '_' +
+                                    i.toLowerCase();
                         });
                         return this.lcfirst(_item);
                     });
@@ -6292,7 +7292,8 @@
                  * @param string options e.g. D dd-MM-yyyy HH:mm:ss ms
                  */
                 date: function (item, options) {
-                    if (!item) return item;
+                    if (!item)
+                        return item;
                     var smallDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
                             longDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday',
                                 'Thursday', 'Friday', 'Saturday'],
@@ -6302,7 +7303,8 @@
                                 'May', 'June', 'July', 'August', 'September',
                                 'October', 'November', 'December'],
                             d = new Date(item);
-                    if (isNaN(d.getTime())) d = new Date(parseInt(item));
+                    if (isNaN(d.getTime()))
+                        d = new Date(parseInt(item));
                     var date = d.getDate(),
                             dy = d.getDay() + 1,
                             mon = d.getMonth() + 1,
@@ -6312,13 +7314,14 @@
                             min = d.getMinutes(),
                             sec = d.getSeconds(),
                             msec = d.getMilliseconds(),
-                            tzon = d.getTimezoneOffset() ? d.getTimezoneOffset() : 0,
+                            tzon = d.getTimezoneOffset() ?
+                            d.getTimezoneOffset() : 0,
                             tzstr = "GMT";
                     if (tzon) {
                         tzon = -1 * tzon / 60;
                         tzstr += tzon > 0 ? '+' + tzon : '-' + tzon;
                     }
-                    return this.replace(options,
+                    return this.replace(new RegExp(option, 'g'),
                             // day of the week and date
                             'DDDD:' + longDays[dy - 1].toUpperCase() // Full string of day, upper case
                             + ';dddd:' + longDays[dy - 1].toLowerCase() // Full string of day, lower case
@@ -6326,8 +7329,10 @@
                             + ';DDD:' + smallDays[dy - 1].toUpperCase() // 3 letter string of day, upper case
                             + ';ddd:' + smallDays[dy - 1].toLowerCase() // 3 letter string of day, lower case
                             + ';Ddd:' + smallDays[dy - 1] // 3 letter string of day, capitalized
-                            + ';DD:' + (dy < 10 ? '0' + dy : dy) // day of the week with leading zero
-                            + ';dd:' + (date < 10 ? '0' + date : date) // date with leading zero
+                            // day of the week with leading zero
+                            + ';DD:' + (dy < 10 ? '0' + dy : dy)
+                            // date with leading zero
+                            + ';dd:' + (date < 10 ? '0' + date : date)
                             + ';D:' + dy // day of the week, no leading zero
                             + ';d:' + date // date, no leading zero
                             // month, minute, millisecond, and meridian status
@@ -6337,10 +7342,14 @@
                             + ';MMM:' + smallMonths[mon - 1].toUpperCase() // 3 letter string of month, upper case
                             + ';Mmm:' + smallMonths[mon - 1] // 3 letter string of day, capitalized
                             + ';mmm:' + smallMonths[mon - 1].toLowerCase() // 3 letter string of month, lower case
-                            + ';MM:' + (mon < 10 ? '0' + mon : mon) // month with leading zero
-                            + ';mm:' + (min < 10 ? '0' + min : min) // minute with leading zero
-                            + ';mer:' + ((hr - 12) < 0 ? 'am' : 'pm') // meridian status, lower case
-                            + ';MER:' + ((hr - 12) < 0 ? 'AM' : 'PM') // meridian status, upper case
+                            // month with leading zero
+                            + ';MM:' + (mon < 10 ? '0' + mon : mon)
+                            // minute with leading zero
+                            + ';mm:' + (min < 10 ? '0' + min : min)
+                            // meridian status, lower case
+                            + ';mer:' + ((hr - 12) < 0 ? 'am' : 'pm')
+                            // meridian status, upper case
+                            + ';MER:' + ((hr - 12) < 0 ? 'AM' : 'PM')
                             + ';ms:' + msec // millisecond
                             + ';M:' + mon // month, no leading zero
                             + ';m:' + min // minute, no leading zero
@@ -6350,12 +7359,15 @@
                             + ';YY:' + yr % 1000 // 2 character year
                             + ';yy:' + yr % 1000 //       "
                             // hour
-                            + ';HH:' + (hr < 10 ? '0' + hr : hr) // 24 hour with leading zero
+                            // 24 hour with leading zero
+                            + ';HH:' + (hr < 10 ? '0' + hr : hr)
                             + ';H:' + hr // 24 hour, no leading zero
-                            + ';hh:' + (h < 10 ? '0' + h : h) // 12 hour with leading zero
+                            // 12 hour with leading zero
+                            + ';hh:' + (h < 10 ? '0' + h : h)
                             + ';h:' + h // 12 hour, no leading zero
                             // second
-                            + ';ss:' + (sec < 10 ? '0' + sec : sec) // second with leading zero
+                            // second with leading zero
+                            + ';ss:' + (sec < 10 ? '0' + sec : sec)
                             + ';s:' + sec // second, no leading zero
                             // timezone
                             + ';TZ:' + tzstr // Timezone, upper case
@@ -6379,7 +7391,8 @@
                         else {
                             var newObj = {};
                             __.forEach(obj, function (i, v) {
-                                if (true === func.call(null, v, i)) {
+                                if (true ===
+                                        func.call(null, v, i)) {
                                     newObj[i] = v;
                                 }
                             });
@@ -6414,8 +7427,11 @@
                  */
                 lcfirst: function (item) {
                     return this.__factory(item, null, function (item) {
-                        if (!item || !__.isString(item)) return item;
-                        return item[0].toLowerCase() + item.substr(1);
+                        if (!item ||
+                                !__.isString(item))
+                            return item;
+                        return item[0].toLowerCase() +
+                                item.substr(1);
                     });
                 },
                 /**
@@ -6425,7 +7441,8 @@
                  */
                 lowercase: function (item) {
                     return this.__factory(item, null, function (item) {
-                        if (!item || !__.isString(item)) return item;
+                        if (!item || !__.isString(item))
+                            return item;
                         return item.toLowerCase();
                     });
                 },
@@ -6435,7 +7452,8 @@
                  */
                 nl2br: function (item) {
                     return this.__factory(item, null, function (item) {
-                        if (!item || !__.isString(item)) return item;
+                        if (!item || !__.isString(item))
+                            return item;
                         return (item + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1<br />$2');
                     });
                 },
@@ -6464,7 +7482,8 @@
                                 return str.replace(/-u-/g, '_');
                             },
                             function (str, options) {
-                                if (!str || !__.isString(str)) return str;
+                                if (!str || !__.isString(str))
+                                    return str;
                                 __.forEach(options, function (search, replace) {
                                     str = str.replace(new RegExp(search, 'g'), replace);
                                 });
@@ -6487,9 +7506,12 @@
                  */
                 snakeToCamel: function (item, ucfirst) {
                     return this.__factory(item, null, function (item) {
-                        if (!item || !__.isString(item)) return item;
+                        if (!item ||
+                                !__.isString(item))
+                            return item;
                         var _item = item.replace(/(\_\w)/g, function (w) {
-                            if (!w || !__.isString(w)) return w;
+                            if (!w || !__.isString(w))
+                                return w;
                             return w[1].toUpperCase();
                         });
                         return ucfirst ? this.ucfirst(_item) : _item;
@@ -6502,7 +7524,9 @@
                  * @returns {Array}                  */
                 split: function (str, separator) {
                     return this.__factory(str, null, function (str) {
-                        if (!str || !__.isString(str)) return str;
+                        if (!str ||
+                                !__.isString(str))
+                            return str;
                         return str.split(separator);
                     });
                 },
@@ -6513,7 +7537,9 @@
                  */
                 trim: function (str) {
                     return this.__factory(str, null, function (str) {
-                        if (!str || !__.isString(str)) return str;
+                        if (!str ||
+                                !__.isString(str))
+                            return str;
                         return str.trim();
                     });
                 },
@@ -6532,8 +7558,11 @@
                  */
                 ucfirst: function (item) {
                     return this.__factory(item, null, function (item) {
-                        if (!item || !__.isString(item)) return item;
-                        return item[0].toUpperCase() + item.substr(1);
+                        if (!item ||
+                                !__.isString(item))
+                            return item;
+                        return item[0].toUpperCase() +
+                                item.substr(1);
                     });
                 },
                 /**
@@ -6546,9 +7575,12 @@
                  */
                 ucwords: function (item) {
                     return this.__factory(item, null, function (item) {
-                        if (!item || !__.isString(item)) return item;
+                        if (!item ||
+                                !__.isString(item))
+                            return item;
                         return item.replace(/[^\s]+/g, function (word) {
-                            if (!word || !__.isString(word)) return word;
+                            if (!word || !__.isString(word))
+                                return word;
                             return word.replace(/^./, function (first) {
                                 if (!first || !__.isString(first))
                                     return first;
@@ -6564,7 +7596,9 @@
                  */
                 uppercase: function (item) {
                     return this.__factory(item, null, function (item) {
-                        if (!item || !__.isString(item)) return item;
+                        if (!item ||
+                                !__.isString(item))
+                            return item;
                         return item.toUpperCase();
                     });
                 }
@@ -6597,14 +7631,34 @@
              */
             Model = function (id, attributes, props) {
                 var _Model = Object.create({
-                    app: props && props.app ? props.app : null,
-                    attributes: __.isObject(attributes) ? attributes : {},
+                    app: props &&
+                            props.app ?
+                            props.app :
+                            null,
+                    attributes: __.isObject(attributes) ?
+                            attributes :
+                            {},
                     id: id,
-                    collection: props && props.collection ? props.collection : null,
-                    method: props && props.method ? props.method : null,
-                    name: props && props.name ? props.name : null,
-                    idKey: props && props.idKey ? props.idKey : '',
-                    url: props && props.url ? props.url : null,
+                    collection: props &&
+                            props.collection ?
+                            props.collection :
+                            null,
+                    method: props &&
+                            props.method ?
+                            props.method :
+                            null,
+                    name: props &&
+                            props.name ?
+                            props.name :
+                            null,
+                    idKey: props &&
+                            props.idKey ?
+                            props.idKey :
+                            '',
+                    url: props &&
+                            props.url ?
+                            props.url :
+                            null,
                     /**
                      * Binds the model to the given element
                      * @param {string}|{HTMLElement}|{_} elem
@@ -6624,7 +7678,9 @@
                             elem.this('url', this.url);
                         var type = getElemType(elem),
                                 _template = this.app
-                                .getCached('[this-id="' + elem.this('id') + '"]', type);
+                                .getCached('[this-id="' +
+                                        elem.this('id') +
+                                        '"]', type);
                         if (_template.length)
                             elem.html(_template.html());
                         return this.app.promise(function (resolve) {
@@ -6661,7 +7717,9 @@
                      * @returns boolean
                      */
                     has: function (key) {
-                        return this.attributes && this.attributes[key] !== undefined;
+                        return this.attributes &&
+                                this.attributes[key] !==
+                                undefined;
                     },
                     /**
                      * Initailizes Model attributes, creating setters and getters for them.
@@ -6670,10 +7728,13 @@
                      */
                     init: function (attr) {
                         var camelCased = Filters.snakeToCamel(attr, true);
-                        this['get' + camelCased] = function (key) {
+                        this['get' +
+                                camelCased] = function (key) {
                             var value = this.attributes[attr];
                             // value is an object or array and key is supplied
-                            if (__.isObject(value, true) && key !== undefined) {
+                            if (__.isObject(value, true) &&
+                                    key !==
+                                    undefined) {
                                 // key is a callback function
                                 if (__.isFunction(key)) {
                                     // default result
@@ -6695,12 +7756,15 @@
                                     return result;
                                 }
                                 // key is not a function: get key in value
-                                else return value[key] || null;
+                                else
+                                    return value[key] ||
+                                            null;
                             }
                             // no key's supplied
                             return value;
                         };
-                        this['set' + camelCased] = function (val) {
+                        this['set' +
+                                camelCased] = function (val) {
                             this.attributes[attr] = val;
                             return this;
                         };
@@ -6729,19 +7793,24 @@
                                 if (this.attributes.__page) {
                                     // get cache
                                     var collection = ext.store.call(this.app, this.name),
-                                            pagination = ext.paginationStore.find(this.name);
+                                            pagination = ext.record.call(this.app).paginationStore.find(this.name);
                                     // pagination exists
                                     if (pagination) {
                                         var page = parseInt(this.attributes.__page),
                                                 removed = false,
                                                 appended = false,
                                                 selector = 'collection[this-model="'
-                                                + this.name + '"],[this-type="collection"][this-model="'
-                                                + this.name + '"]',
+                                                +
+                                                this.name +
+                                                '"],[this-type="collection"][this-model="'
+                                                +
+                                                this.name +
+                                                '"]',
                                                 _collection = this.app.container
                                                 .find(selector),
                                                 cache = this.app.getCached(selector)
-                                                .children().this('type', 'model');
+                                                .children()
+                                                .this('type', 'model');
                                         // go through all pagination metas
                                         while (pagination[page]) {
                                             if (!removed) {
@@ -6751,11 +7820,16 @@
                                             }
                                             else {
                                                 // shift first value into last page's pagination meta
-                                                if (page > 0) {
+                                                if (page >
+                                                        0) {
                                                     var last = pagination[page].shift();
                                                     if (!appended) {
                                                         var lastData = collection.find(last);
-                                                        if (!_collection.children('[this-mid="' + last + '"]').length && lastData) {
+                                                        if (!_collection.children('[this-mid="'
+                                                                +
+                                                                last +
+                                                                '"]').length &&
+                                                                lastData) {
                                                             ext.bindToObject.call(this.app, cache, lastData,
                                                                     function (elem) {
                                                                         elem.attr({
@@ -6765,49 +7839,62 @@
                                                                             "this-url": this.url.replace(this.id, last),
                                                                             "this-mid": last,
                                                                             "this-id-key": this.idKey
-                                                                        }).show();
+                                                                        })
+                                                                                .show();
                                                                         _collection.append(elem);
                                                                     }.bind(this));
                                                             appended = true;
                                                         }
                                                     }
-                                                    pagination[page - 1].push(last);
+                                                    pagination[page -
+                                                            1].push(last);
                                                 }
                                             }
                                             page++;
                                         }
                                         // delete last pagination meta if empty
-                                        if (!pagination[page - 1].length)
-                                            delete pagination[page - 1];
+                                        if (!pagination[page -
+                                                1].length)
+                                            delete pagination[page -
+                                                    1];
                                         // save pagination back to cache
-                                        ext.paginationStore.save(pagination, this.name, true);
+                                        ext.record.call(this.app).paginationStore.save(pagination, this.name, true);
                                         // collection listing is empty
                                         if (!_collection.children().length) {
                                             // reload collection for current page
                                             this.app.load(_collection.this('pagination-page',
-                                                    parseInt(_collection.this('pagination-page')) - 1));
+                                                    parseInt(_collection.this('pagination-page'))
+                                                    -
+                                                    1));
                                         }
                                     }
                                 }
                             }.bind(this);
                             if (config.cacheOnly) {
-                                ext.store.call(this.app, this.name).remove(this.id);
+                                ext.store.call(this.app, this.name)
+                                        .remove(this.id);
                                 done();
                             }
-                            else if (this.url || config.url) {
+                            else if (this.url ||
+                                    config.url) {
                                 var _success = function (data) {
                                     var crudStatus = ext.config.call(app).crud.status;
                                     if ((crudStatus &&
-                                            data[crudStatus.key] === crudStatus.successValue)
-                                            || !crudStatus) {
+                                            data[crudStatus.key] ===
+                                            crudStatus.successValue)
+                                            ||
+                                            !crudStatus) {
                                         if (!_this.app.watchCallback) {
-                                            ext.store.call(_this.app, _this.name).remove(_this.id);
-                                            var deleted = ext.deletedStore.find(_this.name) || [];
+                                            ext.store.call(_this.app, _this.name)
+                                                    .remove(_this.id);
+                                            var deleted = ext.record.call(_this.app).deletedStore.find(_this.name)
+                                                    ||
+                                                    [];
                                             /* Indicate model as deleted */
                                             _this.app.__
                                                     .removeArrayValue(deleted, _this.id, true);
                                             deleted.push(_this.id);
-                                            ext.deletedStore.save(deleted, _this.name, true);
+                                            ext.record.call(_this.app).deletedStore.save(deleted, _this.name, true);
                                             /* update current page */
                                             ext.updatePage.call(_this.app);
                                             done();
@@ -6817,21 +7904,28 @@
                                             _this.collection.length--;
                                         }
                                     }
-                                    __.callable(config.success).call(this, data);
+                                    __.callable(config.success)
+                                            .call(this, data);
                                     resolve(data);
-                                    __.callable(config.complete).call(this);
+                                    __.callable(config.complete)
+                                            .call(this);
                                 },
                                         _error = function (e) {
-                                            __.callable(config.error).call(this, e);
+                                            __.callable(config.error)
+                                                    .call(this, e);
                                             reject(e);
-                                            __.callable(config.complete).call(this, e);
+                                            __.callable(config.complete)
+                                                    .call(this, e);
                                         };
                                 ext.request.call(this.app, null,
                                         function () {
                                             return {
-                                                type: config.method || ext.config.call(app).crud.methods.delete,
-                                                url: config.url || this.url,
-                                                id: config.id || this.id,
+                                                type: config.method ||
+                                                        ext.config.call(app).crud.methods.delete,
+                                                url: config.url ||
+                                                        this.url,
+                                                id: config.id ||
+                                                        this.id,
                                                 action: 'delete',
                                                 success: _success,
                                                 error: _error
@@ -6839,8 +7933,10 @@
                                         }.bind(this),
                                         function () {
                                             return {
-                                                type: config.method || ext.config.call(app).crud.methods.delete,
-                                                url: config.url || _this.url,
+                                                type: config.method ||
+                                                        ext.config.call(app).crud.methods.delete,
+                                                url: config.url ||
+                                                        _this.url,
                                                 success: _success,
                                                 error: _error
                                             };
@@ -6869,35 +7965,42 @@
                                 return reject('Cannot save an unnamed model.');
                             }
                             config = __.extend({}, config);
-                            var data = config.data || {},
+                            var data = config.data ||
+                                    {},
                                     _data = ext.canContinue
-                                    .call(this.app, this.id ? 'model.update' : 'model.create',
+                                    .call(this.app, this.id
+                                            ? 'model.update'
+                                            : 'model.create',
                                             [data], config.form);
-                            if (false === _data) {
+                            if (false ===
+                                    _data) {
                                 return reject('Canceled by a before event');
                             }
                             else if (__.isObject(_data)) {
                                 data = _data;
                             }
                             // no data
-                            if ((!data || (__.isObject(data) && !Object.keys(data).length))
+                            if ((!data ||
+                                    (__.isObject(data) && !Object.keys(data).length))
                                     // and no form
                                     && !config.form) {
                                 this.app.error('No data or form to save');
-                                __.callable(config.error).call(this.app);
+                                __.callable(config.error)
+                                        .call(this.app);
                                 reject('No data or form to save');
-                                return __.callable(config.complete).call(this.app);
+                                return __.callable(config.complete)
+                                        .call(this.app);
                             }
 
-                            var finalizeSave = function (config, data) {
+                            var finalizeSave = function (config, data, removeUploaded) {
                                 var _this = this,
-                                        method = this.id
-                                        ? ext.config.call(app).crud.methods.update
-                                        : ext.config.call(app).crud.methods.create,
+                                        method = this.id ?
+                                        ext.config.call(app).crud.methods.update
+                                        :
+                                        ext.config.call(app).crud.methods.create,
                                         form = new Form(config.form);
                                 form.fromObject(data);
-                                if (this.method)
-                                    method = this.method;
+                                if (this.method) method = this.method;
                                 if (this.id && config.cacheOnly) {
                                     /* save model to collection */
                                     var model = ext.modelToStore.call(this.app, {
@@ -6918,7 +8021,8 @@
                                                     data[crudStatus.key] === crudStatus.successValue)
                                                     || !crudStatus) && model) {
                                                 _this.attributes = model;
-                                                id = id || ext.getUIDValue
+                                                id = id ||
+                                                        ext.getUIDValue
                                                         .call(_this.app, model, _this.idKey);
                                                 // Don't cache for update if watching for updates already
                                                 if (!_this.app.watchCallback) {
@@ -6928,10 +8032,19 @@
                                                                 modelName: _this.name,
                                                                 modelId: id,
                                                                 model: model,
-                                                                expireCollection: !_this.id && _this.app.container
+                                                                expireCollection: !_this.id
+                                                                        &&
+                                                                        _this.app.container
                                                                         .find('collection[this-model="'
-                                                                                + _this.name + '"],[this-type="collection"][this-model="'
-                                                                                + _this.name + '"]').hasThis('paginate'),
+                                                                                +
+                                                                                _this.name
+                                                                                +
+                                                                                '"],[this-type="collection"][this-model="'
+                                                                                +
+                                                                                _this.name
+                                                                                +
+                                                                                '"]')
+                                                                        .hasThis('paginate'),
                                                                 isNew: !_this.id,
                                                                 ignoreDom: !(!config.ignoreDOM)
                                                             });
@@ -6942,35 +8055,47 @@
                                                     _this.collection.length++;
                                                 }
                                             }
-                                            __.callable(config.success).call(this, data, id);
+                                            __.callable(config.success)
+                                                    .call(this, data, id);
                                         }
                                         else {
-                                            __.callable(config.fail).call(this);
+                                            __.callable(config.fail)
+                                                    .call(this);
                                         }
                                         resolve(data, id);
-                                        __.callable(config.complete).call(this);
+                                        __.callable(config.complete)
+                                                .call(this);
                                     },
                                             _error = function (e) {
-                                                __.callable(config.error).call(this, e);
+                                                // remove uploaded files
+                                                __.callable(removeUploaded)
+                                                        .call(this);
+                                                __.callable(config.error)
+                                                        .call(this, e);
                                                 reject(e);
-                                                __.callable(config.complete).call(this, e);
+                                                __.callable(config.complete)
+                                                        .call(this, e);
                                             };
                                     ext.request.call(this.app, config.form,
                                             function () {
                                                 return {
-                                                    url: config.url || this.url,
+                                                    url: config.url ||
+                                                            this.url,
                                                     id: this.id,
                                                     form: config.form,
                                                     data: form,
-                                                    type: config.method || method,
+                                                    type: config.method ||
+                                                            method,
                                                     success: _success,
                                                     error: _error
                                                 };
                                             }.bind(this),
                                             function () {
                                                 return {
-                                                    type: config.method || method,
-                                                    url: config.url || _this.url,
+                                                    type: config.method ||
+                                                            method,
+                                                    url: config.url ||
+                                                            _this.url,
                                                     data: form,
                                                     success: _success,
                                                     error: _error
@@ -6983,9 +8108,11 @@
                                 }
                             };
                             // saving form while there's an uploader for the app
-                            if (config.form && ext.record.call(this.app, 'uploader')) {
+                            if (config.form &&
+                                    ext.record.call(this.app, 'uploader')) {
                                 // get files
-                                var files = this.app._(config.form).find('input[type="file"]');
+                                var files = this.app._(config.form)
+                                        .find('input[type="file"]');
                                 if (files.length) {
                                     data = data || {};
                                     var _this = this;
@@ -6997,15 +8124,16 @@
                                                 data: __.extend(data),
                                                 id: this.id,
                                                 url: this.url,
-                                                done: function (_data) {
-                                                    if (!_data) {
-                                                        __.callable(config.error).call(this.app);
+                                                done: function (_data, cancelUpload) {
+                                                    if (_data === false) {
+                                                        __.callable(config.error)
+                                                                .call(this.app);
                                                         return;
                                                     }
                                                     else if (__.isObject(_data, true)) {
                                                         data = __.extend(data, _data);
                                                     }
-                                                    finalizeSave.call(this, config, data);
+                                                    finalizeSave.call(this, config, data, cancelUpload);
                                                 }.bind(this)
                                             });
                                     return this;
@@ -7035,34 +8163,54 @@
              */
             Collection = function (options) {
                 // see if data can be gotten from or saved to cache
-                if (options.name && !options.ignoreCache) {
+                if (options.name &&
+                        !options.ignoreCache) {
                     if (!__.isObject(options.models, true)) {
-                        options.models = ext.store.call(options.app, options.name).find() || [];
+                        options.models = ext.store.call(options.app, options.name)
+                                .find() ||
+                                [];
                     }
                     else {
                         // save data
                         ext.store.call(options.app, options.name)
-                                .save(options.models, options.idKey || options.ext.config.call(app).idKey);
+                                .save(options.models, options.idKey ||
+                                        options.ext.config.call(app).idKey);
                     }
                 }
                 var _Collection = Object.create({
-                    app: options && options.app ? options.app : null,
+                    app: options &&
+                            options.app ?
+                            options.app :
+                            null,
                     current_index: -1,
-                    models: __.isObject(options.models, true) ? options.models : {},
-                    name: options && options.name ? options.name : null,
-                    idKey: options && options.idKey ? options.idKey : '',
-                    url: options && options.url ? options.url : null,
+                    models: __.isObject(options.models, true) ?
+                            options.models :
+                            {},
+                    name: options &&
+                            options.name ?
+                            options.name :
+                            null,
+                    idKey: options &&
+                            options.idKey ?
+                            options.idKey :
+                            '',
+                    url: options &&
+                            options.url ?
+                            options.url :
+                            null,
                     /**
                      * Adds a model to the collection
                      * @param {Object} config @see Model.save()
                      * @returns {Promise}
                      */
                     add: function (config) {
-                        if (!this.name || !this.url) {
+                        if (!this.name ||
+                                !this.url) {
                             this.app.error('Collection must have a name and url');
                             return;
                         }
-                        else if (!config || !config.data) {
+                        else if (!config ||
+                                !config.data) {
                             this.app.error('Collection.add() must have an object parameter with key data');
                             return;
                         }
@@ -7099,7 +8247,8 @@
                      * Clears the collection data from app cache
                      */
                     clearCache: function () {
-                        ext.store.call(this.app, this.name).drop();
+                        ext.store.call(this.app, this.name)
+                                .drop();
                         return this;
                     },
                     /**
@@ -7107,7 +8256,8 @@
                      * @returns {Model}
                      */
                     current: function () {
-                        return this.get(this.parent.current_index || 0);
+                        return this.get(this.parent.current_index ||
+                                0);
                     },
                     /**
                      * Fetches the first model in the collection
@@ -7123,7 +8273,8 @@
                      */
                     each: function (callback) {
                         __.forEach(this.models, function (i, v) {
-                            __.callable(callback).call(this, i, v);
+                            __.callable(callback)
+                                    .call(this, i, v);
                         });
                         return this;
                     },
@@ -7157,14 +8308,16 @@
                         var current_index = this.parent.current_index,
                                 model = this.next();
                         this.parent.current_index = current_index;
-                        return model !== null;
+                        return model !==
+                                null;
                     },
                     /**
                      * Fetches the last model in the collection
                      * @returns {Model}
                      */
                     last: function () {
-                        return this.get(this.length - 1);
+                        return this.get(this.length -
+                                1);
                     },
                     /**
                      * Loads the collection from given url
@@ -7173,33 +8326,42 @@
                      * @returns {Promise}
                      */
                     load: function (url, options) {
-                        if (url || this.url) {
+                        if (url ||
+                                this.url) {
                             var col = this;
                             return this.app.promise(function (resolve, reject) {
-                                this.request(url || col.url)
+                                this.request(url ||
+                                        col.url)
                                         .then(function (data) {
-                                            options = options || {};
+                                            options = options ||
+                                                    {};
                                             var _data = getRealData.call(this, data, options.dataKey);
                                             // reject if _data isn't an object|array
                                             if (!__.isObject(_data, true)) {
-                                                __.callable(options.error).call(this, _data);
+                                                __.callable(options.error)
+                                                        .call(this, _data);
                                                 return reject.call(this, _data);
                                             }
                                             // save to store
                                             if (col.name)
                                                 ext.store.call(this, col.name)
-                                                        .saveMany(_data, options.idKey || col.idKey);
+                                                        .saveMany(_data, options.idKey
+                                                                ||
+                                                                col.idKey);
                                             // set up collection
                                             col.length = Object.keys(_data).length;
                                             col.__proto__.models = _data;
                                             col.__proto__.current_index = -1;
-                                            col.__proto__.url = url || col.url;
+                                            col.__proto__.url = url ||
+                                                    col.url;
 
-                                            __.callable(options.success).call(this, col);
+                                            __.callable(options.success)
+                                                    .call(this, col);
                                             resolve.call(this, col);
                                         }.bind(this))
                                         .catch(function () {
-                                            __.callable(options.error).call(this, arguments);
+                                            __.callable(options.error)
+                                                    .call(this, arguments);
                                             reject.call(this, arguments);
                                         });
                             });
@@ -7213,7 +8375,8 @@
                      * @returns {Promise}
                      */
                     model: function (model_id, options) {
-                        var _this = this, url,
+                        var _this = this,
+                                url,
                                 options = __.extend({
                                     success: function () {},
                                     error: function (e) {}
@@ -7224,12 +8387,19 @@
                             }
                             else if (this.url) {
                                 url = (_this.url.endsWith('/') ?
-                                        _this.url : _this.url + '/') + model_id;
+                                        _this.url :
+                                        _this.url +
+                                        '/') +
+                                        model_id;
                             }
                             var ignoreCache = options.hasOwnProperty('ignoreCache');
-                            if (((ignoreCache && !options.ignoreCache)
-                                    || (!ignoreCache && !ext.config.call(app).cacheData))
-                                    && this.models[model_id]) {
+                            if (((ignoreCache &&
+                                    !options.ignoreCache)
+                                    ||
+                                    (!ignoreCache &&
+                                            !ext.config.call(app).cacheData))
+                                    &&
+                                    this.models[model_id]) {
                                 var model = __.extend(this.models[model_id]),
                                         _model = new Model(model_id, model, {
                                             name: _this.name,
@@ -7239,8 +8409,9 @@
                                             collection: this
                                         });
                                 delete model.__page;
-                                __.callable(options.success).call(this,
-                                        _model);
+                                __.callable(options.success)
+                                        .call(this,
+                                                _model);
                                 return Promise.resolve(_model);
                             }
                             else if (url) {
@@ -7249,7 +8420,8 @@
                                         url: url,
                                         success: function (data) {
                                             data = getRealData.call(this.app, data);
-                                            if (data && __.isObject(data))
+                                            if (data &&
+                                                    __.isObject(data))
                                                 delete data.__page;
                                             var _model = new Model(model_id, data, {
                                                 name: _this.name,
@@ -7258,12 +8430,14 @@
                                                 url: url,
                                                 collection: this
                                             });
-                                            __.callable(options.success).call(this,
-                                                    _model);
+                                            __.callable(options.success)
+                                                    .call(this,
+                                                            _model);
                                             resolve(_model);
                                         }.bind(this),
                                         error: function (e) {
-                                            __.callable(options.error).call(this, e);
+                                            __.callable(options.error)
+                                                    .call(this, e);
                                             reject(e);
                                         }.bind(this)
                                     });
@@ -7286,7 +8460,8 @@
                      * @returns {Model}
                      */
                     next: function () {
-                        return this.get(this.parent.current_index + 1);
+                        return this.get(this.parent.current_index +
+                                1);
                     },
                     /**
                      * Removes a model
@@ -7303,7 +8478,10 @@
                             }
                             else if (this.url) {
                                 url = (_this.url.endsWith('/') ?
-                                        _this.url : _this.url + '/') + model_id;
+                                        _this.url :
+                                        _this.url +
+                                        '/') +
+                                        model_id;
                             }
                             _options.url = url;
                             _options.success = function () {
@@ -7328,15 +8506,17 @@
                      * @return {Promise}
                      */
                     removeAll: function () {
-                        if (!this.url || !this.name) {
+                        if (!this.url ||
+                                !this.name) {
                             this.app.error('Invalid url and/or model name!');
                             return Promise.reject();
                         }
 
                         if (config.cacheOnly) {
-                            ext.store.call(this.app, this.name).drop();
-                            ext.paginationStore.remove(this.name);
-                            ext.expirationStore.remove(this.name);
+                            ext.store.call(this.app, this.name)
+                                    .drop();
+                            ext.record.call(this.app).paginationStore.remove(this.name);
+                            ext.record.call(this.app).expirationStore.remove(this.name);
                             this.models = {};
                             this.length = 0;
                             return Promise.resolve();
@@ -7346,23 +8526,29 @@
                                 var _this = this,
                                         _success = function (data) {
                                             if (!_this.app.watchCallback)
-                                                ext.store.call(_this.name).drop();
+                                                ext.store.call(_this.name)
+                                                        .drop();
                                             _this.models = {};
                                             _this.length = 0;
-                                            __.callable(config.success).call(_this, data);
+                                            __.callable(config.success)
+                                                    .call(_this, data);
                                             resolve(data);
-                                            __.callable(config.complete).call(_this);
+                                            __.callable(config.complete)
+                                                    .call(_this);
                                         },
                                         _error = function (e) {
-                                            __.callable(config.error).call(_this, e);
+                                            __.callable(config.error)
+                                                    .call(_this, e);
                                             reject(e);
-                                            __.callable(config.complete).call(_this);
+                                            __.callable(config.complete)
+                                                    .call(_this);
                                         };
                                 ext.request.call(this.app, null,
                                         function () {
                                             return {
                                                 url: this.url,
-                                                type: config.method || ext.config.call(app).crud.methods.delete,
+                                                type: config.method ||
+                                                        ext.config.call(app).crud.methods.delete,
                                                 success: _success,
                                                 error: _error
                                             };
@@ -7370,7 +8556,8 @@
                                         function () {
                                             return {
                                                 url: this.url,
-                                                type: config.method || ext.config.call(app).crud.methods.delete,
+                                                type: config.method ||
+                                                        ext.config.call(app).crud.methods.delete,
                                                 success: _success,
                                                 error: _error
                                             };
@@ -7388,11 +8575,15 @@
                     }
                 });
                 _Collection.length = __.isObject(options.models, true) ?
-                        Object.keys(options.models).length : 0;
+                        Object.keys(options.models).length :
+                        0;
                 _Collection.parent = _Collection.__proto__;
-                return !_Collection.length && options.url
-                        ? _Collection.load(options.url, options)
-                        : Promise.resolve(_Collection);
+                return !_Collection.length &&
+                        options.url
+                        ?
+                        _Collection.load(options.url, options)
+                        :
+                        Promise.resolve(_Collection);
             },
             /**
              * Extends ThisApp
@@ -7408,7 +8599,8 @@
                          * @returns {Object}
                          */
                         extend: function (name, value) {
-                            if (name && value) {
+                            if (name &&
+                                    value) {
                                 target[name] = value;
                             }
                             return this;
@@ -7430,7 +8622,8 @@
                          * @returns mixed
                          */
                         run: function (name, value) {
-                            return __.callable(target[name]).call(target, value);
+                            return __.callable(target[name])
+                                    .call(target, value);
                         }
                     };
                 };
@@ -7442,7 +8635,8 @@
         if (!(this instanceof ThisApp))
             return new ThisApp(config);
         this.version = '1.0';
-        if (config && __.isObject(config))
+        if (config &&
+                __.isObject(config))
             this.config = __.extend(this.config, config, true);
         // set default error function
         this.error = function (msg) {
@@ -7468,10 +8662,13 @@
                 ThisApp.prototype[i] = function () {
                     var args = Array.from(arguments);
                     args.unshift(ext);
-                    return __.callable(v).apply(this, args);
+                    return __.callable(v)
+                            .apply(this, args);
                 };
             else
-                console.error('ThisApp.' + i + ' already exists!');
+                console.error('ThisApp.' +
+                        i +
+                        ' already exists!');
         });
     };
     ThisApp.prototype = {
@@ -7494,7 +8691,8 @@
         config: {
             /* 			 * The base url upon which other urls are built
              */
-            baseURL: location.origin + location.pathname,
+            baseURL: location.origin +
+                    location.pathname,
             /*
              * Indicates whether received model data should be cached for offline
              * access
@@ -7619,7 +8817,10 @@
          * @param boolean debug
          * @returns _          */
         _: function (selector, debug) {
-            return _(selector, debug || this.config ? ext.record.call(this, 'debug') : true);
+            return _(selector, debug ||
+                    this.config ?
+                    ext.record.call(this, 'debug') :
+                    true);
         },
         /**
          * Adds an element to the cache collection for later reuse
@@ -7633,21 +8834,31 @@
             }
             return this.tryCatch(function () {
                 var _this = this;
-                this._(elem).each(function () {
-                    var _elem = _this._(this).clone().removeThis('loaded');
-                    if (_elem.this('type') === 'layout')
-                        _elem.find('[this-content]').html('');
-                    _elem.find('style').each(function () {
-                        _this._(this).replaceWith('<div this-type="style">'
-                                + this.innerText + '</div>');
-                    });
-                    // remove existing cache
-                    _this.templates.find(elemToSelector(_elem, {
-                        ignore: ['tag'],
-                        attrs: ['this-type', 'this-id', 'this-url']
-                    })).remove();
-                    _this.templates.append(_elem.outerHtml());
-                });
+                this._(elem)
+                        .each(function () {
+                            var _elem = _this._(this)
+                                    .clone()
+                                    .removeThis('loaded');
+                            if (_elem.this('type') ===
+                                    'layout')
+                                _elem.find('[this-content]')
+                                        .html('');
+                            _elem.find('style')
+                                    .each(function () {
+                                        _this._(this)
+                                                .replaceWith('<div this-type="style">'
+                                                        +
+                                                        this.innerText +
+                                                        '</div>');
+                                    });
+                            // remove existing cache
+                            _this.templates.find(elemToSelector(_elem, {
+                                ignore: ['tag'],
+                                attrs: ['this-type', 'this-id', 'this-url']
+                            }))
+                                    .remove();
+                            _this.templates.append(_elem.outerHtml());
+                        });
                 // save templates to store if page has already been loaded
                 // because all templates would already have been stored then.
                 if (this.pageIsLoaded) {
@@ -7667,7 +8878,9 @@
                 return this;
             }
             return this.tryCatch(function () {
-                if (e && __.isObject(e) && e['preventDefault'])
+                if (e &&
+                        __.isObject(e) &&
+                        e['preventDefault'])
                     e.preventDefault();
                 if (!this.canGoBack()) {
                     return this.home(true);
@@ -7718,7 +8931,8 @@
                 ext.bindToObject.call(this, this._(elem), object, function (_elem) {
                     elem.replaceWith(_elem);
                     resolve.apply(this, arguments);
-                    __.callable(callback).apply(this, arguments);
+                    __.callable(callback)
+                            .apply(this, arguments);
                 }.bind(this));
             });
         },
@@ -7730,7 +8944,8 @@
                 this.error('App not started yet!');
                 return this;
             }
-            return history.length > 2;
+            return history.length >
+                    2;
         },
         /**
          * Clears the cache of all models and collections on the current page
@@ -7746,24 +8961,30 @@
             var app = this,
                     did_page = false;
             this.container.find('collection,[this-type="collection"],model:not([this-in-collection]),'
-                    + '[this-type="model"]:not([this-in-collection])')
+                    +
+                    '[this-type="model"]:not([this-in-collection])')
                     .each(function () {
                         var __this = app._(this),
-                                name = __this.this('model') || __this.this('id');
-                        ext.store.call(app, name).drop();
-                        if (__this.this('type') === 'page') {
+                                name = __this.this('model') ||
+                                __this.this('id');
+                        ext.store.call(app, name)
+                                .drop();
+                        if (__this.this('type') ===
+                                'page') {
                             did_page = true;
                             return;
                         }
                         // reload element if page's model collection has
                         // not been cleared. Otherwise, don't. Reloading
                         // page would take care of that.
-                        if (reload && !did_page) {
+                        if (reload &&
+                                !did_page) {
                             app.load(__this);
                         }
                     });
             // cleared page's model collection: reload page
-            if (did_page && reload) {
+            if (did_page &&
+                    reload) {
                 return this.reload();
             }
             return this;
@@ -7777,11 +8998,13 @@
          */
         collection: function (modelName, options) {
             if (!ext.isRunning.call(this)) {
-                __.callable(options.error).call('App not started yet!');
+                __.callable(options.error)
+                        .call('App not started yet!');
                 return Promise.reject('App not started yet!');
             }
             return this.tryCatch(function () {
-                options = options || {};
+                options = options ||
+                        {};
                 options.app = this;
                 options.name = modelName;
                 return new Collection(options);
@@ -7794,7 +9017,10 @@
          */
         debug: function (mode) {
             if (!ext.isRunning.call(this))
-                this.config.debug = mode === undefined ? true : mode;
+                this.config.debug = mode ===
+                        undefined ?
+                        true :
+                        mode;
             return this;
         },
         /**
@@ -7811,12 +9037,18 @@
                 return [];
             }
             list = __.isString(list) ?
-                    this.container.find('[this-id="' + list + '"]') : this._(list);
-            var _dropdownList = list.this('autocompleting') ? list :
+                    this.container.find('[this-id="' +
+                            list +
+                            '"]') :
+                    this._(list);
+            var _dropdownList = list.this('autocompleting') ?
+                    list :
                     this.container.find('list[this-id="'
-                            + list.this('parent-list') +
+                            +
+                            list.this('parent-list') +
                             '"],[this-type="list"][this-id="'
-                            + list.this('parent-list') +
+                            +
+                            list.this('parent-list') +
                             '"]');
             return ext.fillAutocompleteList.call(this, {
                 list: list,
@@ -7836,7 +9068,9 @@
                 return this;
             }
             return this.tryCatch(function () {
-                if (e && __.isObject(e) && e['preventDefault'])
+                if (e &&
+                        __.isObject(e) &&
+                        e['preventDefault'])
                     e.preventDefault();
                 if (!ext.canContinue
                         .call(this, 'page.leave', [], this.page.items[0])) {
@@ -7872,29 +9106,49 @@
                     __.forEach(selector.split(','), function (i, v) {
                         if (seltr)
                             seltr += ',';
-                        var parts = v.split(' '), sel = '';
+                        var parts = v.split(' '),
+                                sel = '';
                         v = parts.pop();
                         if (parts.length)
-                            sel += parts.join(' ') + ' ';
-                        seltr += sel + v + '[this-type="' + type + '"],' + sel + type + v;
+                            sel += parts.join(' ') +
+                                    ' ';
+                        seltr += sel +
+                                v +
+                                '[this-type="' +
+                                type +
+                                '"],' +
+                                sel +
+                                type +
+                                v;
                     });
                     selector = seltr;
                 }
                 // check in page cache first
                 if (this.page) {
                     if (!selector) {
-                        selector = 'page[this-id="' + this.page.this('id')
-                                + '"],[this-type="page"][this-id="'
-                                + this.page.this('id') + '"]';
+                        selector = 'page[this-id="' +
+                                this.page.this('id')
+                                +
+                                '"],[this-type="page"][this-id="'
+                                +
+                                this.page.this('id') +
+                                '"]';
                     }
                     var selectr = '';
                     __.forEach(selector.split(','), function (i, v) {
                         if (selectr)
                             selectr += ',';
                         selectr += 'page[this-id="'
-                                + _this.page.this('id') + '"] ' + v
-                                + ',[this-type="page"][this-id="'
-                                + _this.page.this('id') + '"] ' + v;
+                                +
+                                _this.page.this('id') +
+                                '"] ' +
+                                v
+                                +
+                                ',[this-type="page"][this-id="'
+                                +
+                                _this.page.this('id') +
+                                '"] ' +
+                                v;
                     });
                     elem = this.templates.find(selectr);
                     if (!elem.length)
@@ -7902,9 +9156,13 @@
                                 .find(selector);
                     if (!elem.length) {
                         var _layout = this.page.closest('layout,[this-type="layout"]');
-                        while (!elem.length && _layout.length) {
-                            elem = this.templates.find('layout ' + selector
-                                    + ',[this-type="layout"] ' + selector);
+                        while (!elem.length &&
+                                _layout.length) {
+                            elem = this.templates.find('layout ' +
+                                    selector
+                                    +
+                                    ',[this-type="layout"] ' +
+                                    selector);
                             _layout = _layout.closest('layout,[this-type="layout"]');
                         }
                     }
@@ -7913,16 +9171,23 @@
                     elem = this.templates.children(selector);
                     // return empty element if loading first page and debugging
                     // This ensures that a fresh copy is loaded
-                    if (this.firstPage && ext.config.call(this).debug
-                            && !elem.hasThis('in-container'))
+                    if (this.firstPage &&
+                            ext.config.call(this).debug
+                            &&
+                            !elem.hasThis('in-container'))
                         return this._();
                 }
                 elem = elem.clone();
-                if (elem.this('type') === 'template')
+                if (elem.this('type') ===
+                        'template')
                     elem.removeThis('type');
-                elem.find('[this-type="style"]').each(function () {
-                    _this._(this).replaceWith('<style>' + this.innerText + '</style>');
-                });
+                elem.find('[this-type="style"]')
+                        .each(function () {
+                            _this._(this)
+                                    .replaceWith('<style>' +
+                                            this.innerText +
+                                            '</style>');
+                        });
                 ext.emptyFeatures.call(_this, elem);
                 return this._(elem.outerHtml());
             });
@@ -7960,15 +9225,19 @@
             }
             return this.tryCatch(function () {
                 var _this = this;
-                this._(elem).each(function () {
-                    var type = getElemType(_this._(this)),
-                            method = 'load' + type[0].toUpperCase() + type.substr(1),
-                            valid = __.inArray(type.toLowerCase(),
-                                    ['component', 'collection', 'model']);
-                    if (!ext[method] || !valid)
-                        return;
-                    ext[method].call(_this, this, callback, data);
-                });
+                this._(elem)
+                        .each(function () {
+                            var type = getElemType(_this._(this)),
+                                    method = 'load' +
+                                    type[0].toUpperCase() +
+                                    type.substr(1),
+                                    valid = __.inArray(type.toLowerCase(),
+                                            ['component', 'collection', 'model']);
+                            if (!ext[method] ||
+                                    !valid)
+                                return;
+                            ext[method].call(_this, this, callback, data);
+                        });
                 return this;
             });
         },
@@ -7985,26 +9254,37 @@
                 return this;
             }
             return this.tryCatch(function () {
-                var last_page = ext.recordsStore.find('last_page');
+                var last_page = ext.record.call(this).store.find('last_page');
                 // cancel loading the same page again
-                if (!pageIDorPath || ((last_page === pageIDorPath || last_page === '#/' + pageIDorPath)
-                        && !this.firstPage))
+                if (!pageIDorPath ||
+                        ((last_page ===
+                                pageIDorPath ||
+                                last_page ===
+                                '#/' +
+                                pageIDorPath)
+                                &&
+                                !this.firstPage))
                     return this;
-                if (this.page && !ext.canContinue
+                if (this.page &&
+                        !ext.canContinue
                         .call(this, 'page.leave', [], this.page.items[0]))
                     return this;
                 pageIDorPath = ext.pageIDFromLink.call(this, pageIDorPath, true);
                 if (!ext.canContinue.call(this, 'page.load', [pageIDorPath]))
                     return this;
                 this.oldPage = _();
-                var newPage = this.getCached('[this-id="' + pageIDorPath + '"]', 'page');
-                if (newPage.length > 1) {
+                var newPage = this.getCached('[this-id="' +
+                        pageIDorPath +
+                        '"]', 'page');
+                if (newPage.length >
+                        1) {
                     this.error('Target page matches multiple pages!');
                     return this;
                 }
                 else if (!newPage.length) {
                     var paths = ext.config.call(this).paths;
-                    if (paths && paths.pages) {
+                    if (paths &&
+                            paths.pages) {
                         var _this = this;
                         ext.fullyFromURL.call(this, 'page', pageIDorPath,
                                 function (elem) {
@@ -8033,17 +9313,28 @@
         on: function (event, selector, callback) {
             return this.tryCatch(function () {
                 if (ext.isRunning.call(this)) {
+                    if (__.isFunction(selector)) {
+                        callback = selector;
+                        selector = null;
+                    }
                     if (this.page) {
-                        var evt = event.replace(/[^a-z0-9]/gi, '')
-                                + selector.replace(/[^a-z0-9]/gi, ''),
+                        var evt = event.replace(/[^a-z0-9]/gi, ''),
                                 pageID = this.page.this('id');
+                        if (selector)
+                            evt += selector.replace(/[^a-z0-9]/gi, '');
                         if (!containedEvents[evt]) {
                             // event has not been handled at all before
                             containedEvents[evt] = {};
                             var _this = this;
-                            this.container.on(event, selector, function () {
-                                return ext.dispatchEvent.call(_this, evt, this, Array.from(arguments));
-                            });
+                            // use custom event dispatcher to enable dispatching
+                            // only events registered for the current page
+                            if (selector)
+                                this.container.on(event, selector, function () {
+                                    return ext.dispatchEvent.call(_this, evt, this, Array.from(arguments));
+                                });
+                            else this.container.on(event, function () {
+                                    return ext.dispatchEvent.call(_this, evt, this, Array.from(arguments));
+                                });
                         }
                         if (!containedEvents[evt][pageID])
                             containedEvents[evt][pageID] = callback;
@@ -8052,9 +9343,9 @@
                         this.container.on(event, selector, callback);
                     }
                 }
-                else
-                    this.events.push({
-                        event: event, selector: selector,
+                else this.events.push({
+                        event: event,
+                        selector: selector,
                         callback: callback
                     });
                 return this;
@@ -8068,7 +9359,8 @@
         onError: function (callback) {
             if (!ext.isRunning.call(this)) {
                 this.error = function (message) {
-                    __.callable(callback, true).call(this, message);
+                    __.callable(callback, true)
+                            .call(this, message);
                 };
             }
             return this;
@@ -8091,7 +9383,8 @@
         promise: function (func) {
             return this.tryCatch(function () {
                 return new Promise(function (resolve, reject) {
-                    __.callable(func).call(this, resolve, reject);
+                    __.callable(func)
+                            .call(this, resolve, reject);
                 }.bind(this));
             });
         },
@@ -8107,15 +9400,17 @@
                 return this;
             }
             return this.tryCatch(function () {
-                var last_page = ext.recordsStore.find('last_page');
-                ext.recordsStore.remove('last_page');
+                var last_page = ext.record.call(this).store.find('last_page');
+                ext.record.call(this).store.remove('last_page');
                 if (resources)
                     location.reload();
                 else {
-                    this.reloadLayouts = layouts || false;
+                    this.reloadLayouts = layouts ||
+                            false;
                     if (this.page.hasThis('reading')) {
                         // keep attributes for page
-                        this.tar['page#' + this.page.this('id')] = {
+                        this.tar['page#' +
+                                this.page.this('id')] = {
                             reading: '',
                             url: this.page.this('url'),
                             model: this.page.this('model'),
@@ -8138,7 +9433,9 @@
                 this.error('App not started yet!');
                 return this;
             }
-            this.templates.find(selector).replaceWith(this._(elem).clone());
+            this.templates.find(selector)
+                    .replaceWith(this._(elem)
+                            .clone());
             return this;
         },
         /**
@@ -8170,32 +9467,45 @@
                 config.api = false;
                 if (!url) {
                     ext.log.call(this, 'error', 'Method request() expects parameter 1 to be string. '
-                            + typeof url + ' given');
+                            +
+                            typeof url +
+                            ' given');
                     return Promise.reject('Method request() expects parameter 1 to be string. '
-                            + typeof url + ' given');
+                            +
+                            typeof url +
+                            ' given');
                 }
                 else if (__.isObject(url)) {
                     url = url.this('url');
                 }
-                if (!url.startsWith('./') && !url.startsWith('../') &&
-                        !url.startsWith('//') && url.indexOf('://') === -1) {
-                    url = ext.config.call(this).baseURL + url;
+                if (!url.startsWith('./') &&
+                        !url.startsWith('../') &&
+                        !url.startsWith('//') &&
+                        url.indexOf('://') ===
+                        -1) {
+                    url = ext.config.call(this).baseURL +
+                            url;
                     config.api = true;
                 }
-                config.type = config.type || 'get';
-                config.dataType = config.dataType || 'json';
-                if (config.type.toLowerCase() === 'get')
+                config.type = config.type ||
+                        'get';
+                config.dataType = config.dataType ||
+                        'json';
+                if (config.type.toLowerCase() ===
+                        'get')
                     config.ignoreCache = ext.record.call(this, 'debug');
                 config.url = url;
                 return this.promise(function (resolve, reject) {
                     var success = config.success,
                             error = config.error;
                     config.success = function () {
-                        __.callable(success).apply(this, arguments);
+                        __.callable(success)
+                                .apply(this, arguments);
                         resolve.apply(this, arguments);
                     }.bind(this);
                     config.error = function () {
-                        __.callable(error).apply(this, arguments);
+                        __.callable(error)
+                                .apply(this, arguments);
                         reject.apply(this, arguments);
                     }.bind(this);
                     Ajax(config, this);
@@ -8215,26 +9525,47 @@
             }
             return this.tryCatch(function () {
                 if (id) {
-                    var selector = '', _this = this;
+                    var selector = '',
+                            _this = this;
                     __.forEach(id.split(','), function (i, v) {
                         if (i)
                             selector += ',';
-                        selector += '[this-id="' + v.trim() + '"][this-autocomplete]';
+                        selector += '[this-id="' +
+                                v.trim() +
+                                '"][this-autocomplete]';
                     });
-                    this.container.find(selector).each(function () {
-                        var _input = _(this),
-                                _dropdownList = _this.container.find('[this-id="' + _input.this('list')
-                                        + '"][this-type="list"],list[this-id="' + _input.this('list')
-                                        + '"]'),
-                                _selectedList = _this.container.find('[this-id="'
-                                        + _dropdownList.this('selection-list')
-                                        + '"][this-type="list"],list[this-id="'
-                                        + _dropdownList.this('selection-list')
-                                        + '"]');
-                        _selectedList.html('').hide().trigger('list.emptied');
-                        _dropdownList.removeThis('selected').html('').hide().trigger('list.emptied');
-                        _input.val('').trigger('keyup').show();
-                    });
+                    this.container.find(selector)
+                            .each(function () {
+                                var _input = _(this),
+                                        _dropdownList = _this.container.find('[this-id="'
+                                                +
+                                                _input.this('list')
+                                                +
+                                                '"][this-type="list"],list[this-id="'
+                                                +
+                                                _input.this('list')
+                                                +
+                                                '"]'),
+                                        _selectedList = _this.container.find('[this-id="'
+                                                +
+                                                _dropdownList.this('selection-list')
+                                                +
+                                                '"][this-type="list"],list[this-id="'
+                                                +
+                                                _dropdownList.this('selection-list')
+                                                +
+                                                '"]');
+                                _selectedList.html('')
+                                        .hide()
+                                        .trigger('list.emptied');
+                                _dropdownList.removeThis('selected')
+                                        .html('')
+                                        .hide()
+                                        .trigger('list.emptied');
+                                _input.val('')
+                                        .trigger('keyup')
+                                        .show();
+                            });
                 }
                 return this;
             });
@@ -8272,7 +9603,9 @@
             if (!this.config.paths)
                 this.config.paths = {};
             this.config.paths.components = {
-                dir: path, ext: ext || '.html'
+                dir: path,
+                ext: ext ||
+                        '.html'
             };
             return this;
         },
@@ -8344,7 +9677,8 @@
                 this.config.paths = {};
             this.config.paths.layouts = {
                 dir: path,
-                ext: ext || '.html'
+                ext: ext ||
+                        '.html'
             };
             return this;
         },
@@ -8361,7 +9695,8 @@
                 this.config.paths = {};
             this.config.paths.pages = {
                 dir: path,
-                ext: ext || '.html'
+                ext: ext ||
+                        '.html'
             };
             return this;
         },
@@ -8392,8 +9727,10 @@
                             !__.isFunction(testStore.remove) ||
                             !__.isFunction(testStore.drop)) {
                         this.error('Returned collections object must have methods'
-                                + ' find, save, saveMany, remove and drop which are all'
-                                + ' functions.');
+                                +
+                                ' find, save, saveMany, remove and drop which are all'
+                                +
+                                ' functions.');
                     }
                     testStore.drop();
                     Store = newStore;
@@ -8449,21 +9786,39 @@
                     // get target page from hash
                     target_page = ext.processLink.call(this, hash),
                     // get default page
-                    default_page = this.config.startWith || _('[this-default-page]').this('id'),
+                    default_page = this.config.startWith ||
+                    _('[this-default-page]')
+                    .this('id'),
                     // set start page
-                    start_page = target_page ? target_page : default_page;
-            this._('body').find('page[this-id="' + default_page
-                    + '"],[this-type="page"][this-id="' + default_page + '"]')
+                    start_page = target_page ?
+                    target_page :
+                    default_page;
+            this._('body')
+                    .find('page[this-id="' +
+                            default_page
+                            +
+                            '"],[this-type="page"][this-id="' +
+                            default_page +
+                            '"]')
                     .this('default-page', '');
             this.firstPage = true;
             ext.setup.call(this, start_page);
             // load from old state if fresh copy not required and not debugging
-            if (!freshCopy && !this.config.debug && history.state &&
-                    start_page === ext.recordsStore.find('last_page')) {
+            if (!freshCopy &&
+                    !this.config.debug &&
+                    history.state &&
+                    start_page ===
+                    ext.record.call(this).store.find('last_page')) {
                 ext.restoreState.call(this, history.state);
             }
             else {
-                this.loadPage((hash && hash !== '#' && hash !== '#/') ? hash : start_page);
+                this.loadPage((hash &&
+                        hash !==
+                        '#' &&
+                        hash !==
+                        '#/') ?
+                        hash :
+                        start_page);
             }
             return this;
         },
@@ -8475,7 +9830,8 @@
         store: function (collection) {
             return this.tryCatch(function () {
                 return collection ?
-                        ext.store.call(this, collection) : Store;
+                        ext.store.call(this, collection) :
+                        Store;
             });
         },
         /**
@@ -8490,10 +9846,10 @@
                 return __.callable(tryFunc).call(this);
             }.bind(this),
                     function (e) {
-                        if (catchFunc)
-                            __.callable(catchFunc).call(this, e);
-                        else
-                            this.error(e);
+                        console.log(e);
+                        this.error(e);
+                        if (catchFunc) __.callable(catchFunc).call(this, e);
+                        return this;
                     }.bind(this));
         },
         /**
@@ -8527,7 +9883,8 @@
     __.forEach(ThisApp.prototype, function (i, v) {
         if (__.isFunction(v)) {
             v.toString = function () {
-                return 'See https://this-js.github.com/#/methods?lookup=' + i;
+                return 'See https://this-js.github.com/#/methods?lookup=' +
+                        i;
             };
         }
     });

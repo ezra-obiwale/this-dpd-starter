@@ -130,7 +130,7 @@ app.onError(function (msg) {
                 hasFiles = true;
             });
             if (!hasFiles) {
-                return options.done({});
+                return options.done();
             }
             app.request({
                 type: 'post',
@@ -138,7 +138,9 @@ app.onError(function (msg) {
                 data: fd,
                 dataType: 'json',
                 success: function (resp) {
-                    var data = {___freshUpload: []};
+                    var data = {
+                        ___freshUpload: []
+                    }, ids = [];
                     if (resp.length) {
                         app.__.forEach(resp, function (i, value) {
                             var name = options.files[i].name,
@@ -148,9 +150,21 @@ app.onError(function (msg) {
                             }
                             data[name] = path + value.filename;
                             data[name + 'Id'] = value.id;
-                            data['___freshUpload'].push(value.id);
+                            ids.push(value.id);
                         });
-                        options.done(data);
+
+                        options.done(data, function () {
+                            app.request({
+                                url: url,
+                                type: 'delete',
+                                data: {
+                                    id: {
+                                        $in: ids
+                                    }
+                                },
+                                dataType: 'json'
+                            });
+                        });
                     }
                     else {
                         showErrorMessage('Upload failed!');
@@ -247,7 +261,8 @@ app.onError(function (msg) {
                 _link = _('.sidebar-menu a[this-goto="' + app.config.startWith + '"]');
             // mark current nav link as active if not already marked
             if (_link.length && !_link.parent().hasClass('active'))
-                _link.parent().addClass('active').siblings().removeClass('active');
+                _link.parent().addClass('active').siblings()
+                        .removeClass('active');
             // hide back button
             if (app.page.this('id') === app.config.startWith)
                 app.container.find('[this-go-back]').hide();
@@ -323,10 +338,12 @@ app.onError(function (msg) {
         })
         // show only modal in container
         .on('click', '[data-toggle="_modal"]', function () {
-            var $modal = $(app.container.find(_(this).data('target')).get(0)).modal('show');
+            var $modal = $(app.container.find(_(this).data('target')).get(0))
+                    .modal('show');
             $modal.find('[type="file"]').previewMedia().addClass('hidden');
             $modal.find('img:not(.actionable)').on('click', function () {
-                $(this).addClass('actionable').siblings('[type="file"]').click();
+                $(this).addClass('actionable').siblings('[type="file"]')
+                        .click();
             });
             $modal.find('input,textarea,select,.btn').get(0).focus();
         })
@@ -345,9 +362,11 @@ $container.on('click', '[data-target="#delete"]', function () {
     $('#delete.modal #deleting').html($(this).data('deleting'));
 })
         .on('hide.bs.modal', function (e) {
-            app.resetAutocomplete(_(this).find('[this-autocomplete]').this('id'));
+            app.resetAutocomplete(_(this).find('[this-autocomplete]')
+                    .this('id'));
             $(this).find('img.actionable').removeClass('actionable')
-                    .unbind('click').attr('src', '../assets/images/no-image.png');
+                    .unbind('click')
+                    .attr('src', '../assets/images/no-image.png');
         });
 
 // ---------------------------------------------------
@@ -556,7 +575,8 @@ $(function () {
 
     //Activate direct chat widget
     if (o.directChat.enable) {
-        $(document).on('click', o.directChat.contactToggleSelector, function () {
+        $(document)
+                .on('click', o.directChat.contactToggleSelector, function () {
             var box = $(this).parents('.direct-chat').first();
             box.toggleClass('direct-chat-contacts-open');
         });
@@ -605,22 +625,27 @@ function _init() {
         },
         fix: function () {
             //Get window height and the wrapper height
-            var neg = $('.main-header').outerHeight() + $('.main-footer').outerHeight();
+            var neg = $('.main-header').outerHeight() + $('.main-footer')
+                    .outerHeight();
             var window_height = $(window).height();
             var sidebar_height = $(".sidebar").height();
             //Set the min-height of the content and sidebar based on the
             //the height of the document.
             if ($("body").hasClass("fixed")) {
-                $(".content-wrapper, .right-side").css('min-height', window_height - $('.main-footer').outerHeight());
+                $(".content-wrapper, .right-side")
+                        .css('min-height', window_height - $('.main-footer')
+                        .outerHeight());
             }
             else {
                 var postSetWidth;
                 if (window_height >= sidebar_height) {
-                    $(".content-wrapper, .right-side").css('min-height', window_height - neg);
+                    $(".content-wrapper, .right-side")
+                            .css('min-height', window_height - neg);
                     postSetWidth = window_height - neg;
                 }
                 else {
-                    $(".content-wrapper, .right-side").css('min-height', sidebar_height);
+                    $(".content-wrapper, .right-side")
+                            .css('min-height', sidebar_height);
                     postSetWidth = sidebar_height;
                 }
 
@@ -628,7 +653,8 @@ function _init() {
                 var controlSidebar = $($.AdminLTE.options.controlSidebarOptions.selector);
                 if (typeof controlSidebar !== "undefined") {
                     if (controlSidebar.height() > postSetWidth)
-                        $(".content-wrapper, .right-side").css('min-height', controlSidebar.height());
+                        $(".content-wrapper, .right-side")
+                                .css('min-height', controlSidebar.height());
                 }
 
             }
@@ -637,7 +663,10 @@ function _init() {
             //Make sure the body tag has the .fixed class
             if (!$("body").hasClass("fixed")) {
                 if (typeof $.fn.slimScroll != 'undefined') {
-                    $(".sidebar").slimScroll({destroy: true}).height("auto");
+                    $(".sidebar").slimScroll({
+                        destroy: true
+                    })
+                            .height("auto");
                 }
                 return;
             }
@@ -648,10 +677,14 @@ function _init() {
             if ($.AdminLTE.options.sidebarSlimScroll) {
                 if (typeof $.fn.slimScroll != 'undefined') {
                     //Destroy if it exists
-                    $(".sidebar").slimScroll({destroy: true}).height("auto");
+                    $(".sidebar").slimScroll({
+                        destroy: true
+                    })
+                            .height("auto");
                     //Add slimscroll
                     $(".sidebar").slimscroll({
-                        height: ($(window).height() - $(".main-header").height()) + "px",
+                        height: ($(window).height() - $(".main-header")
+                                .height()) + "px",
                         color: "rgba(0,0,0,0.2)",
                         size: "3px"
                     });
@@ -679,26 +712,32 @@ function _init() {
                 //Enable sidebar push menu
                 if ($(window).width() > (screenSizes.sm - 1)) {
                     if ($("body").hasClass('sidebar-collapse')) {
-                        $("body").removeClass('sidebar-collapse').trigger('expanded.pushMenu');
+                        $("body").removeClass('sidebar-collapse')
+                                .trigger('expanded.pushMenu');
                     }
                     else {
-                        $("body").addClass('sidebar-collapse').trigger('collapsed.pushMenu');
+                        $("body").addClass('sidebar-collapse')
+                                .trigger('collapsed.pushMenu');
                     }
                 }
                 //Handle sidebar push menu for small screens
                 else {
                     if ($("body").hasClass('sidebar-open')) {
-                        $("body").removeClass('sidebar-open').removeClass('sidebar-collapse').trigger('collapsed.pushMenu');
+                        $("body").removeClass('sidebar-open')
+                                .removeClass('sidebar-collapse')
+                                .trigger('collapsed.pushMenu');
                     }
                     else {
-                        $("body").addClass('sidebar-open').trigger('expanded.pushMenu');
+                        $("body").addClass('sidebar-open')
+                                .trigger('expanded.pushMenu');
                     }
                 }
             });
 
             $(".content-wrapper").click(function () {
                 //Enable hide menu when clicking on the content-wrapper on small screens
-                if ($(window).width() <= (screenSizes.sm - 1) && $("body").hasClass("sidebar-open")) {
+                if ($(window).width() <= (screenSizes.sm - 1) && $("body")
+                        .hasClass("sidebar-open")) {
                     $("body").removeClass('sidebar-open');
                 }
             });
@@ -729,11 +768,13 @@ function _init() {
             });
         },
         expand: function () {
-            $("body").removeClass('sidebar-collapse').addClass('sidebar-expanded-on-hover');
+            $("body").removeClass('sidebar-collapse')
+                    .addClass('sidebar-expanded-on-hover');
         },
         collapse: function () {
             if ($('body').hasClass('sidebar-expanded-on-hover')) {
-                $('body').removeClass('sidebar-expanded-on-hover').addClass('sidebar-collapse');
+                $('body').removeClass('sidebar-expanded-on-hover')
+                        .addClass('sidebar-collapse');
             }
         }
     };
@@ -756,7 +797,8 @@ function _init() {
                     var checkElement = $this.next();
 
                     //Check if the next element is a menu and is visible
-                    if ((checkElement.is('.treeview-menu')) && (checkElement.is(':visible')) && (!$('body').hasClass('sidebar-collapse'))) {
+                    if ((checkElement.is('.treeview-menu')) && (checkElement.is(':visible')) && (!$('body')
+                            .hasClass('sidebar-collapse'))) {
                         //Close the menu
                         checkElement.slideUp(animationSpeed, function () {
                             checkElement.removeClass('menu-open');
@@ -770,7 +812,8 @@ function _init() {
                         //Get the parent menu
                         var parent = $this.parents('ul').first();
                         //Close all open menus within the parent
-                        var ul = parent.find('ul:visible').slideUp(animationSpeed);
+                        var ul = parent.find('ul:visible')
+                                .slideUp(animationSpeed);
                         //Remove the menu-open class from the parent
                         ul.removeClass('menu-open');
                         //Get the parent li
@@ -836,7 +879,8 @@ function _init() {
             }
             else {
                 //If the content height is less than the sidebar's height, force max height
-                if ($('.content-wrapper, .right-side').height() < sidebar.height()) {
+                if ($('.content-wrapper, .right-side')
+                        .height() < sidebar.height()) {
                     _this._fixForContent(sidebar);
                 }
             }
@@ -891,7 +935,8 @@ function _init() {
             });
         },
         _fixForContent: function (sidebar) {
-            $(".content-wrapper, .right-side").css('min-height', sidebar.height());
+            $(".content-wrapper, .right-side")
+                    .css('min-height', sidebar.height());
         }
     };
 
