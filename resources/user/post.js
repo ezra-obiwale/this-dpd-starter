@@ -111,11 +111,16 @@ switch (parts[0]) {
         cancelIf(body.hasOwnProperty('confirm') &&
                 body.password !== body.confirm, 'Passwords mismatch!');
         var register = function () {
+            cancelUnless(ctx.validator.isEmail(body.email), 'Invalid email address!');
             dpd.users.post(body, function (user, err) {
-                if (!user)
-                    setResult(null, err);
-                delete user.verificationToken;
-                setResult(user);
+                if (!user) {
+                    if (err.errors.username) {
+                        err.errors.email = err.errors.username;
+                        delete err.errors.username;
+                    }
+                }
+                else delete user.verificationToken;
+                setResult(user, err);
             });
         };
         // check whether should use and check recaptcha
@@ -211,13 +216,6 @@ switch (parts[0]) {
                 });
             });
         });
-        break;
-    case 'update-info':
-        delete body.passwordToken;
-        delete body.lastLogin;
-        cancelIf(body.hasOwnProperty('firstName') && !body.firstName, 'First name cannot be empty!');
-        cancelIf(body.hasOwnProperty('lastName') && !body.lastName, 'Last name cannot be empty!');
-        dpd.users.put(ctx.user.id, body, setResult);
         break;
     case 'delete-account':
         // cancel if provided id is not the same as the user id in token payload

@@ -104,7 +104,29 @@
             "required": false,
             "id": "roles",
             "order": 12
+        },
+        "picture": {
+            "name": "picture",
+            "type": "string",
+            "typeLabel": "string",
+            "required": false,
+            "id": "picture",
+            "order": 13
+        },
+        "pictureId": {
+            "name": "pictureId",
+            "type": "string",
+            "typeLabel": "string",
+            "required": false,
+            "id": "pictureId",
+            "order": 14
         }
     },
-    "swagger": {}
+    "swagger": {},
+    "queryKeys": [
+        "firstName",
+        "lastName",
+        "name",
+        "email"
+    ]
 }

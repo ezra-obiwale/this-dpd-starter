@@ -500,6 +500,58 @@
                 "tags": [
                     "Account - User"
                 ]
+            },
+            "put": {
+                "description": "Updates current user",
+                "parameters": [
+                    {
+                        "description": "Object containing user information",
+                        "in": "body",
+                        "name": "payload",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "id": "email",
+                                    "name": "email",
+                                    "order": 0,
+                                    "required": true,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "firstName": {
+                                    "id": "firstName",
+                                    "name": "firstName",
+                                    "order": 1,
+                                    "required": false,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "lastName": {
+                                    "id": "lastName",
+                                    "name": "lastName",
+                                    "order": 2,
+                                    "required": false,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                },
+                                "name": {
+                                    "id": "name",
+                                    "name": "name",
+                                    "order": 3,
+                                    "required": false,
+                                    "type": "string",
+                                    "typeLabel": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {},
+                "tags": [
+                    "Account - User"
+                ]
             }
         }
     }

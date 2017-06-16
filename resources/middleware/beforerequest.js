@@ -179,11 +179,11 @@ ctx.__proto__.utils = {
                 })
                 .catch(err =>
                 {
+                    // recreate err object with only the necessary details
                     err = {
                         statusCode: err.statusCode,
                         errors: err.errors
                     };
-                    // remove unnecessary info
                     console.error('Error!', err);
                     options.callback(null, err);
                 });
@@ -296,6 +296,9 @@ if (ctx.jwt.token || !ctx.user) {
 ctx.__proto__.me = function (callback) {
     return this.user.id ? dpd.users.get(this.user.id, callback) : callback(null, 'User not found!');
 };
+
+// setup validator
+ctx.__proto__.validator = require('validator');
 
 // update query for user=me
 if (query.user === 'me') {

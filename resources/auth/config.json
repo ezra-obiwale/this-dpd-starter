@@ -6,11 +6,11 @@
     "allowedRedirectURLs": ".",
     "disableSessionId": true,
     "disableReturnParams": true,
-    "allowLocal": true,
+    "allowLocal": false,
     "allowTwitter": false,
-    "allowFacebook": false,
+    "allowFacebook": true,
     "allowGitHub": false,
-    "allowGoogle": false,
+    "allowGoogle": true,
     "allowDribbble": false,
     "allowWeibo": false,
     "twitterConsumerKey": "",
@@ -28,6 +28,7 @@
     "dribbbbleClientSecret": "",
     "weiboClientId": "",
     "weiboClientSecret": "",
+    "allowGoogleIdToken": false,
     "sessionDataKeys": "-id,apiKey,refreshToken,verified,socialAccount,path",
     "jwt": {
         "noVerify": {

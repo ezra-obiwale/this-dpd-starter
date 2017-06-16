@@ -3,7 +3,6 @@ if (!this.socialAccount) { // creating user from registration
     var hash = require('string-hash');
     this.verificationToken = hash(this.username + Date.now()) + 'T' + Date.now();
     this.verified = false;
-    this.name = this.firstName + ' ' + this.lastName;
     dpd.template.post({"template": 'verify-email.html'}, function (data) {
         ctx.utils.sendmail({
             recipients: [{address: this.username}],

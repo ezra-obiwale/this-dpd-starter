@@ -23,7 +23,7 @@ app.debug(true)
                 _error.addClass('hidden');
             }, 4000);
         })
-        .secureAPI(function (key, headers, data) {
+        .secureAPI(function (headers, data) {
             var ssn = app.store('ssn').find(1);
             if (ssn && ssn.k) headers['X-API-TOKEN'] = ssn.k;
         })
@@ -146,65 +146,70 @@ app.debug(true)
                 _(this).html('show');
             }
         })
-        .on('form.submission.success form.submission.error form.submission.failed', 'form', function (e) {
-            var data = e.detail.responseData,
-                    _modal = _(this).closest('.modal'),
-                    _alert = _modal.find('.modal-footer').children(),
-                    _submit = _(this).find('img[alt="loading"]').addClass('hidden')
-                    .siblings().removeClass('hidden');
-            // error
-            if (data && data.status) {
-                var message = data.message;
-                if (data.errors) {
-                    message = '<ul>';
-                    app.__.forEach(data.errors, function (i, v) {
-                        message += '<li><strong>' + i + '</strong> ' + v + '</li>';
-                    });
-                    message += '</ul>';
-                }
-                _alert.removeClass('alert-success alert-info')
-                        .addClass('alert-danger')
-                        .html(data ? message.replace('username', 'email')
-                                : 'No internet connection');
-            }
-            // success
-            else {
-                var message = 'Sign up successful. Please check your email for confirmation.';
-                switch (_modal.attr('id')) {
-                    case 'login-email-password':
-                        var url = './admin/';
-                        if (app.params.r)
-                            url += decodeURIComponent(app.params.r);
-                        app.store('ssn').save({
-                            k: data.apiKey,
-                            i: data.uid,
-                            v: data.verified,
-                            e: data.expires
-                        }, 1);
-                        // redirect to user page
-                        location.href = url;
-                        _submit.addClass('hidden').siblings().removeClass('hidden');
-                        return;
-                    case 'reset-password':
-                        message = 'Password reset email sent.';
-                        break;
-                    case 'reset-password-2':
-                        message = 'Password reset successfully.';
-                        break;
-                    case 'resend-verification-email':
-                        message = 'Verification email resent.';
-                        break;
-                }
-                $(_modal.get(0)).modal('hide');
-                _modal = _c('#login-email-password.modal');
-                _alert = _modal.find('.modal-footer').children();
-                _alert.removeClass('alert-danger alert-info')
-                        .addClass('alert-success').html(message);
-                this.reset();
-                $(_modal.get(0)).modal('show');
-            }
-            _alert.parent().removeClass('hidden');
-        })
+        .on('form.submission.success form.submission.error form.submission.failed', 'form',
+                function (e) {
+                    var data = e.detail.responseData,
+                            _modal = _(this).closest('.modal'),
+                            _alert = _modal.find('.modal-footer').children(),
+                            _submit = _(this).find('img[alt="loading"]').addClass('hidden')
+                            .siblings().removeClass('hidden');
+                    // error
+                    if (data && data.status) {
+                        var message = data.message;
+                        if (data.errors) {
+                            message = '<ul>';
+                            app.__.forEach(data.errors, function (i, v) {
+                                message += '<li><strong>' + i + '</strong> ' + v + '</li>';
+                            });
+                            message += '</ul>';
+                        }
+                        _alert.removeClass('alert-success alert-info')
+                                .addClass('alert-danger')
+                                .html(data ? message.replace('username', 'email')
+                                        : 'No internet connection');
+                    }
+                    // success
+                    else {
+                        var message = 'Sign up successful. Please check your email for confirmation.';
+                        switch (_modal.attr('id')) {
+                            case 'login-email-password':
+                                var url = './admin/';
+                                if (app.params.r)
+                                    url += decodeURIComponent(app.params.r);
+                                app.store('ssn').save({
+                                    k: data.apiKey,
+                                    i: data.uid,
+                                    v: data.verified,
+                                    e: data.expires
+                                }, 1);
+                                app.request('user/me')
+                                        .then(function (user) {
+                                            app.store('ssn').save(user, 'u');
+                                            // redirect to user page
+                                            location.href = url;
+                                        });
+                                _submit.addClass('hidden').siblings().removeClass('hidden');
+                                return;
+                            case 'reset-password':
+                                message = 'Password reset email sent.';
+                                break;
+                            case 'reset-password-2':
+                                message = 'Password reset successfully.';
+                                break;
+                            case 'resend-verification-email':
+                                message = 'Verification email resent.';
+                                break;
+                        }
+                        $(_modal.get(0)).modal('hide');
+                        _modal = _c('#login-email-password.modal');
+                        _alert = _modal.find('.modal-footer').children();
+                        _alert.removeClass('alert-danger alert-info')
+                                .addClass('alert-success').html(message);
+                        this.reset();
+                        $(_modal.get(0)).modal('show');
+                    }
+                    _alert.parent().removeClass('hidden');
+                })
         .start('home', true);
 $('.modal').on('hide.bs.modal', function () {
     $(this).find('.modal-footer').addClass('hidden');
