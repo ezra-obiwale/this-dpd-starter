@@ -144,7 +144,7 @@ app.onError(function (msg) {
                     if (resp.length) {
                         app.__.forEach(resp, function (i, value) {
                             var name = options.files[i].name,
-                                    path = app.config.baseURL + 'upload/';
+                                    path = app.config.baseURL + '_files/';
                             if (col) {
                                 path += col + '/';
                             }
