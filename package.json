@@ -14,7 +14,7 @@
         "dpd-notify": "^1.0.3",
         "dpd-passport": "http://github.com/ezra-obiwale/dpd-passport.git",
         "dpd-push-dashboard": "^1.1.0",
-        "dpd-router-event": "^1.0.5",
+        "dpd-router-event": "^1.0.7",
         "dpd-router-middleware": "^1.0.0",
         "dpd-swagger-doc": "http://github.com/ezra-obiwale/dpd-swagger-doc.git",
         "dpd-template": "^0.0.5",

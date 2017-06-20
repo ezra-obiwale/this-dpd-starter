@@ -78,7 +78,7 @@ var app = new ThisApp({
             app.store('ssn').drop();
             location.href = '../';
         },
-        me = app.store('ssn').find('u') || {};
+        me = {};
 app.__.ready(function () {
     _(window).on('beforeunload', function () {
         $('.modal').modal('hide');
@@ -179,6 +179,7 @@ app.onError(function (msg) {
         })
         .before('page.load', function () {
             if (!app.loadedPartial) {
+                me = app.store('ssn').find('u') || {};
                 // check user is logged in
                 var ssn = app.store('ssn').find(1),
                         watchToken = function (ssn, minutesBefore) {
@@ -577,9 +578,9 @@ $(function () {
     if (o.directChat.enable) {
         $(document)
                 .on('click', o.directChat.contactToggleSelector, function () {
-            var box = $(this).parents('.direct-chat').first();
-            box.toggleClass('direct-chat-contacts-open');
-        });
+                    var box = $(this).parents('.direct-chat').first();
+                    box.toggleClass('direct-chat-contacts-open');
+                });
     }
 
     /*
@@ -634,7 +635,7 @@ function _init() {
             if ($("body").hasClass("fixed")) {
                 $(".content-wrapper, .right-side")
                         .css('min-height', window_height - $('.main-footer')
-                        .outerHeight());
+                                .outerHeight());
             }
             else {
                 var postSetWidth;

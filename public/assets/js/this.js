@@ -165,33 +165,34 @@
     Store.collections = function () {
         return Store('__cols__').find();
     };
-    function objToQStr(obj, callback) {
-        if (!__.isObject(obj))
+    function objToQStr(obj, callback, prepend) {
+        if (!__.isObject(obj, true))
             return obj;
         var str = '',
                 callback = __.callable(callback);
         __.forEach(obj, function (i, v) {
-            if (str)
-                str += '&';
             callback.call(null, i, v);
+
+            if (str) str += '&';
+
+            var pre = prepend || '';
+            if (prepend) i = '[' + i + ']';
+            pre += __.isNumeric(i) ? '[]' : i;
+
+            // is array or object
             if (__.isObject(v, true)) {
                 var isArray = __.isArray(v);
                 __.forEach(v, function (j, w) {
-                    if (j)
-                        str += '&';
-                    if (isArray)
-                        j = '';
+                    if (j && __.isNumeric(j)) str += '&';
                     if (__.isObject(w, true))
-                        str += i + '[' + j + ']=' + parseData(w);
-                    else if (('' + w).trim())
-                        str += i + '[' + j + ']=' + encodeURIComponent(('' +
-                                w).trim());
+                        str += objToQStr(w, null, pre + '[' + j + ']');
+                    else if (w)
+                        str += pre + '[' + j + ']=' + encodeURIComponent(w);
                 });
             }
+            // not an object
             else {
-                str += i;
-                if (v !== undefined && ('' + v).trim())
-                    str += '=' + encodeURIComponent(('' + v).trim());
+                if (v !== undefined) str += pre + '=' + encodeURIComponent(v);
             }
         });
         return str;
@@ -199,16 +200,92 @@
     function qStrToObj(str, callback) {
         var obj = {},
                 callback = __.callable(callback);
-        __.forEach(str.split('&'), function (i, v) {
-            var parts = v.split('=');
+        // loop through each key=value part
+        __.forEach(str.split('&'), function (i, keyToValue) {
+            // get key and value parts
+            var parts = keyToValue.split('='),
+                    // decode value
+                    value = decodeURIComponent(parts[1]);
+            callback.apply(null, parts);
             try {
-                obj[parts[0]] = eval(parts[1]);
-                callback.apply(null, parts);
-                if (obj[parts[0]] === undefined)
-                    throw 'error';
+                // try to ascertain value's real type
+                value = eval(value);
             }
             catch (e) {
-                obj[parts[0]] = parts[1];
+            }
+            // key is an object path
+            if (parts[0].indexOf('[') !== -1) {
+                // get the path parts
+                parts = parts[0].replace(/\]/g, '').split('[');
+                // topmost 
+                var firstKey = parts.shift(),
+                        // last
+                        lastKey = parts.pop();
+                // set firstKey value
+                obj[firstKey] = obj[firstKey] || {};
+                // get firstKey value as temporary object
+                var _tmp = obj[firstKey],
+                        // previous temporary object
+                        prevTmp = obj,
+                        // previously used key
+                        prevKey = firstKey;
+                // loop through other parts
+                __.forEach(parts, function (j, part) {
+                    // part is empty or integer: array
+                    if (!part || parseInt(part) == part) {
+                        // initialize next object
+                        _tmp = {};
+                        // prevKey in prevTmp is not an array (or not exist)
+                        if (!__.isArray(prevTmp[prevKey]))
+                            // set as array with initialized object
+                            prevTmp[prevKey] = [_tmp];
+                        // part exists in previously intialized object
+                        else if (prevTmp[prevKey][part])
+                            // set temp as same
+                            _tmp = prevTmp[prevKey][part];
+                        else
+                            // add initialized object to array
+                            prevTmp[prevKey].push(_tmp);
+
+                        // skip object processing
+                        return;
+                    }
+                    // keep current tmp obj as the previous tmp
+                    prevTmp = _tmp;
+                    if (__.isArray(prevTmp)) {
+                        _tmp = {};
+                        // current part doesn't exist in tmp. Initialize it as object
+                        if (!_tmp[part]) _tmp[part] = {};
+                        prevTmp.push(_tmp);
+                    }
+                    else {
+                        // current part doesn't exist in tmp. Initialize it as object
+                        if (!_tmp[part]) _tmp[part] = {};
+                        // overwrite current tmp with the value of part from previous tmp
+                        _tmp = prevTmp[part];
+                    }
+                    prevKey = part;
+                });
+                // last key is string, hence object
+                if (lastKey)
+                    _tmp[lastKey] = value;
+                // last key is empty: array
+                else {
+                    // get last non-empty part used in loop
+                    lastKey = parts.pop() || prevKey;
+                    // it's value in previous tmp is an array
+                    if (prevTmp[lastKey] && __.isArray(prevTmp[lastKey])) {
+                        // push the value into the array
+                        prevTmp[lastKey].push(value);
+                    }
+                    // not array: override with an array containing the value
+                    else prevTmp[lastKey] = [value];
+                }
+            }
+            // key is just a key
+            else {
+                // set value
+                obj[parts[0]] = value;
             }
         });
         return obj;
@@ -248,6 +325,7 @@
         if (parts[0].endsWith('/'))
             parts[0] = parts[0].substr(0, parts[0].length - 1);
         analysis.page = parts.shift();
+        // get action
         if (parts.length) {
             __.forEach(crudConnectors, function (i, v) {
                 if (v === parts[0]) {
@@ -257,10 +335,17 @@
                 }
             });
         }
-        analysis.model = parts.shift();
-        // parameters exist
-        if (parts.length) {
-            analysis.url = parts.join('/');
+        // get model
+        if (parts.length) analysis.model = parts.shift();
+        // get url
+        if (parts.length) analysis.url = parts.join('/');
+        // page has parameters
+        if (analysis.page.indexOf('?') !== -1) {
+            parts = analysis.page.split('?');
+            // set page again
+            analysis.page = parts[0];
+            // set params
+            analysis.params = qStrToObj(parts[1]);
         }
         return analysis;
     }
@@ -349,7 +434,7 @@
         if (!__.inArray('id', options.ignore) && elem.attr('id'))
             sel = '#' + elem.attr('id');
         // parse attributes if not ignored
-        if (!__.inArray('attrs', options.ignore))
+        if (!__.inArray('attrs', options.ignore)) {
             elem.attr().forEach(function (v) {
                 // skip if attribute is not requested
                 if (!__.inArray(v.name, options.attrs))
@@ -366,6 +451,7 @@
                 if (v.value) sel += '="' + v.value + '"';
                 sel += ']';
             });
+        }
         // skip classes if ignored
         if (__.inArray('class', options.ignore)) return sel;
         else if (cls) sel += '.';
@@ -446,7 +532,7 @@
     function findElem(selector) {
         return Array.from(this.querySelectorAll(selector));
     }
-    Form = function (form) {
+    var Form = function (form) {
         // Ensures Form is called as an object not a function
         if (!this instanceof Form) return new Form(form);
         // data to hold from element entries
@@ -607,15 +693,15 @@
             },
             error: function () {
             },
-            complete: function () {
-            },
             progress: function (e, loaded, total) {
             },
             async: true,
             clearCache: false
         }, config);
         config.type = config.type.toLowerCase();
-        var httpRequest = new XMLHttpRequest(), contentType;
+        var httpRequest = new XMLHttpRequest(),
+                contentType = config.headers['Content-Type'] || config.headers['Content-type']
+                || config.headers['content-type'] || config.headers['CONTENT-TYPE'];
         // call secureAPI
         if (app && config.api) {
             var secureAPI = ext.record.call(app, 'secureAPI'),
@@ -651,34 +737,39 @@
                     __.callable(config.error)
                             .call(httpRequest, httpRequest.response);
                 }
-                __.callable(config.complete)
-                        .call(httpRequest, httpRequest.response);
             }
         };
         // add time query to string to make it ignore cache
         if (config.ignoreCache)
             config.url += ((/\?/).test(config.url) ? "&" : "?") +
                     (new Date()).getTime();
-        // set config data to best format base on the type of request this is
-        if (config.data instanceof Form) {
+
+
+        // leave data alone if content type is set
+        if (!contentType && __.isObject(config.data)
+                && !(config.data instanceof FormData)) {
+            // load plain object into Form Object
+            if (!(config.data instanceof Form))
+                config.data = (new Form()).fromObject(config.data);
+            // set config data to best format base on the type of request this is
             var form = config.data.forRequest(config.type.toLowerCase());
             contentType = form.contentType;
             config.data = form.data;
         }
-        else if (__.isObject(config.data) && !(config.data instanceof FormData)) {
-            config.data = objToQStr(config.data);
+        // GET Request with string or object data
+        if (config.type === 'get' && (__.isString(config.data)
+                || __.isObject(config.data, true))) {
+            // convert data to string if not already string
+            config.data = __.isString(config.data) ? config.data : objToQStr(config.data);
+            // append data string to url
+            config.url += ((/\?/).test(config.url) ? "&" : "?") + config.data;
+            // unset config data
+            config.data = null;
         }
         // data is string but no content type has been set
-        if (config.data && __.isString(config.data)) {
-            if (config.type === 'get') {
-                if (config.data.startsWith('&') || config.data.startsWith('?'))
-                    config.data = config.data.substr(1);
-                config.url += ((/\?/).test(config.url) ? "&" : "?") + config.data;
-                config.data = null;
-            }
-            if (!contentType)
-                contentType = 'application/x-www-form-urlencoded';
-        }
+        else if (config.type !== 'get' && __.isString(config.data) && !contentType)
+            contentType = 'application/x-www-form-urlencoded';
+
         httpRequest.open(config.type, config.url, config.async);
         httpRequest.responseType = config.dataType;
         httpRequest.withCredentials = config.withCredentials;
@@ -763,8 +854,6 @@
                         success: function (data) {
                         },
                         error: function () {
-                        },
-                        complete: function () {
                         }
                     }, config);
                     return Ajax(config);
@@ -1029,7 +1118,8 @@
                         value = this.items[0].dataset[key];
                     // ensure that non-string values are returned in their appropriate data types
                     return this.tryCatch(function () {
-                        return eval(value);
+                        var val = eval(value);
+                        if (val === undefined) throw 'error';
                     }, function () {
                         return value;
                     });
@@ -1313,12 +1403,12 @@
                     return item && typeof item === 'object' && (allowArray || !Array.isArray(item));
                 },
                 /**
-                 * Checks if the given item is a number
+                 * Checks if the given item is numeric
                  * @param mixed item
                  * @returns {Boolean}
                  */
-                isNumber: function (item) {
-                    return !isNaN(item) && !this.isString(item);
+                isNumeric: function (item) {
+                    return !isNaN(item);
                 },
                 /**
                  * Checks if the given item is a string
@@ -2333,23 +2423,23 @@
                         if (_layout.this('url')) {
                             this.request({
                                 url: _layout.this('url'),
-                                success: function (data) {
-                                    _layout.removeThis('url')
-                                            .html(data)
-                                            .find('[this-content]')
-                                            .html(__layout.show());
-                                    if (_layout.this('extends')) {
-                                        ext.extendLayout.call(app, _layout, replaceInState);
-                                    }
-                                    else {
-                                        ext.finalizePageLoad.call(app, _layout,
-                                                replaceInState);
-                                    }
-                                },
-                                error: function () {
-                                },
                                 dataType: 'text'
-                            });
+                            })
+                                    .then(function (data) {
+                                        _layout.removeThis('url')
+                                                .html(data)
+                                                .find('[this-content]')
+                                                .html(__layout.show());
+                                        if (_layout.this('extends')) {
+                                            ext.extendLayout.call(app, _layout, replaceInState);
+                                        }
+                                        else {
+                                            ext.finalizePageLoad.call(app, _layout,
+                                                    replaceInState);
+                                        }
+                                    })
+                                    .catch(function () {
+                                    });
                         }
                         else {
                             _layout.find('[this-content]')
@@ -2487,7 +2577,9 @@
                             .removeThis('layout').hide();
                     this.container.find('[this-type]:not([this-type="page"]):not(page)'
                             + ':not(layout):not([this-type="layout"])'
-                            + ':not(component):not([this-type="component"])').hide();
+                            + ':not(component):not([this-type="component"])'
+                            + ',[this-repeat-for]')
+                            .hide();
                     // delete pageModel for last page
                     delete this.pageModel;
                     this.pageIsLoaded = false;
@@ -2534,17 +2626,17 @@
                     if (this.page.this('path')) {
                         this.request({
                             url: this.page.this('path'),
-                            success: function (data) {
-                                app.page.html(data).show()
-                                        .find('[this-type]'
-                                                + ':not(component):not([this-type="component"])')
-                                        .hide();
-                                ext.loadAssets.call(app, app.page, loadedAssets);
-                            },
-                            error: function () {
-                            },
                             dataType: 'text'
-                        });
+                        })
+                                .then(function (data) {
+                                    app.page.html(data).show()
+                                            .find('[this-type]'
+                                                    + ':not(component):not([this-type="component"])')
+                                            .hide();
+                                    ext.loadAssets.call(app, app.page, loadedAssets);
+                                })
+                                .catch(function () {
+                                });
                     }
                     // just load the page assets
                     else {
@@ -2572,91 +2664,91 @@
                     var url = pathConfig.dir + idOrPath + pathConfig.ext;
                     this.request({
                         url: url,
-                        success: function (data) {
-                            var elem = __.createElement(data),
-                                    prep4Tmpl = function (elem) {
-                                        var content = ext.removeComments.call(app, elem.html());
-                                        elem.html(content);
-                                        elem.find('[this-type="collection"]:not([this-model]),'
-                                                + 'collection:not([this-model])')
-                                                .each(function () {
-                                                    app._(this)
-                                                            .this('model', app._(this)
-                                                                    .this('id'));
-                                                });
-                                        elem.find('[this-autocomplete][this-list]')
-                                                .each(function () {
-                                                    var __this = app._(this),
-                                                            _dropdownList = elem.find('list[this-id="'
-                                                                    + __this.this('list')
-                                                                    + '"],[this-type="list"][this-id="' + __this.this('list')
-                                                                    + '"]')
-                                                            .this('autocompleting', __this.this('id')),
-                                                            _selectedList = elem.find('list[this-id="'
-                                                                    + _dropdownList.this('selection-list')
-                                                                    + '"],[this-type="list"][this-id="'
-                                                                    + _dropdownList.this('selection-list')
-                                                                    + '"]')
-                                                            .this('parent-list', _dropdownList.this('id'));
-                                                });
-                                        elem.find('img[src]')
-                                                .each(function () {
-                                                    var __this = app._(this);
-                                                    if (!__this.attr('src'))
-                                                        return;
-                                                    __this.attr('this-src', __this.attr('src'))
-                                                            .removeAttr('src');
-                                                });
-                                    },
-                                    done = function () {
-                                        __.callable(success)
-                                                .call(this, elem.clone());
-                                    }.bind(this);
-                            // components
-                            if (type === 'component') {
-                                if (elem.length > 1 || (elem.hasThis('type') && elem.this('type') !== 'component'))
-                                    elem = app._('<div/>').html(elem);
-                                elem.this('component-url', idOrPath);
-                                prep4Tmpl(elem);
-                                ext.loadCollections.call(app,
-                                        function () {
-                                            app.addToCache(app._('<div this-type="component"'
-                                                    + ' this-url="' + idOrPath + '" />')
-                                                    .html(elem.clone().removeThis('url')));
-                                            done();
-                                        },
-                                        elem.find('[this-type="collection"][this-static]:not([this-ignore]),'
-                                                + 'collection[this-static]:not([this-ignore])'));
-                            }
-                            // pages and layouts
-                            else {
-                                if (!elem.length || elem.length > 1) {
-                                    elem = app._('<div this-type="' + type + '" />')
-                                            .html(data);
-                                }
-                                else if (!elem.is(type) && elem.this('type') !== type) {
-                                    if (elem.this('type'))
-                                        elem = elem.wrap('<div this-type="page" />')
-                                                .parent();
-                                    else
-                                        elem.this('type', type);
-                                }
-                                // overwrite id from idOrPath
-                                elem.this('id', idOrPath.replace(/\/\\/g, '-'));
-                                if (type === 'page') {
-                                    if (idOrPath.indexOf('/') !== -1)
-                                        elem.this('path', idOrPath);
-                                    prep4Tmpl(elem);
-                                }
-                                app.addToCache(elem);
-                                done();
-                            }
-                        },
-                        error: function (e) {
-                            __.callable(error).call(this, e);
-                        },
                         dataType: 'text'
-                    });
+                    })
+                            .then(function (data) {
+                                var elem = __.createElement(data),
+                                        prep4Tmpl = function (elem) {
+                                            var content = ext.removeComments.call(app, elem.html());
+                                            elem.html(content);
+                                            elem.find('[this-type="collection"]:not([this-model]),'
+                                                    + 'collection:not([this-model])')
+                                                    .each(function () {
+                                                        app._(this)
+                                                                .this('model', app._(this)
+                                                                        .this('id'));
+                                                    });
+                                            elem.find('[this-autocomplete][this-list]')
+                                                    .each(function () {
+                                                        var __this = app._(this),
+                                                                _dropdownList = elem.find('list[this-id="'
+                                                                        + __this.this('list')
+                                                                        + '"],[this-type="list"][this-id="' + __this.this('list')
+                                                                        + '"]')
+                                                                .this('autocompleting', __this.this('id')),
+                                                                _selectedList = elem.find('list[this-id="'
+                                                                        + _dropdownList.this('selection-list')
+                                                                        + '"],[this-type="list"][this-id="'
+                                                                        + _dropdownList.this('selection-list')
+                                                                        + '"]')
+                                                                .this('parent-list', _dropdownList.this('id'));
+                                                    });
+                                            elem.find('img[src]')
+                                                    .each(function () {
+                                                        var __this = app._(this);
+                                                        if (!__this.attr('src'))
+                                                            return;
+                                                        __this.attr('this-src', __this.attr('src'))
+                                                                .removeAttr('src');
+                                                    });
+                                        },
+                                        done = function () {
+                                            __.callable(success)
+                                                    .call(this, elem.clone());
+                                        }.bind(this);
+                                // components
+                                if (type === 'component') {
+                                    elem = app._('<div this-type="component"'
+                                            + ' this-url="' + idOrPath + '"/>')
+                                            .html(elem);
+                                    prep4Tmpl(elem);
+                                    ext.loadCollections.call(app,
+                                            function () {
+                                                app.addToCache(elem);
+                                                if (elem.children().length === 1)
+                                                    elem = elem.children();
+                                                done();
+                                            },
+                                            elem.find('[this-type="collection"][this-static]:not([this-ignore]),'
+                                                    + 'collection[this-static]:not([this-ignore])'));
+                                }
+                                // pages and layouts
+                                else {
+                                    if (!elem.length || elem.length > 1) {
+                                        elem = app._('<div this-type="' + type + '" />')
+                                                .html(data);
+                                    }
+                                    else if (!elem.is(type) && elem.this('type') !== type) {
+                                        if (elem.this('type'))
+                                            elem = elem.wrap('<div this-type="page" />')
+                                                    .parent();
+                                        else
+                                            elem.this('type', type);
+                                    }
+                                    // overwrite id from idOrPath
+                                    elem.this('id', idOrPath.replace(/\/\\/g, '-'));
+                                    if (type === 'page') {
+                                        if (idOrPath.indexOf('/') !== -1)
+                                            elem.this('path', idOrPath);
+                                        prep4Tmpl(elem);
+                                    }
+                                    app.addToCache(elem);
+                                    done();
+                                }
+                            })
+                            .catch(function (e) {
+                                __.callable(error).call(this, e);
+                            });
                 },
                 /**
                  * Fetches all the comments in the content
@@ -2947,14 +3039,15 @@
                     if (ext.record.call(this, 'debug') || !pageAssets[type][url]) {
                         this.request({
                             dataType: type === 'css' ? 'text/css' : 'text/javascript',
-                            url: url,
-                            success: function (content) {
-                                pageAssets[type][url] = content;
-                            },
-                            complete: function () {
-                                load(url);
-                            }
-                        });
+                            url: url
+                        })
+                                .then(function (content) {
+                                    pageAssets[type][url] = content;
+                                    load(url);
+                                })
+                                .catch(function () {
+                                    load(url);
+                                });
                     }
                     else {
                         load(url);
@@ -3055,100 +3148,112 @@
                         __this.this('model', __this.this('id'));
                     // get collection content
                     var _cached = this.getCached('[this-id="'
-                            + __this.this('id') + '"]', 'collection'),
-                            emptyContent = _cached.children('[this-on-empty]')
-                            .remove().removeThis('on-empty')
-                            .removeThis('on-emptied').outerHtml(),
-                            content = _cached.children(':not([this-on-emptied])')
-                            .get(0, true).outerHtml(),
-                            app = this,
-                            model_name = __this.this('model');
-                    __this = ext.doTar.call(this, __this, true);
-                    if (!__this.hasThis('paginate') ||
-                            !__this.children(':first-child')
-                            .this('mid')) {
-                        __this.html('');
-                    }
-                    var requestData = {},
-                            save = ext.config.call(this).cacheData,
-                            success, error;
-                    if (app.page.this('query')) {
-                        requestData['query'] = app.page.this('query');
-                        /* don't save search response requestData */
-                        save = false;
-                    }
-                    if (__this.this('search'))
-                        requestData['keys'] = __this.this('search');
-                    // paginate collection
-                    if (__this.hasThis('paginate')) {
-                        // update pagination
-                        if (!__this.this('pagination-page')) {
-                            __this.this('pagination-page', 0);
-                        }
-                        // add request data with pagination info
-                        if (__this.this('pagination-page') !== undefined) {
-                            requestData['page'] = parseInt(__this.this('pagination-page')) + 1;
-                            __this.this('pagination-page', requestData['page']);
-                            // add limit
-                            if (__this.this('paginate')) {
-                                requestData['limit'] = __this.this('paginate');
-                            }
-                            else if (ext.config.call(this).pagination &&
-                                    ext.config.call(this).pagination.limit) {
-                                requestData['limit'] = ext.config.call(this).pagination.limit;
-                            }
-                        }
-                    }
-                    // callbacks for request
-                    success = function (data, idKey, handled) {
-                        if (idKey)
-                            __this.this('model-id-key', idKey);
-                        if (!data || (__.isObject(data, true)
-                                && !Object.keys(data).length)) {
-                            __this.html(emptyContent)
-                                    .this('loaded', '')
-                                    .removeThis('loading')
-                                    .show()
-                                    .trigger('collection.loaded');
-                            __.callable(callback).call(this, data);
-                            data = false;
-                        }
-
-                        if (handled) {
-                            __.callable(callback)
-                                    .call(app, data || {});
-                            return;
-                        }
-                        else if (data) {
-                            ext.loadData
-                                    .call(app, __this, data, content, false, save,
-                                            function (elem) {
-                                                if (elem) {
-                                                    elem.this('loaded', '')
-                                                            .removeThis('loading')
-                                                            .trigger('collection.loaded');
-                                                }
-                                                __.callable(callback).call(this, data);
-                                            }.bind(app));
-                        }
-                    },
-                            error = function () {
-                                // revert pagination page to former page count
-                                if (__this.this('pagination-page') !== undefined) {
-                                    __this.this('pagination-page', parseInt(__this.this('pagination-page')) - 1);
+                            + __this.this('id') + '"]', 'collection');
+                    ext.loadComponents.call(this,
+                            function () {
+                                var emptyContent = _cached.children('[this-on-empty]')
+                                        .remove().removeThis('on-empty')
+                                        .removeThis('on-emptied')
+                                        .removeThis('[this-first-child]').outerHtml(),
+                                        firstChild = _cached.children('[this-first-child]')
+                                        .remove().removeThis('first-child')
+                                        .removeThis('on-emptied').outerHtml(),
+                                        content = _cached.children(':not([this-on-emptied])')
+                                        .get(0, true).outerHtml(),
+                                        app = this,
+                                        model_name = __this.this('model');
+                                __this = ext.doTar.call(this, __this, true);
+                                if (!__this.hasThis('paginate') ||
+                                        !__this.children(':first-child')
+                                        .this('mid')) {
+                                    __this.html('');
                                 }
-                                __this.removeThis('loading');
-                                __.callable(callback).call(app);
-                            };
-                    ext.loadOrRequestData.call(this, {
-                        elem: __this,
-                        content: content,
-                        data: data,
-                        success: success,
-                        error: error,
-                        replaceState: replaceState,
-                        requestData: Object.keys(requestData).length ? requestData : null
-                    });
+                                var requestData = {},
+                                        save = ext.config.call(this).cacheData,
+                                        success, error;
+                                if (app.page.this('query')) {
+                                    requestData['query'] = app.page.this('query');
+                                    /* don't save search response requestData */
+                                    save = false;
+                                }
+                                if (__this.this('search'))
+                                    requestData['keys'] = __this.this('search');
+                                // paginate collection
+                                if (__this.hasThis('paginate')) {
+                                    // update pagination
+                                    if (!__this.this('pagination-page')) {
+                                        __this.this('pagination-page', 0);
+                                    }
+                                    // add request data with pagination info
+                                    if (__this.this('pagination-page') !== undefined) {
+                                        requestData['page'] = parseInt(__this.this('pagination-page')) + 1;
+                                        __this.this('pagination-page', requestData['page']);
+                                        // add limit
+                                        if (__this.this('paginate')) {
+                                            requestData['limit'] = __this.this('paginate');
+                                        }
+                                        else if (ext.config.call(this).pagination &&
+                                                ext.config.call(this).pagination.limit) {
+                                            requestData['limit'] = ext.config.call(this).pagination.limit;
+                                        }
+                                    }
+                                }
+                                // callbacks for request
+                                success = function (data, idKey, handled) {
+                                    if (firstChild) __this.prepend(firstChild);
+                                    if (idKey)
+                                        __this.this('model-id-key', idKey);
+                                    if (!data || (__.isObject(data, true)
+                                            && !Object.keys(data).length)) {
+                                        __this.html(emptyContent)
+                                                .this('loaded', '')
+                                                .removeThis('loading')
+                                                .show();
+                                        __.callable(callback).call(this, data);
+                                        data = false;
+                                    }
+                                    __this.trigger('collection.loaded');
+
+                                    if (handled) {
+                                        __.callable(callback)
+                                                .call(app, data || {});
+                                        return;
+                                    }
+                                    else if (data) {
+                                        ext.loadData
+                                                .call(app, __this, data, content, false, save,
+                                                        function (elem) {
+                                                            if (elem) {
+                                                                elem.this('loaded', '')
+                                                                        .removeThis('loading')
+                                                                        .trigger('collection.loaded');
+                                                            }
+                                                            __.callable(callback).call(this, data);
+                                                        }.bind(app));
+                                    }
+                                },
+                                        error = function () {
+                                            if (emptyContent)
+                                                __this.html(emptyContent).show();
+                                            // revert pagination page to former page count
+                                            if (__this.this('pagination-page') !== undefined) {
+                                                __this.this('pagination-page', parseInt(__this.this('pagination-page')) - 1);
+                                            }
+                                            __this.removeThis('loading')
+                                                    .trigger('collection.loaded');
+                                            __.callable(callback).call(app);
+                                        };
+                                ext.loadOrRequestData.call(this, {
+                                    elem: __this,
+                                    content: content,
+                                    data: data,
+                                    success: success,
+                                    error: error,
+                                    replaceState: replaceState,
+                                    requestData: Object.keys(requestData).length ? requestData : null
+                                });
+                            }.bind(this),
+                            _cached.find('[this-component]:not([this-ignore])'));
                     return this;
                 },
                 /**
@@ -3199,15 +3304,12 @@
                     if (!component ||
                             !this._(component).length) {
                         if (__this.this('url')) {
-                            var cached = this
-                                    .getCached('[this-url="' +
-                                            __this.this('url') +
-                                            '"]', 'component');
+                            var cached = this.getCached('[this-url="' +
+                                    __this.this('url') + '"]', 'component');
                             if (cached.length)
                                 ext.loadComponent.call(this, __this, callback, cached.children()
-                                        .clone()
-                                        .show());
-                            else {
+                                        .clone().show());
+                            else
                                 ext.fullyFromURL
                                         .call(app, 'component', __this.this('url'),
                                                 function (data) {
@@ -3220,7 +3322,6 @@
                                                     __.callable(callback)
                                                             .call(app);
                                                 });
-                            }
                         }
                         else {
                             component = this.getCached('[this-id="'
@@ -3690,11 +3791,14 @@
                                         url: _selectedList.this('refill-url'),
                                         data: {
                                             ids: data
-                                        },
-                                        success: function (data) {
-                                            gotData(getRealData.call(app, data));
                                         }
-                                    });
+                                    })
+                                            .then(function (data) {
+                                                gotData(getRealData.call(app, data));
+                                            })
+                                            .catch(function () {
+
+                                            });
                                 }
                                 gotData(data);
                             }
@@ -3799,26 +3903,26 @@
                                 if (_layout.this('url')) {
                                     this.request({
                                         url: _layout.this('url'),
-                                        success: function (data) {
-                                            _layout.removeThis('url')
-                                                    .html(data)
-                                                    .find('[this-content]')
-                                                    .html(app.page);
-                                            if (_layout.this('extends'))
-                                                ext.extendLayout.call(app, _layout,
-                                                        replaceInState);
-                                            else {
+                                        dataType: 'text'
+                                    })
+                                            .then(function (data) {
+                                                _layout.removeThis('url')
+                                                        .html(data)
+                                                        .find('[this-content]')
+                                                        .html(app.page);
+                                                if (_layout.this('extends'))
+                                                    ext.extendLayout.call(app, _layout,
+                                                            replaceInState);
+                                                else {
+                                                    ext.finalizePageLoad.call(app, _layout,
+                                                            replaceInState);
+                                                }
+                                            })
+                                            .catch(function () {
+                                                app.error('Layout [' + layout + '] not found!');
                                                 ext.finalizePageLoad.call(app, _layout,
                                                         replaceInState);
-                                            }
-                                        },
-                                        error: function () {
-                                            app.error('Layout [' + layout + '] not found!');
-                                            ext.finalizePageLoad.call(app, _layout,
-                                                    replaceInState);
-                                        },
-                                        dataType: 'text'
-                                    });
+                                            });
                                 }
                                 else {
                                     _layout.find('[this-content]').html(app.page);
@@ -4015,7 +4119,7 @@
                             loadDataOrCache = function (config, isError) {
                                 // if no data and no explicit ignore-cache on collection config.elem
                                 // and cache exists
-                                if (!config.data && cache) {
+                                if (!config.data && cache && Object.keys(cache).length) {
                                     if (config.looping)
                                         this.__proto__[type + 's']--;
                                     config.data = cache;
@@ -4207,7 +4311,7 @@
                         // create entries to update dom
                         if (!options.ignoreDOM) {
                             var store_name = options.isNew ? 'createdStore' : 'updatedStore',
-                                    actionStore = ext[store_name],
+                                    actionStore = ext.record.call(this, store_name),
                                     action = actionStore.find(options.modelName);
                             // saved existing options.model for dom update
                             if (!options.isNew) {
@@ -4297,11 +4401,8 @@
                         this._params.unshift(analytics.model);
                     if (prepParams) {
                         var parts = id.split('?');
-                        this.params = {};
+                        this.params = analytics.params || {};
                         this.pageAction = analytics.action;
-                        if (parts.length > 1) {
-                            this.params = qStrToObj(parts[1]);
-                        }
                         this.GETParams = location.search ?
                                 qStrToObj(location.search.substr(1)) :
                                 {};
@@ -4373,7 +4474,7 @@
                         }
                         delete this.firstPage;
                     }
-                    // load required if not already loaded js
+                    // load required js if not already loaded
                     if (this.page.this('load-js')
                             && !loadedPageJS.last[this.page.this('id')]) {
                         var jses = this.page.this('load-js')
@@ -4591,21 +4692,18 @@
                                                 + '[this-type="collection"]:not([this-loaded]),'
                                                 + '[this-type="layout"]:not([this-loaded]),'
                                                 + '[this-type="list"]:not([this-loaded]),'
-                                                + '[this-type="component"]:not([this-loaded])'
-                                                + '[this-paginate-next],[this-paginate-previous]')
+                                                + '[this-type="component"]:not([this-loaded]),'
+                                                + '[this-paginate-next],[this-paginate-previous]'
+                                                + '[this-repeat-for]')
                                         .hide()
                                         );
                     }
                     else {
                         templates = this._('<div>').html(templates);
                         // remove loaded templates from cached one
-                        if (loaded)
-                            templates.find(loaded)
-                                    .remove();
+                        if (loaded) templates.find(loaded).remove();
                         this.templates = this._('[this-type="templates"][this-app="'
-                                +
-                                this.container.this('id') +
-                                '"]')
+                                + this.container.this('id') + '"]')
                                 .html(templates.children());
                     }
                     // add the remaining page and layouts to cache
@@ -4683,8 +4781,8 @@
                         ext.records[this.container.this('id')][key] = value;
                         return this;
                     }
-                    var records = this.container ? ext.records[this.container.this('id')] : null;
-                    return records && key ? records[key] : records;
+                    var records = this.container ? ext.records[this.container.this('id')] : {};
+                    return key ? records[key] : records;
                 },
                 /**
                  * Escapes a regex string
@@ -4702,7 +4800,7 @@
                 removeComments: function (content) {
                     var exps = ext.getComments.call(this, content);
                     __.forEach(exps, function (i, v) {
-                        content = content.replace(new RegExp(v, 'g'), '');
+                        content = content.replace(v, '');
                     });
                     return content;
                 },
@@ -4743,8 +4841,14 @@
                         var config = __.callable(def).call(this);
                         // url exists
                         if (config.url) {
+                            var success = __.callable(config.success),
+                                    error = __.callable(config.error);
+                            delete config.success;
+                            delete config.error;
                             // load request
-                            this.request(config);
+                            this.request(config)
+                                    .then(success)
+                                    .catch(error);
                         }
                         // url does not exist:
                         else {
@@ -5335,14 +5439,7 @@
                                             // got model
                                             .then(function (model_) {
                                                 model = model_;
-                                                return model.remove({
-                                                    complete: function () {
-                                                        _model.trigger('delete.complete', {
-                                                            response: this,
-                                                            model: model
-                                                        });
-                                                    }
-                                                });
+                                                return model.remove();
                                             })
                                             // removed
                                             .then(function (data) {
@@ -5373,12 +5470,20 @@
                                                         responseData: data,
                                                         model: model
                                                     });
+                                                _model.trigger('delete.complete', {
+                                                    response: this,
+                                                    model: model
+                                                });
                                             })
                                             // remove failed
                                             .catch(function (data) {
                                                 _model.trigger('delete.error', {
                                                     response: this,
                                                     responseData: data,
+                                                    model: model
+                                                });
+                                                _model.trigger('delete.complete', {
+                                                    response: this,
                                                     model: model
                                                 });
                                             });
@@ -5673,16 +5778,7 @@
                                                                     app.page.this('url') ||
                                                                     app.page.this('action'),
                                                             ignoreDOM: __this.hasThis('ignore-dom'),
-                                                            method: method,
-                                                            complete: function () {
-                                                                __this.trigger('form.submission.complete',
-                                                                        {
-                                                                            response: this,
-                                                                            method: method.toUpperCase(),
-                                                                            create: creating,
-                                                                            model: _model
-                                                                        });
-                                                            }
+                                                            method: method
                                                         });
                                                     })
                                                     // saved
@@ -5725,6 +5821,13 @@
                                                                         model: _model
                                                                     });
                                                         }
+                                                        __this.trigger('form.submission.complete',
+                                                                {
+                                                                    response: this,
+                                                                    method: method.toUpperCase(),
+                                                                    create: creating,
+                                                                    model: _model
+                                                                });
                                                     })
                                                     // not saved
                                                     .catch(function (data) {
@@ -5732,6 +5835,13 @@
                                                                 {
                                                                     response: this,
                                                                     responseData: data,
+                                                                    method: method.toUpperCase(),
+                                                                    create: creating,
+                                                                    model: _model
+                                                                });
+                                                        __this.trigger('form.submission.complete',
+                                                                {
+                                                                    response: this,
                                                                     method: method.toUpperCase(),
                                                                     create: creating,
                                                                     model: _model
@@ -5993,7 +6103,7 @@
                         if (this.oldPage)
                             this.oldPage.remove();
                         delete this.oldPage;
-                    }.bind(this), __.isNumber(wait) ? wait : 0);
+                    }.bind(this), __.isNumeric(wait) ? wait : 0);
                     if (ext.config.call(this).titleContainer)
                         ext.config.call(this).titleContainer.html(this.page.this('title'));
                     // this ensures that only expressions and variables for the page
@@ -6027,7 +6137,7 @@
                     if (!this.container.hasThis('auto-id'))
                         // use the id with the name
                         name = this.container.this('id') + '.' + name;
-                    return name ? new Store(name) : null;
+                    return name ? new Store(name) : Store;
                 },
                 /**
                  * Updates a retrieved saved page
@@ -6063,7 +6173,7 @@
                                 return;
                             // remove the empty marker
                             _collection.children(':not([this-id="' +
-                                    _collection.this('id') + '"])')
+                                    _collection.this('model') + '"])')
                                     .remove();
                             touched.created = true;
                             var __collection = ext.store.call(app, model_name),
@@ -6451,7 +6561,8 @@
                                 'May', 'June', 'July', 'August', 'September',
                                 'October', 'November', 'December'],
                             d = new Date(item);
-                    if (isNaN(d.getTime())) d = new Date(parseInt(item));
+                    if (isNaN(d.getTime()))
+                        d = new Date(parseInt(item));
                     var date = d.getDate(),
                             dy = d.getDay() + 1,
                             mon = d.getMonth() + 1,
@@ -6467,7 +6578,7 @@
                         tzon = -1 * tzon / 60;
                         tzstr += tzon > 0 ? '+' + tzon : '-' + tzon;
                     }
-                    return this.replace(new RegExp(options, 'g'),
+                    var cnv =
                             // day of the week and date
                             'DDDD:' + longDays[dy - 1].toUpperCase() // Full string of day, upper case
                             + ';dddd:' + longDays[dy - 1].toLowerCase() // Full string of day, lower case
@@ -6519,8 +6630,8 @@
                             + ';TZ:' + tzstr // Timezone, upper case
                             + ';tz:' + tzstr.toLowerCase() // Timezone, lower case
                             // timestamp
-                            + ';t:' + d.getTime() // timestamp of date
-                            );
+                            + ';t:' + d.getTime(); // timestamp of date
+                    return this.replace(options, cnv);
                 },
                 /**
                  * Filters items out of the object or array
@@ -6577,6 +6688,16 @@
                     });
                 },
                 /**
+                 * Gets the length of the value if value is object, array or 
+                 * string. Returns 0 otherwise.
+                 */
+                length: function (item) {
+                    if (__.isObject(item, true))
+                        return Object.keys(item).length;
+                    else if (__.isString(item)) return item.length;
+                    else return 0;
+                },
+                /**
                  * Changes the item to lower case
                  * @param string|array item
                  * @returns string|array
@@ -6622,7 +6743,8 @@
                                 return str.replace(/-u-/g, '_');
                             },
                             function (str, options) {
-                                if (!str || !__.isString(str)) return str;
+                                if (!str || !__.isString(str))
+                                    return str;
                                 __.forEach(options, function (search, replace) {
                                     str = str.replace(new RegExp(search, 'g'), replace);
                                 });
@@ -6706,7 +6828,8 @@
                     return this.__factory(item, null, function (item) {
                         if (!item || !__.isString(item)) return item;
                         return item.replace(/[^\s]+/g, function (word) {
-                            if (!word || !__.isString(word)) return word;
+                            if (!word || !__.isString(word))
+                                return word;
                             return word.replace(/^./, function (first) {
                                 if (!first || !__.isString(first))
                                     return first;
@@ -6983,15 +7106,11 @@
                                     __.callable(config.success)
                                             .call(this, data);
                                     resolve(data);
-                                    __.callable(config.complete)
-                                            .call(this);
                                 },
                                         _error = function (e) {
                                             __.callable(config.error)
                                                     .call(this, e);
                                             reject(e);
-                                            __.callable(config.complete)
-                                                    .call(this, e);
                                         };
                                 ext.request.call(this.app, null,
                                         function () {
@@ -7057,8 +7176,7 @@
                                     && !config.form) {
                                 this.app.error('No data or form to save');
                                 __.callable(config.error).call(this.app);
-                                reject('No data or form to save');
-                                return __.callable(config.complete).call(this.app);
+                                return reject('No data or form to save');
                             }
 
                             var finalizeSave = function (config, data, removeUploaded) {
@@ -7121,7 +7239,6 @@
                                             __.callable(config.fail).call(this);
                                         }
                                         resolve(data, id);
-                                        __.callable(config.complete).call(this);
                                     },
                                             _error = function (e) {
                                                 // remove uploaded files
@@ -7130,8 +7247,6 @@
                                                 __.callable(config.error)
                                                         .call(this, e);
                                                 reject(e);
-                                                __.callable(config.complete)
-                                                        .call(this, e);
                                             };
                                     ext.request.call(this.app, config.form,
                                             function () {
@@ -7413,8 +7528,10 @@
                                         _this.url : _this.url + '/') + model_id;
                             }
                             var ignoreCache = options.hasOwnProperty('ignoreCache');
+                            // not asked to ignore cache
                             if (((ignoreCache && !options.ignoreCache)
-                                    || (!ignoreCache && !ext.config.call(app).cacheData))
+                                    // 
+                                    || (!ignoreCache && !ext.config.call(app).cacheData === false))
                                     && this.models[model_id]) {
                                 var model = __.extend(this.models[model_id]),
                                         _model = new Model(model_id, model, {
@@ -7431,30 +7548,28 @@
                             }
                             else if (url) {
                                 return this.app.promise(function (resolve, reject) {
-                                    this.app.request({
-                                        url: url,
-                                        success: function (data) {
-                                            data = getRealData.call(this.app, data);
-                                            if (data && __.isObject(data))
-                                                delete data.__page;
-                                            var _model = new Model(model_id, data, {
-                                                name: _this.name,
-                                                app: _this.app,
-                                                idKey: _this.idKey,
-                                                url: url,
-                                                collection: this
-                                            });
-                                            __.callable(options.success)
-                                                    .call(this,
-                                                            _model);
-                                            resolve(_model);
-                                        }.bind(this),
-                                        error: function (e) {
-                                            __.callable(options.error)
-                                                    .call(this, e);
-                                            reject(e);
-                                        }.bind(this)
-                                    });
+                                    this.app.request(url)
+                                            .then(function (data) {
+                                                data = getRealData.call(this.app, data);
+                                                if (data && __.isObject(data))
+                                                    delete data.__page;
+                                                var _model = new Model(model_id, data, {
+                                                    name: _this.name,
+                                                    app: _this.app,
+                                                    idKey: _this.idKey,
+                                                    url: url,
+                                                    collection: this
+                                                });
+                                                __.callable(options.success)
+                                                        .call(this,
+                                                                _model);
+                                                resolve(_model);
+                                            }.bind(this))
+                                            .catch(function (e) {
+                                                __.callable(options.error)
+                                                        .call(this, e);
+                                                reject(e);
+                                            }.bind(this));
                                 }.bind(this));
                             }
                         }
@@ -7542,15 +7657,11 @@
                                             __.callable(config.success)
                                                     .call(_this, data);
                                             resolve(data);
-                                            __.callable(config.complete)
-                                                    .call(_this);
                                         },
                                         _error = function (e) {
                                             __.callable(config.error)
                                                     .call(_this, e);
                                             reject(e);
-                                            __.callable(config.complete)
-                                                    .call(_this);
                                         };
                                 ext.request.call(this.app, null,
                                         function () {
@@ -8058,11 +8169,18 @@
             return this.tryCatch(function () {
                 var _this = this,
                         elem = this._();
-                if (__.isObject(selector))
+                if (__.isObject(selector)) {
+                    var attrs = ["this-id", "this-type", "this-model"];
+                    // don't check `this-model` for bounded non-page element
+                    if (selector.hasThis('binding')
+                            && selector.this('type') !== 'page') {
+                        __.arrayRemoveIndex(2);
+                    }
                     selector = elemToSelector(selector, {
-                        attrs: ["this-id", "this-type", "this-model"],
+                        attrs: attrs,
                         ignore: ["class"]
                     });
+                }
                 if (type) {
                     var seltr = '';
                     __.forEach(selector.split(','), function (i, v) {
@@ -8105,8 +8223,16 @@
                         }
                     }
                 }
+                // not found in page cache
                 if (!elem.length) {
+                    // check templates directly
                     elem = this.templates.children(selector);
+                    // not found
+                    if (!elem.length) {
+                        // check in components
+                        elem = this.template.find('component>' + selector
+                                + ',[this-type="component"]>' + selector);
+                    }
                     // return empty element if loading first page and debugging
                     // This ensures that a fresh copy is loaded
                     if (this.firstPage && ext.config.call(this).debug
@@ -8114,8 +8240,7 @@
                         return this._();
                 }
                 elem = elem.clone();
-                if (elem.this('type') === 'template')
-                    elem.removeThis('type');
+                if (elem.this('type') === 'template') elem.removeThis('type');
                 elem.find('[this-type="style"]').each(function () {
                     _this._(this).replaceWith('<style>' + this.innerText + '</style>');
                 });
@@ -8304,11 +8429,10 @@
         },
         /**
          * Reloads the current page
-         * @param {Boolean} resources Indicates whether to reload all resources as well.
-         * @param {Boolean} layouts Indicates whether to reload all layouts as well.
+         * @param {Boolean} layoutsToo Indicates whether to reload all layouts as well.
          * @returns {ThisApp}
          */
-        reload: function (resources, layouts) {
+        reload: function (layoutsToo) {
             if (!ext.isRunning.call(this)) {
                 this.error('App not started yet!');
                 return this;
@@ -8316,21 +8440,17 @@
             return this.tryCatch(function () {
                 var last_page = ext.record.call(this).store.find('last_page');
                 ext.record.call(this).store.remove('last_page');
-                if (resources)
-                    location.reload();
-                else {
-                    this.reloadLayouts = layouts || false;
-                    if (this.page.hasThis('reading')) {
-                        // keep attributes for page
-                        this.tar['page#' + this.page.this('id')] = {
-                            reading: '',
-                            url: this.page.this('url'),
-                            model: this.page.this('model'),
-                            mid: this.page.this('mid')
-                        };
-                    }
-                    this.loadPage(last_page, true);
+                this.reloadLayouts = layoutsToo || false;
+                if (this.page.hasThis('reading')) {
+                    // keep attributes for page
+                    this.tar['page#' + this.page.this('id')] = {
+                        reading: '',
+                        url: this.page.this('url'),
+                        model: this.page.this('model'),
+                        mid: this.page.this('mid')
+                    };
                 }
+                this.loadPage(last_page, true);
                 return this;
             });
         },
@@ -8680,9 +8800,11 @@
          * @returns {Store}
          */
         store: function (collection) {
+            if (!ext.isRunning.call(this)) {
+                return this.error('App is not started yet!');
+            }
             return this.tryCatch(function () {
-                return collection ?
-                        ext.store.call(this, collection) : Store;
+                return ext.store.call(this, collection);
             });
         },
         /**
@@ -8697,9 +8819,9 @@
                 return __.callable(tryFunc).call(this);
             }.bind(this),
                     function (e) {
-                        console.log(e);
                         this.error(e);
-                        if (catchFunc) __.callable(catchFunc).call(this, e);
+                        if (catchFunc)
+                            __.callable(catchFunc).call(this, e);
                         return this;
                     }.bind(this));
         },
