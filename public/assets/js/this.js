@@ -4181,7 +4181,6 @@
                         catch (e) {
                             type = 'get';
                         }
-
                         return ext.request.call(this, config.elem,
                                 function () {
                                     if (!config.elem.hasThis('no-updates') &&
@@ -4189,6 +4188,7 @@
                                         ext.watch.call(this, config.elem);
                                     config.elem.removeThis('no-updates');
                                     return {
+										action: 'read',
                                         elem: config.elem,
                                         type: type,
                                         id: config.elem.this('mid'),
@@ -4369,8 +4369,7 @@
                 pageFound: function (page, replaceInState) {
                     if (ext.is.call(this, 'page', page)) {
                         if (this.page) {
-                            this.oldPage = this.page.this('dead', '')
-                                    .trigger('page.leave');
+                            this.oldPage = this.page.this('dead', '');
                             if (this.oldPage.this('id') === page.this('id'))
                                 replaceInState = true;
                         }
@@ -4991,7 +4990,7 @@
                     this.tryCatch(function () {
                         var app = this;
                         // save page state before leaving
-                        this.when('page.leave', 'page', function () {
+                        this.before('page.leave', function () {
                             ext.saveState.call(app, true);
                         });
                         // save page state before leaving
@@ -5315,8 +5314,6 @@
                                  * Load page
                                  * 
                                  * Target must have attribute `this-goto`
-                                 * 
-                                 * Event page.leave is triggered
                                  */
                                 .on('click', '[this-goto]:not(form)', function (e) {
                                     e.preventDefault();
@@ -5624,6 +5621,7 @@
                                             ext.record.call(app).store.save(data, 'autocompleting');
                                         },
                                                 config = {
+													action: 'autocomplete',
                                                     type: type,
                                                     url: url,
                                                     success: success,
@@ -5886,6 +5884,7 @@
                                     ext.request.call(app, _form,
                                             function () {
                                                 return {
+													action: 'handled-submit',
                                                     type: _form.attr('method'),
                                                     url: _form.attr('action'),
                                                     data: fd,
@@ -6048,9 +6047,6 @@
                          */
                         this._(window).on('popstate', function (e) {
                             if (e.state) {
-                                if (this.page) {
-                                    this.page.trigger('page.leave');
-                                }
                                 location.replace(e.state.url);
                                 ext.pageIDFromLink.call(this, e.state.url, true);
                                 this.__proto__.modelParams = this._params;
@@ -6374,13 +6370,15 @@
                             !elem.this('url'))
                         return this;
                     var isCollection = ext.is.call(this, 'collection', elem),
-                            model_name = elem.this('model') || elem.this('id');
-                    this.watching[elem.this('id')] = {
-                        type: isCollection ? 'collection' : 'model',
-                        url: elem.this('url'),
-                        mid: elem.this('mid')
-                    };
-                    __.callable(this.watchCallback)(elem.this('url'),
+                            model_name = elem.this('model') || elem.this('id'),
+							config = {
+								type: isCollection ? 'collection' : 'model',
+								url: elem.this('url'),
+								mid: elem.this('mid'),
+								modelName: model_name
+							};
+                    this.watching[elem.this('id')] = config;
+                    __.callable(this.watchCallback)(config,
                             function (resp) {
                                 // save model to collection
                                 switch (resp.event) {
@@ -7253,6 +7251,7 @@
                                                 return {
                                                     url: config.url || this.url,
                                                     id: this.id,
+													action: this.id ? 'update' : 'create',
                                                     form: config.form,
                                                     data: form,
                                                     type: config.method || method,
@@ -7666,6 +7665,7 @@
                                 ext.request.call(this.app, null,
                                         function () {
                                             return {
+												action: 'delete',
                                                 url: this.url,
                                                 type: config.method ||
                                                         ext.config.call(app).crud.methods.delete,
@@ -8015,6 +8015,7 @@
          * @param {_}|{HTMLElement} elem
          * @param {Object} object
          * @param {Funtion} callback
+		 * @returns {Promise}
          */
         bindToObject: function (elem, object, callback) {
             if (!ext.isRunning.call(this)) {
@@ -8271,7 +8272,7 @@
          * @param {HTMLElement}|{_}|{string} elem
          * @param {Object} data
          * @param {Function} callback
-         * @returns {ThisApp}
+         * @returns {Promise}
          */
         load: function (elem, data, callback) {
             if (!ext.isRunning.call(this)) {
@@ -8279,7 +8280,7 @@
                 __.callable.call(this, null, 'App not started yet!');
                 return this;
             }
-            return this.tryCatch(function () {
+            return this.promise(function (resolve) {
                 var _this = this;
                 this._(elem).each(function () {
                     var type = getElemType(_this._(this)),
@@ -8288,9 +8289,11 @@
                                     ['component', 'collection', 'model']);
                     if (!ext[method] || !valid)
                         return;
-                    ext[method].call(_this, this, callback, data);
+                    ext[method].call(_this, this, function(){
+						__.callable(callback).apply(this, arguments);
+						resolve.apply(this, arguments);
+					}, data);
                 });
-                return this;
             });
         },
         /**
@@ -8531,7 +8534,7 @@
         },
         /**
          * Reset an autocomplete input element
-         * @param {string} id The id of the element. Could also be a comma-separted
+         * @param {string} id The id of the element. Could also be a comma-separated
          * list of ids
          * @return {ThisApp}
          */
@@ -8570,7 +8573,7 @@
          * Provide function to ensure api requests are secured by providing either
          * headers or request body data, or both.
          * @param {Function} func The function to be called when making api
-         * requests. The function would receive 3 parameters: (string) key, 
+         * requests. The function would receive 3 parameters: 
          * (object) header, (object) body
          * @returns {ThisApp}
          */
@@ -8616,7 +8619,8 @@
             return this;
         },
         /**
-         * Sets the key in the response which holds the data array          * @param string key
+         * Sets the key in the response which holds the data array
+		 * @param string key
          * @returns ThisApp
          */
         setDataKey: function (key) {
@@ -8760,7 +8764,7 @@
             return this;
         },
         /**
-         * Initializes the app
+         * Starts the app
          * @param string page The ID of the page
          * @param boolean freshCopy Indicates to ignore copy in history and 
          * generate a fresh one
@@ -8799,12 +8803,12 @@
          * @param string collection
          * @returns {Store}
          */
-        store: function (collection) {
+        store: function (collectionName) {
             if (!ext.isRunning.call(this)) {
                 return this.error('App is not started yet!');
             }
             return this.tryCatch(function () {
-                return ext.store.call(this, collection);
+                return ext.store.call(this, collectionName);
             });
         },
         /**

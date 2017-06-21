@@ -1,7 +1,8 @@
 var app = new ThisApp({
-    idKey: 'id',
-    pagination: {
-        limit: 24
+    crud: {
+        status: {
+            successValue: 200
+        }
     }
 }),
         _ = function (selector) {
@@ -91,14 +92,14 @@ app.debug(true)
                                                 id: ssn.i
                                             }
                                         })
-                                                .then(function (d) {
+                                                .then(function (resp) {
                                                     // got new data
-                                                    if (d) {
+                                                    if (resp.status === 200) {
                                                         ssn = {
-                                                            e: d.expires,
+                                                            e: resp.data.expires,
                                                             i: ssn.i,
-                                                            k: d.apiKey,
-                                                            v: d.verified
+                                                            k: resp.data.apiKey,
+                                                            v: resp.data.verified
                                                         };
                                                         app.store('ssn')
                                                                 .save(ssn, 1, true);
@@ -120,8 +121,8 @@ app.debug(true)
                         };
                 if (ssn && ssn.e > Date.now()) {
                     app.request('user/me')
-                            .then(function (user) {
-                                if (user) {
+                            .then(function (resp) {
+                                if (resp.status === 200) {
                                     _c('li.btn.auth').addClass('hidden');
                                     _c('li.btn.account').removeClass('hidden');
                                     // watch token and reset 10 minutes before expiration
@@ -148,24 +149,24 @@ app.debug(true)
         })
         .on('form.submission.success form.submission.error form.submission.failed', 'form',
                 function (e) {
-                    var data = e.detail.responseData,
+                    var resp = e.detail.responseData,
                             _modal = _(this).closest('.modal'),
                             _alert = _modal.find('.modal-footer').children(),
                             _submit = _(this).find('img[alt="loading"]').addClass('hidden')
                             .siblings().removeClass('hidden');
                     // error
-                    if (data && data.status) {
-                        var message = data.message;
-                        if (data.errors) {
+                    if (resp.status !== 200) {
+                        var message = resp.message;
+                        if (resp.errors) {
                             message = '<ul>';
-                            app.__.forEach(data.errors, function (i, v) {
+                            app.__.forEach(resp.errors, function (i, v) {
                                 message += '<li><strong>' + i + '</strong> ' + v + '</li>';
                             });
                             message += '</ul>';
                         }
                         _alert.removeClass('alert-success alert-info')
                                 .addClass('alert-danger')
-                                .html(data ? message.replace('username', 'email')
+                                .html(resp ? message.replace('username', 'email')
                                         : 'No internet connection');
                     }
                     // success
@@ -177,18 +178,18 @@ app.debug(true)
                                 if (app.params.r)
                                     url += decodeURIComponent(app.params.r);
                                 app.store('ssn').save({
-                                    k: data.apiKey,
-                                    i: data.uid,
-                                    v: data.verified,
-                                    e: data.expires
+                                    k: resp.data.apiKey,
+                                    i: resp.data.uid,
+                                    v: resp.data.verified,
+                                    e: resp.data.expires
                                 }, 1);
-                                app.request('user/me')
-                                        .then(function (user) {
-                                            app.store('ssn').save(user, 'u');
-                                            // redirect to user page
-                                            location.href = url;
-                                        });
-                                _submit.addClass('hidden').siblings().removeClass('hidden');
+                                app.store('ssn').save({
+                                    id: resp.data.uid
+                                }, 'u');
+                                // redirect to user page
+                                location.href = url;
+                                _submit.addClass('hidden').siblings()
+                                        .removeClass('hidden');
                                 return;
                             case 'reset-password':
                                 message = 'Password reset email sent.';

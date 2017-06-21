@@ -47,14 +47,13 @@ var app = new ThisApp({
         text: 'Starter App'
     },
     container: 'app',
-    modelUID: 'id',
     pagination: {
         limit: 12
     },
-    dataKey: null,
-//    cacheData: false,
     crud: {
-        status: false
+        status: {
+            successValue: 200
+        }
     }
 }),
         // for hiding messages
@@ -111,71 +110,87 @@ app.onError(function (msg) {
         .setUploader(function (options) {
             var fd = new FormData(),
                     url = 'files/',
-                    hasFiles = false;
-            var col = options.modelName;
-            if (col) {
-                if (col.indexOf('-') !== -1) {
-                    var parts = col.split('-');
-                    col = parts[parts.length - 1];
-                }
+                    hasFiles = false,
+                    data = {};
+            if (options.modelName) {
                 // use model name as subdirectory
-                url += '?subdir=' + col;
+                url += '?subdir=' + options.modelName;
             }
             // add files to formdata
             _(options.files).each(function () {
-                if (!this.files.length) {
-                    return;
-                }
+                if (!this.name || !this.files.length) return;
                 fd.append(this.name, this.files[0]);
+
+                if (this.name.indexOf('[')) {
+                    var parts = this.name.split('[');
+                    // keep old files
+                    data[parts[0]] = app.pageModel ? app.pageModel.attributes[parts[0]] : [];
+                }
                 hasFiles = true;
             });
             if (!hasFiles) {
-                return options.done();
+                return options.done({});
             }
             app.request({
                 type: 'post',
                 url: url,
                 data: fd,
-                dataType: 'json',
-                success: function (resp) {
-                    var data = {
-                        ___freshUpload: []
-                    }, ids = [];
-                    if (resp.length) {
-                        app.__.forEach(resp, function (i, value) {
-                            var name = options.files[i].name,
-                                    path = app.config.baseURL + '_files/';
-                            if (col) {
-                                path += col + '/';
-                            }
-                            data[name] = path + value.filename;
-                            data[name + 'Id'] = value.id;
-                            ids.push(value.id);
-                        });
-
-                        options.done(data, function () {
-                            app.request({
-                                url: url,
-                                type: 'delete',
-                                data: {
-                                    id: {
-                                        $in: ids
+                dataType: 'json'
+            })
+                    .then(function (resp) {
+                        if (resp.status === 200 && resp.data.length) {
+                            var ids = [], files = '', fileIds = '';
+                            app.__.forEach(resp.data, function (i, value) {
+                                ids.push(value.id);
+                                var name = options.files[i].name,
+                                        path = app.config.baseURL + '_files/';
+                                if (options.modelName) {
+                                    path += options.modelName + '/';
+                                }
+                                if (files) {
+                                    files += '&';
+                                    fileIds += '&';
+                                }
+                                files += name + '=' + path + value.filename;
+                                if (name.indexOf('[]') === -1) {
+                                    fileIds += name + 'Id=' + value.id;
+                                }
+                                else {
+                                    name = name.replace('[]', '');
+                                    if (name.endsWith(']')) {
+                                        fileIds += name.substr(0, name.length - 1)
+                                                + 'Id][]=' + value.id;
                                     }
-                                },
-                                dataType: 'json'
+                                    else {
+                                        fileIds += name + 'Id[]=' + value.id;
+                                    }
+                                }
                             });
-                        });
-                    }
-                    else {
-                        showErrorMessage('Upload failed!');
+                            files = app.__.queryStringToObject(files);
+                            fileIds = app.__.queryStringToObject(fileIds);
+
+                            options.done(app.__.extend(files, fileIds, true),
+                                    function () {
+                                        app.request({
+                                            url: url,
+                                            type: 'delete',
+                                            data: {
+                                                id: {
+                                                    $in: ids
+                                                }
+                                            }
+                                        });
+                                    });
+                        }
+                        else {
+                            showErrorMessage('Upload failed!');
+                            options.done(false);
+                        }
+                    })
+                    .catch(function (e) {
+                        showErrorMessage(e);
                         options.done(false);
-                    }
-                },
-                error: function (e) {
-                    showErrorMessage(e.responseText);
-                    options.done(false);
-                }
-            });
+                    });
         })
         .before('page.load', function () {
             if (!app.loadedPartial) {
@@ -195,14 +210,14 @@ app.onError(function (msg) {
                                                 id: ssn.i
                                             }
                                         })
-                                                .then(function (d) {
+                                                .then(function (resp) {
                                                     // got new data
-                                                    if (d) {
+                                                    if (resp.status === 200) {
                                                         ssn = {
-                                                            e: d.expires,
+                                                            e: resp.data.expires,
                                                             i: ssn.i,
-                                                            k: d.apiKey,
-                                                            v: d.verified
+                                                            k: resp.data.apiKey,
+                                                            v: resp.data.verified
                                                         };
                                                         app.store('ssn')
                                                                 .save(ssn, 1, true);
@@ -226,12 +241,12 @@ app.onError(function (msg) {
                 if (ssn && ssn.e > Date.now()) {
                     // check token is valid
                     app.request('user/me')
-                            .then(function (user) {
+                            .then(function (resp) {
                                 // token is valid
-                                if (user) {
-                                    me = user;
-                                    _c('.user-fullname').html(user.name);
-                                    app.store('ssn').save(user, 'u');
+                                if (resp.status === 200) {
+                                    me = resp.data;
+                                    _c('.user-fullname').html(resp.data.name);
+                                    app.store('ssn').save(resp.data, 'u');
                                     // watch for renewal
                                     watchToken(ssn, 10);
                                 }

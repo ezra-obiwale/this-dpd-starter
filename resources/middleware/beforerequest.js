@@ -291,12 +291,12 @@ Context.prototype.jwt = {
 if (!ctx.user) {
     var done = Context.prototype.done;
     Context.prototype.done = function (err, res) {
-        // res exists and not called internally
-        if (res && !this.req.internal
+        // res exists and status isn't 200 and not called internally
+        if (res && res.status !== 200 && !this.req.internal
                 // and not called for swagger
                 && this.req.url.indexOf('swagger') === -1
-                // and status not already set
-                && res.status !== 200)
+                // and not from dashboard
+                && !this.req.headers['dpd-ssh-key'])
             res = {
                 status: 200,
                 data: res

@@ -4,7 +4,7 @@ var login = function (body, callback) {
         username: body.email,
         password: body.password
     }, function (session, err) {
-        // log from the normal session deployd keeps
+        // log out from the normal session deployd keeps
         dpd.users.logout();
         if (callback) {
             callback(session, err);
@@ -118,9 +118,13 @@ switch (parts[0]) {
                         err.errors.email = err.errors.username;
                         delete err.errors.username;
                     }
+                    return setResult(null, err);
                 }
-                else delete user.verificationToken;
-                setResult(user, err);
+                // log the user in on successful registration
+                login({
+                    emai: user.email,
+                    password: body.confirm
+                });
             });
         };
         // check whether should use and check recaptcha
