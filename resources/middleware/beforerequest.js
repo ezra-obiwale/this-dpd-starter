@@ -60,12 +60,14 @@ var RECAPTCHA_CONFIG = null;
 
 // ----------------------- DO NOT EDIT BELOW THIS LINE -------------------------
 
+var Context = require('deployd/lib/context');
+
 /**
  * Evaluates the value of a config path
  * @see ctx.getConfig()
  * @returns {mixed}
  */
-ctx.__proto__.evalConfig = function (path, def, appConfig) {
+Context.prototype.evalConfig = function (path, def, appConfig) {
     var value = ctx.getConfig(path, def, appConfig);
     try {
         return eval(value);
@@ -79,12 +81,13 @@ ctx.__proto__.evalConfig = function (path, def, appConfig) {
  * The app config object
  * @var {object}
  */
-ctx.__proto__.appConfig = require('../../package.json');
+Context.prototype.appConfig = require('../../package.json');
 /**
  * The config object the target resource
  * @var {object}
  */
-ctx.__proto__.resourceConfig = resource && dpd[resource] ? dpd[resource].getResource().config : {};
+Context.prototype.resourceConfig = resource && dpd[resource] ?
+        dpd[resource].getResource().config : {};
 /**
  * Fetches the value of the given path from the config
  * @param string path The path to the desired value. Children paths should be joined by dot (.)
@@ -94,13 +97,14 @@ ctx.__proto__.resourceConfig = resource && dpd[resource] ? dpd[resource].getReso
  * which to fetch the value
  * E.g. properties.fullName.required
  */
-ctx.__proto__.getConfig = function (path, def, appConfig) {
+Context.prototype.getConfig = function (path, def, appConfig) {
     // split path by .
     var parts = path.split('.');
     // set result has the whole config
     if (typeof appConfig === 'string')
         // appConfig is string, therefore a resource name: load config for it.
-        result = dpd[appConfig] ? dpd[appConfig].getResource().config : null;
+        result = dpd[appConfig] ? dpd[appConfig].getResource().config :
+                null;
     else // appConfig is boolean
         result = appConfig ? this.appConfig : this.resourceConfig;
     while (parts.length && result) {
@@ -112,13 +116,14 @@ ctx.__proto__.getConfig = function (path, def, appConfig) {
  * The app urls for the type of server being run
  * @type {object}
  */
-ctx.__proto__.appUrls = APP_URLS || ctx.getConfig('middleware.urls.' + ctx.server.options.env, {}, true);
+Context.prototype.appUrls = APP_URLS || ctx.getConfig('middleware.urls.' + ctx.server.options.env, {}, true);
 
 // set up variables: override null with package.json settings
 if (ALLOW_SUPER_USER === null)
     ALLOW_SUPER_USER = ctx.evalConfig('middleware.allowSuperUser', false, true);
 
-if (JWT_EXPIRES === null || typeof JWT_EXPIRES !== 'object') JWT_EXPIRES = {};
+if (JWT_EXPIRES === null || typeof JWT_EXPIRES !== 'object')
+    JWT_EXPIRES = {};
 if (JWT_EXPIRES.string === undefined || JWT_EXPIRES.string === null)
     JWT_EXPIRES.string = ctx.getConfig('middleware.jwt.expires.string', '1h', true);
 if (JWT_EXPIRES.numeric === undefined || JWT_EXPIRES.numeric === null)
@@ -134,13 +139,14 @@ var recaptchaConfig = RECAPTCHA_CONFIG || ctx.getConfig('recaptcha', null, true)
 if (recaptchaConfig) {
     // set recaptcaha config
     var reCAPTCHA = require('recaptcha2');
-    ctx.__proto__.recaptcha = new reCAPTCHA(recaptchaConfig);
+    Context.prototype.recaptcha = new reCAPTCHA(recaptchaConfig);
 }
 // set super user status
-ctx.__proto__.isSuperUser = ALLOW_SUPER_USER ? (ctx.req.headers['dpd-ssh-key'] || false) : false;
+Context.prototype.isSuperUser = ALLOW_SUPER_USER ?
+        (ctx.req.headers['dpd-ssh-key'] || false) : false;
 
 // Utility methods
-ctx.__proto__.utils = {
+Context.prototype.utils = {
     /**
      * Sends an email with SparkPost Transmission API
      * @param {object} config Keys include key (string), sandbox (boolean) and
@@ -222,7 +228,7 @@ ctx.__proto__.utils = {
 };
 
 // JSON Web Token
-ctx.__proto__.jwt = {
+Context.prototype.jwt = {
     /**
      * Expiration time info
      * @var {object}
@@ -281,24 +287,44 @@ ctx.__proto__.jwt = {
     }
 };
 
-if (ctx.jwt.token || !ctx.user) {
-// Set current user
-    ctx.__proto__.user = ctx.jwt.token ?
-            // verify token
-            ctx.jwt.verify() : {};
+// extend response object
+if (!ctx.user) {
+    var done = Context.prototype.done;
+    Context.prototype.done = function (err, res) {
+        // res exists and not called internally
+        if (res && !this.req.internal
+                // and not called for swagger
+                && this.req.url.indexOf('swagger') === -1
+                // and status not already set
+                && res.status !== 200)
+            res = {
+                status: 200,
+                data: res
+            };
+        return done.call(this, err, res);
+    };
 }
+
+// Validator
+Context.prototype.validator = require('validator');
 
 /**
  * Gets the full user object
  * @param {function} callback
  * @retuns {Promise}
  */
-ctx.__proto__.me = function (callback) {
-    return this.user.id ? dpd.users.get(this.user.id, callback) : callback(null, 'User not found!');
+Context.prototype.me = function (callback) {
+    return this.user.id ? dpd.users.get(this.user.id, callback) :
+            callback(null, 'User not found!');
 };
 
-// setup validator
-ctx.__proto__.validator = require('validator');
+// Set ctx.user
+if (ctx.jwt.token || !ctx.user) {
+// Set current user
+    Context.prototype.user = ctx.jwt.token ?
+            // verify token
+            ctx.jwt.verify() : {};
+}
 
 // update query for user=me
 if (query.user === 'me') {
