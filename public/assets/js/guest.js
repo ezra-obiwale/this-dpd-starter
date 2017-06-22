@@ -166,8 +166,7 @@ app.debug(true)
                         }
                         _alert.removeClass('alert-success alert-info')
                                 .addClass('alert-danger')
-                                .html(resp ? message.replace('username', 'email')
-                                        : 'No internet connection');
+                                .html(message || 'No internet connection');
                     }
                     // success
                     else {

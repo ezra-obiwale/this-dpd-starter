@@ -8787,7 +8787,7 @@
             ext.setup.call(this, start_page);
             // load from old state if fresh copy not required and not debugging
             if (!freshCopy && !this.config.debug && history.state &&
-                start_page === ext.recordsStore.find('last_page')) {
+                start_page === ext.record.call(this, 'store').find('last_page')) {
                 ext.restoreState.call(this, history.state);
             }
             else {
