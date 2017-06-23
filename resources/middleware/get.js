@@ -7,6 +7,7 @@ if (!ctx.user.id && !ctx.isSuperUser && toVerify &&
     kill('Access denied!');
 }
 // enforce use of paginate endpoint to access list of models
-else if (ctx.getConfig('type') !== 'EventResource' && dpd[resource] && !internal)
+else if (ctx.getConfig('type') !== 'EventResource' && dpd[resource] && !internal
+        && !ctx.isSuperUser)
     kill('Endpoint suspended! Use /paginate/' + resource);
 else proceed();
