@@ -142,7 +142,8 @@ if (recaptchaConfig) {
     Context.prototype.recaptcha = new reCAPTCHA(recaptchaConfig);
 }
 // set super user status
-Context.prototype.isSuperUser = ALLOW_SUPER_USER ? !isRoot : false;
+Context.prototype.isSuperUser = ALLOW_SUPER_USER ?
+        (ctx.req.headers['dpd-ssh-key'] || false) : false;
 
 // Utility methods
 Context.prototype.utils = {
