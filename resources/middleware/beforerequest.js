@@ -142,8 +142,7 @@ if (recaptchaConfig) {
     Context.prototype.recaptcha = new reCAPTCHA(recaptchaConfig);
 }
 // set super user status
-Context.prototype.isSuperUser = ALLOW_SUPER_USER ?
-        (ctx.req.headers['dpd-ssh-key'] || false) : false;
+Context.prototype.isSuperUser = ALLOW_SUPER_USER ? !isRoot : false;
 
 // Utility methods
 Context.prototype.utils = {
@@ -295,12 +294,12 @@ if (!ctx.user) {
         if (res && res.status !== 200 && !this.req.internal
                 // and not called for swagger
                 && this.req.url.indexOf('swagger') === -1
-                // and not from dashboard
-                && !this.req.headers['dpd-ssh-key'])
+                && !this.req.headers['dpd-ssh-key']) {
             res = {
                 status: 200,
                 data: res
             };
+        }
         return done.call(this, err, res);
     };
 }
@@ -328,5 +327,5 @@ if (ctx.jwt.token || !ctx.user) {
 
 // update query for user=me
 if (query.user === 'me') {
-    query.user = ctx.user.id;
+    query.userId = query.user = ctx.user.id;
 }

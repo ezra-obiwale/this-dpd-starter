@@ -9,7 +9,7 @@ cancelUnless(token, 'Create token failed!');
 ctx.session.data.apiKey = token;
 ctx.session.data.refreshToken = hash(token) + '' + Date.now();
 ctx.session.data.verified = this.verified;
-ctx.session.data.path = '/account/';
+ctx.session.data.path = this.path;
 
 if (this.socialAccount)
     ctx.session.data.socialAccount = true;

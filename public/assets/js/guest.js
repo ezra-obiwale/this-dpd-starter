@@ -15,7 +15,8 @@ var app = new ThisApp({
             if (value === undefined) return localStorage.getItem(key);
             else if (value === null) return localStorage.removeItem(key);
             return localStorage.setItem(key, value);
-        };
+        },
+        $container = $('body');
 app.debug(true)
         .setDefaultLayout('main')
         .onError(function (msg) {
@@ -35,7 +36,7 @@ app.debug(true)
             _(this).closest('.modal-body').siblings('.modal-footer')
                     .addClass('hidden');
         })
-        .when('page.loaded', 'page', function () {
+        .before('page.load', function () {
             // only if page is freshly loaded
             if (!app.loadedPartial) {
                 // allow reset password - part 2
@@ -70,7 +71,8 @@ app.debug(true)
                             if (store('exited')) {
                                 // show login modal
                                 $(_c('#login.modal').get(0)).modal('show')
-                                        .find('.modal-footer').removeClass('hidden')
+                                        .find('.modal-footer')
+                                        .removeClass('hidden')
                                         .children().addClass('alert-info')
                                         .html('Session expired');
                                 store('exited', null);
@@ -124,7 +126,11 @@ app.debug(true)
                             .then(function (resp) {
                                 if (resp.status === 200) {
                                     _c('li.btn.auth').addClass('hidden');
-                                    _c('li.btn.account').removeClass('hidden');
+                                    _c('li.btn.account').removeClass('hidden')
+                                            .find('a')
+                                            // account button should take user 
+                                            // to the right admin page
+                                            .attr('href', resp.data.path);
                                     // watch token and reset 10 minutes before expiration
                                     watchToken(ssn, 10);
                                 }
@@ -133,7 +139,16 @@ app.debug(true)
                             .catch(noUser);
                 }
                 else noUser();
+                // set up container
+                $container = $(_c().get(0));
+                // set up tooltips
+                $container.tooltip({
+                    selector: '[data-toggle="tooltip"]',
+                    container: 'body'
+                });
             }
+        })
+        .when('page.loaded', 'page', function () {
             $('[data-toggle="tooltip"]').tooltip();
         })
         .on('click', '.input-group-addon', function () {
@@ -152,7 +167,8 @@ app.debug(true)
                     var resp = e.detail.responseData,
                             _modal = _(this).closest('.modal'),
                             _alert = _modal.find('.modal-footer').children(),
-                            _submit = _(this).find('img[alt="loading"]').addClass('hidden')
+                            _submit = _(this).find('img[alt="loading"]')
+                            .addClass('hidden')
                             .siblings().removeClass('hidden');
                     // error
                     if (resp.status !== 200) {
@@ -173,7 +189,7 @@ app.debug(true)
                         var message = 'Sign up successful. Please check your email for confirmation.';
                         switch (_modal.attr('id')) {
                             case 'login-email-password':
-                                var url = './admin/';
+                                var url = '.' + resp.data.path;
                                 if (app.params.r)
                                     url += decodeURIComponent(app.params.r);
                                 app.store('ssn').save({

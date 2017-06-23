@@ -120,6 +120,14 @@
             "required": false,
             "id": "pictureId",
             "order": 14
+        },
+        "path": {
+            "name": "path",
+            "type": "string",
+            "typeLabel": "string",
+            "required": false,
+            "id": "path",
+            "order": 15
         }
     },
     "swagger": {},
