@@ -4,9 +4,9 @@ function showErrorMessage(msg, hide) {
     clearTimeout(timeout);
     app._('callout').hide();
     app._('.callout').removeClass('callout-success callout-info')
-            .addClass('callout-danger')
-            .removeClass('hidden')
-            .html(msg);
+        .addClass('callout-danger')
+        .removeClass('hidden')
+        .html(msg);
     if (false !== hide)
         hideMessage(hide || 7000);
 }
@@ -14,9 +14,9 @@ function showSuccessMessage(msg, hide) {
     clearTimeout(timeout);
     app._('callout').hide();
     app._('.callout').removeClass('callout-danger callout-info')
-            .addClass('callout-success')
-            .removeClass('hidden')
-            .html(msg);
+        .addClass('callout-success')
+        .removeClass('hidden')
+        .html(msg);
     if (false !== hide)
         hideMessage(hide);
 }
@@ -24,9 +24,9 @@ function showInfoMessage(msg, hide) {
     clearTimeout(timeout);
     app._('callout').hide();
     app._('.callout').removeClass('callout-danger callout-success')
-            .addClass('callout-info')
-            .removeClass('hidden')
-            .html(msg);
+        .addClass('callout-info')
+        .removeClass('hidden')
+        .html(msg);
     if (hide)
         hideMessage(hide);
 }
@@ -54,30 +54,57 @@ var app = new ThisApp({
         status: {
             successValue: 200
         }
+    },
+    paths: {
+        components: {
+            min: {
+                prod: true
+            }
+        },
+        css: {
+            min: {
+                prod: true
+            }
+        },
+        js: {
+            min: {
+                prod: true
+            }
+        },
+        layouts: {
+            min: {
+                prod: true
+            }
+        },
+        pages: {
+            min: {
+                prod: true
+            }
+        }
     }
 }),
-        // for hiding messages
-        timeout,
-        // holds previous page menu link. Needed for reactivation when new page not found
-        formerLink,
-        _ = function (selector) {
-            return app._(selector);
-        },
-        _c = function (selector) {
-            return selector ? app.container.find(selector) : app.container;
-        },
-        store = function (key, value) {
-            if (value === undefined) return localStorage.getItem(key);
-            else if (value === null) return localStorage.removeItem(key);
-            return localStorage.setItem(key, value);
-        },
-        logout = function () {
-            // show just exited
-            store('exited', true);
-            app.store('ssn').drop();
-            location.href = '../';
-        },
-        me = {};
+    // for hiding messages
+    timeout,
+    // holds previous page menu link. Needed for reactivation when new page not found
+    formerLink,
+    _ = function (selector) {
+        return app._(selector);
+    },
+    _c = function (selector) {
+        return selector ? app.container.find(selector) : app.container;
+    },
+    store = function (key, value) {
+        if (value === undefined) return localStorage.getItem(key);
+        else if (value === null) return localStorage.removeItem(key);
+        return localStorage.setItem(key, value);
+    },
+    logout = function () {
+        // show just exited
+        store('exited', true);
+        app.store('ssn').drop();
+        location.href = '../';
+    },
+    me = {};
 app.__.ready(function () {
     _(window).on('beforeunload', function () {
         $('.modal').modal('hide');
@@ -94,296 +121,292 @@ app.__.ready(function () {
     }
 });
 
-app.onError(function (msg) {
-    var _error = _('#error').html(msg).removeClass('hidden');
-    setTimeout(function () {
-        _error.addClass('hidden');
-    }, 4000);
-})
-        .debug(1)
-        .setBaseURL('http://localhost:2403/')
-        .setDefaultLayout('main')
-        .secureAPI(function (headers, data) {
-            var ssn = app.store('ssn').find(1);
-            if (ssn && ssn.k) headers['X-API-TOKEN'] = ssn.k;
+app
+    .onError(function (msg) {
+        var _error = _('#error').html(msg).removeClass('hidden');
+        setTimeout(function () {
+            _error.addClass('hidden');
+        }, 4000);
+    })
+    .debug(1)
+    .setBaseURL('http://localhost:2403/')
+    .setDefaultLayout('main')
+    .secureAPI(function (headers, data) {
+        var ssn = app.store('ssn').find(1);
+        if (ssn && ssn.k) headers['X-API-TOKEN'] = ssn.k;
+    })
+    .setUploader(function (options) {
+        var fd = new FormData(),
+            url = 'files/',
+            hasFiles = false,
+            names = [];
+        if (options.modelName) {
+            // use model name as subdirectory
+            url += '?subdir=' + options.modelName;
+        }
+        // add files to formdata
+        _(options.files).each(function () {
+            if (!this.name || !this.files.length) return;
+            fd.append(this.name, this.files[0]);
+            names.push(this.name);
+            hasFiles = true;
+        });
+        if (!hasFiles) {
+            return options.done({});
+        }
+        app.request({
+            type: 'post',
+            url: url,
+            data: fd,
+            dataType: 'json'
         })
-        .setUploader(function (options) {
-            var fd = new FormData(),
-                    url = 'files/',
-                    hasFiles = false,
-                    data = {};
-            if (options.modelName) {
-                // use model name as subdirectory
-                url += '?subdir=' + options.modelName;
-            }
-            // add files to formdata
-            _(options.files).each(function () {
-                if (!this.name || !this.files.length) return;
-                fd.append(this.name, this.files[0]);
+            .then(function (resp) {
+                if (resp.status === 200 && resp.data.length) {
+                    var ids = [], files = '', fileIds = '';
+                    app.__.forEach(resp.data, function (i, value) {
+                        ids.push(value.id);
+                        var name = names[i],
+                            path = app.config.baseURL + '_files/';
+                        if (options.modelName) {
+                            path += options.modelName + '/';
+                        }
+                        if (files) {
+                            files += '&';
+                            fileIds += '&';
+                        }
+                        files += name + '=' + path + value.filename;
+                        if (name.indexOf('[]') === -1) {
+                            fileIds += name + 'Id=' + value.id;
+                        }
+                        else {
+                            name = name.replace('[]', '');
+                            if (name.endsWith(']')) {
+                                fileIds += name.substr(0, name.length - 1)
+                                    + 'Id][]=' + value.id;
+                            }
+                            else {
+                                fileIds += name + 'Id[]=' + value.id;
+                            }
+                        }
+                    });
+                    files = app.__.queryStringToObject(files);
+                    fileIds = app.__.queryStringToObject(fileIds);
 
-                if (this.name.indexOf('[')) {
-                    var parts = this.name.split('[');
-                    // keep old files
-                    data[parts[0]] = app.pageModel ? app.pageModel.attributes[parts[0]] : [];
-                }
-                hasFiles = true;
-            });
-            if (!hasFiles) {
-                return options.done({});
-            }
-            app.request({
-                type: 'post',
-                url: url,
-                data: fd,
-                dataType: 'json'
-            })
-                    .then(function (resp) {
-                        if (resp.status === 200 && resp.data.length) {
-                            var ids = [], files = '', fileIds = '';
-                            app.__.forEach(resp.data, function (i, value) {
-                                ids.push(value.id);
-                                var name = options.files[i].name,
-                                        path = app.config.baseURL + '_files/';
-                                if (options.modelName) {
-                                    path += options.modelName + '/';
-                                }
-                                if (files) {
-                                    files += '&';
-                                    fileIds += '&';
-                                }
-                                files += name + '=' + path + value.filename;
-                                if (name.indexOf('[]') === -1) {
-                                    fileIds += name + 'Id=' + value.id;
-                                }
-                                else {
-                                    name = name.replace('[]', '');
-                                    if (name.endsWith(']')) {
-                                        fileIds += name.substr(0, name.length - 1)
-                                                + 'Id][]=' + value.id;
-                                    }
-                                    else {
-                                        fileIds += name + 'Id[]=' + value.id;
+                    options.done(app.__.extend(files, fileIds, true),
+                        function () {
+                            app.request({
+                                url: url,
+                                type: 'delete',
+                                data: {
+                                    id: {
+                                        $in: ids
                                     }
                                 }
                             });
-                            files = app.__.queryStringToObject(files);
-                            fileIds = app.__.queryStringToObject(fileIds);
-
-                            options.done(app.__.extend(files, fileIds, true),
-                                    function () {
-                                        app.request({
-                                            url: url,
-                                            type: 'delete',
-                                            data: {
-                                                id: {
-                                                    $in: ids
-                                                }
-                                            }
-                                        });
-                                    });
-                        }
-                        else {
-                            showErrorMessage('Upload failed!');
-                            options.done(false);
-                        }
-                    })
-                    .catch(function (e) {
-                        showErrorMessage(e);
-                        options.done(false);
-                    });
-        })
-        .before('page.load', function () {
-            if (!app.loadedPartial) {
-                me = app.store('ssn').find('u') || {};
-                // check user is logged in
-                var ssn = app.store('ssn').find(1),
-                        watchToken = function (ssn, minutesBefore) {
-                            // end time minus 10 minutes
-                            var e = ssn.e - Date.now() - minutesBefore * 60 * 1000,
-                                    // try to renew token
-                                    renewToken = function () {
-                                        // send request
-                                        app.request({
-                                            type: 'post',
-                                            url: 'user/renew-token',
-                                            data: {
-                                                id: ssn.i
-                                            }
-                                        })
-                                                .then(function (resp) {
-                                                    // got new data
-                                                    if (resp.status === 200) {
-                                                        ssn = {
-                                                            e: resp.data.expires,
-                                                            i: ssn.i,
-                                                            k: resp.data.apiKey,
-                                                            v: resp.data.verified
-                                                        };
-                                                        app.store('ssn')
-                                                                .save(ssn, 1, true);
-                                                        // start watching all over again
-                                                        watchToken(ssn, minutesBefore);
-                                                    }
-                                                    // no data: log out
-                                                    else logout();
-                                                })
-                                                // error: log out
-                                                .catch(logout);
-                                    };
-                            // there's still time before expiration
-                            if (e > 0) {
-                                return setTimeout(renewToken, e);
-                            }
-                            // try renewal right away
-                            else renewToken();
-                        };
-                // token not expired
-                if (ssn && ssn.e > Date.now()) {
-                    // check token is valid
-                    app.request('user/me')
-                            .then(function (resp) {
-                                // token is valid
-                                if (resp.status === 200) {
-                                    me = resp.data;
-                                    _c('.user-fullname').html(resp.data.name);
-                                    app.store('ssn').save(resp.data, 'u');
-                                    // watch for renewal
-                                    watchToken(ssn, 10);
-                                }
-                                // invalid token: log out
-                                else logout();
-                            })
-                            // error: log out
-                            .catch(logout);
+                        });
                 }
-                // token expired: log out
-                else logout();
+                else {
+                    showErrorMessage('Upload failed!');
+                    options.done(false);
+                }
+            })
+            .catch(function (e) {
+                showErrorMessage(e);
+                options.done(false);
+            });
+    })
+    .before('page.load', function () {
+        if (!app.loadedPartial) {
+            me = app.store('ssn').find('u') || {};
+            // check user is logged in
+            var ssn = app.store('ssn').find(1),
+                watchToken = function (ssn, minutesBefore) {
+                    // end time minus 10 minutes
+                    var e = ssn.e - Date.now() - minutesBefore * 60 * 1000,
+                        // try to renew token
+                        renewToken = function () {
+                            // send request
+                            app.request({
+                                type: 'post',
+                                url: 'user/renew-token',
+                                data: {
+                                    id: ssn.i
+                                }
+                            })
+                                .then(function (resp) {
+                                    // got new data
+                                    if (resp.status === 200) {
+                                        ssn = {
+                                            e: resp.data.expires,
+                                            i: ssn.i,
+                                            k: resp.data.apiKey,
+                                            v: resp.data.verified
+                                        };
+                                        app.store('ssn')
+                                            .save(ssn, 1, true);
+                                        // start watching all over again
+                                        watchToken(ssn, minutesBefore);
+                                    }
+                                    // no data: log out
+                                    else logout();
+                                })
+                                // error: log out
+                                .catch(logout);
+                        };
+                    // there's still time before expiration
+                    if (e > 0) {
+                        return setTimeout(renewToken, e);
+                    }
+                    // try renewal right away
+                    else renewToken();
+                };
+            // token not expired
+            if (ssn && ssn.e > Date.now()) {
+                // check token is valid
+                app.request('user/me')
+                    .then(function (resp) {
+                        // token is valid
+                        if (resp.status === 200) {
+                            me = resp.data;
+                            _c('.user-fullname').html(resp.data.name);
+                            app.store('ssn').save(resp.data, 'u');
+                            // watch for renewal
+                            watchToken(ssn, 10);
+                        }
+                        // invalid token: log out
+                        else logout();
+                    })
+                    // error: log out
+                    .catch(logout);
             }
-        })
-        .before('page.leave', function () {
-            $('.modal').modal('hide');
-            hideMessage(false);
-        })
-        .when('page.leave', 'page', function () {
-            _('.page-loading.overlay').removeClass('hidden');
-        })
-        .when('page.loaded', 'page', function () {
-            _('.page-loading.overlay').addClass('hidden');
-            _(window).trigger('resize');
-            var _link = _('.sidebar-menu a[this-goto="'
-                    + _(this).this('id') + '"]');
-            // use default page's link if current page link doesn't exist
-            if (!_link.length)
-                _link = _('.sidebar-menu a[this-goto="' + app.config.startWith + '"]');
-            // mark current nav link as active if not already marked
-            if (_link.length && !_link.parent().hasClass('active'))
-                _link.parent().addClass('active').siblings()
-                        .removeClass('active');
-            // hide back button
-            if (app.page.this('id') === app.config.startWith)
-                app.container.find('[this-go-back]').hide();
-            else // show back button
-                app.container.find('[this-go-back]').show();
-            // set page title
-            var title = app.config.name.text;
-            if (app.page.this('title'))
-                title += ' | ' + app.page.this('title');
-            _('head>title').html(title);
-            $container.find('img').error(function () {
-                $(this).attr('src', '../assets/images/no-image.png');
-            });
-        })
-        .on('page.not.found', function (e) {
-            _('.page-loading.overlay').addClass('hidden');
-            showErrorMessage('Page <strong>' + e.detail.pageId.toUpperCase()
-                    + '</strong> Not Found!', 2500);
-            _(formerLink).addClass('active').siblings().removeClass('active');
-        })
-        .on('form.invalid.submission', function () {
-            showErrorMessage('Form contains some invalid and/or empty fields');
-        })
-        .on('form.submission.error, delete.error', function (e) {
-            showErrorMessage('Unable to connect to the server');
-            setTimeout(function () {
-                app.container.find('[this-mid="'
-                        + e.detail.model.id + '"]:not(.modal)')
-                        .css('opacity', 1)
-                        .find('.btn,.list-group')
-                        .show();
-            });
-        })
-        .on('form.submission.failed', function (e) {
-            showErrorMessage('Submission failed!<p>' + e.detail.responseData.message + '</p>');
-        })
-        .on('form.submission.success', function () {
-            $(this).closest('.modal').modal('hide');
-            showSuccessMessage('Data saved successfully!');
-        })
-        .on('delete.failed', function (e) {
-            showErrorMessage('Delete failed!');
+            // token expired: log out
+            else logout();
+        }
+    })
+    .before('page.leave', function () {
+        $('.modal').modal('hide');
+        hideMessage(false);
+    })
+    .when('page.leave', 'page', function () {
+        _('.page-loading.overlay').removeClass('hidden');
+    })
+    .when('page.loaded', 'page', function () {
+        _('.page-loading.overlay').addClass('hidden');
+        _(window).trigger('resize');
+        var _link = _('.sidebar-menu a[this-goto="'
+            + _(this).this('id') + '"]');
+        // use default page's link if current page link doesn't exist
+        if (!_link.length)
+            _link = _('.sidebar-menu a[this-goto="' + app.config.startWith + '"]');
+        // mark current nav link as active if not already marked
+        if (_link.length && !_link.parent().hasClass('active'))
+            _link.parent().addClass('active').siblings()
+                .removeClass('active');
+        // hide back button
+        if (app.page.this('id') === app.config.startWith)
+            app.container.find('[this-go-back]').hide();
+        else // show back button
+            app.container.find('[this-go-back]').show();
+        // set page title
+        var title = app.config.name.text;
+        if (app.page.this('title'))
+            title += ' | ' + app.page.this('title');
+        _('head>title').html(title);
+        $container.find('img').error(function () {
+            $(this).attr('src', '../assets/images/no-image.png');
+        });
+    })
+    .on('page.not.found', function (e) {
+        _('.page-loading.overlay').addClass('hidden');
+        showErrorMessage('Page <strong>' + e.detail.pageId.toUpperCase()
+            + '</strong> Not Found!', 2500);
+        _(formerLink).addClass('active').siblings().removeClass('active');
+    })
+    .on('form.invalid.submission', function () {
+        showErrorMessage('Form contains some invalid and/or empty fields');
+    })
+    .on('form.submission.error, delete.error', function (e) {
+        showErrorMessage('Unable to connect to the server');
+        setTimeout(function () {
             app.container.find('[this-mid="'
-                    + e.detail.model.id + '"]:not(.modal)')
-                    .css('opacity', 1)
-                    .find('.btn,.list-group')
-                    .show();
-        })
-        .on('delete.success', function () {
-            $(this).closest('.modal').modal('hide');
-            showSuccessMessage('Delete successful!');
-        })
-        .on('model.binded,model.loaded,cache.model.loaded', function () {
-            $(this).find('img').error(function () {
-                $(this).attr('src', '../assets/images/no-image.png');
-            });
-        })
-        .on('click', 'a[href="#"]', function (e) {
-            e.preventDefault();
-        })
-        .on('click', '.sidebar-menu a', function () {
-            var _li = _(this).parent();
-            formerLink = _li.siblings('.active');
-            _li.addClass('active')
-                    .siblings().removeClass('active');
-        })
-        .on('click', 'a#sign-out', function (e) {
-            e.preventDefault();
-            logout();
-        })
-        .on('click', '[data-target="#form"]', function () {
-            _('#form.modal .modal-title').html(_(this).attr('title'));
-        })
-        // show only modal in container
-        .on('click', '[data-toggle="_modal"]', function () {
-            var $modal = $(app.container.find(_(this).data('target')).get(0))
-                    .modal('show');
-            $modal.find('[type="file"]').previewMedia().addClass('hidden');
-            $modal.find('img:not(.actionable)').on('click', function () {
-                $(this).addClass('actionable').siblings('[type="file"]')
-                        .click();
-            });
-            $modal.find('input,textarea,select,.btn').get(0).focus();
-        })
-        .on('click', '#delete.modal [this-delete]', function () {
-            var _modal = _(this).closest('.modal');
-            app.container.find('[this-mid="'
-                    + _modal.this('mid') + '"]:not(form):not(.modal)')
-                    .css('opacity', .4)
-                    .find('.btn,.list-group')
-                    .hide();
-        })
-        .start('dashboard');
+                + e.detail.model.id + '"]:not(.modal)')
+                .css('opacity', 1)
+                .find('.btn,.list-group')
+                .show();
+        });
+    })
+    .on('form.submission.failed', function (e) {
+        showErrorMessage('Submission failed!<p>' + e.detail.responseData.message + '</p>');
+    })
+    .on('form.submission.success', function () {
+        $(this).closest('.modal').modal('hide');
+        showSuccessMessage('Data saved successfully!');
+    })
+    .on('delete.failed', function (e) {
+        showErrorMessage('Delete failed!');
+        app.container.find('[this-mid="'
+            + e.detail.model.id + '"]:not(.modal)')
+            .css('opacity', 1)
+            .find('.btn,.list-group')
+            .show();
+    })
+    .on('delete.success', function () {
+        $(this).closest('.modal').modal('hide');
+        showSuccessMessage('Delete successful!');
+    })
+    .on('model.binded,model.loaded,cache.model.loaded', function () {
+        $(this).find('img').error(function () {
+            $(this).attr('src', '../assets/images/no-image.png');
+        });
+    })
+    .on('click', 'a[href="#"]', function (e) {
+        e.preventDefault();
+    })
+    .on('click', '.sidebar-menu a', function () {
+        var _li = _(this).parent();
+        formerLink = _li.siblings('.active');
+        _li.addClass('active')
+            .siblings().removeClass('active');
+    })
+    .on('click', 'a#sign-out', function (e) {
+        e.preventDefault();
+        logout();
+    })
+    .on('click', '[data-target="#form"]', function () {
+        _('#form.modal .modal-title').html(_(this).attr('title'));
+    })
+    // show only modal in container
+    .on('click', '[data-toggle="_modal"]', function () {
+        var $modal = $(app.container.find(_(this).data('target')).get(0))
+            .modal('show');
+        $modal.find('[type="file"]').previewMedia().addClass('hidden');
+        $modal.find('img:not(.actionable)').on('click', function () {
+            $(this).addClass('actionable').siblings('[type="file"]')
+                .click();
+        });
+        $modal.find('input,textarea,select,.btn').get(0).focus();
+    })
+    .on('click', '#delete.modal [this-delete]', function () {
+        var _modal = _(this).closest('.modal');
+        app.container.find('[this-mid="'
+            + _modal.this('mid') + '"]:not(form):not(.modal)')
+            .css('opacity', .4)
+            .find('.btn,.list-group')
+            .hide();
+    })
+    .start('dashboard');
 
 var $container = $(_c().get(0));
 $container.on('click', '[data-target="#delete"]', function () {
     $('#delete.modal #deleting').html($(this).data('deleting'));
 })
-        .on('hide.bs.modal', function (e) {
-            app.resetAutocomplete(_(this).find('[this-autocomplete]')
-                    .this('id'));
-            $(this).find('img.actionable').removeClass('actionable')
-                    .unbind('click')
-                    .attr('src', '../assets/images/no-image.png');
-        });
+    .on('hide.bs.modal', function (e) {
+        app.resetAutocomplete(_(this).find('[this-autocomplete]')
+            .this('id'));
+        $(this).find('img.actionable').removeClass('actionable')
+            .unbind('click')
+            .attr('src', '../assets/images/no-image.png');
+    });
 
 // ---------------------------------------------------
 
@@ -537,8 +560,8 @@ $(function () {
     //Extend options if external options exist
     if (typeof AdminLTEOptions !== "undefined") {
         $.extend(true,
-                $.AdminLTE.options,
-                AdminLTEOptions);
+            $.AdminLTE.options,
+            AdminLTEOptions);
     }
 
     //Easy access to options
@@ -592,10 +615,10 @@ $(function () {
     //Activate direct chat widget
     if (o.directChat.enable) {
         $(document)
-                .on('click', o.directChat.contactToggleSelector, function () {
-                    var box = $(this).parents('.direct-chat').first();
-                    box.toggleClass('direct-chat-contacts-open');
-                });
+            .on('click', o.directChat.contactToggleSelector, function () {
+                var box = $(this).parents('.direct-chat').first();
+                box.toggleClass('direct-chat-contacts-open');
+            });
     }
 
     /*
@@ -642,26 +665,26 @@ function _init() {
         fix: function () {
             //Get window height and the wrapper height
             var neg = $('.main-header').outerHeight() + $('.main-footer')
-                    .outerHeight();
+                .outerHeight();
             var window_height = $(window).height();
             var sidebar_height = $(".sidebar").height();
             //Set the min-height of the content and sidebar based on the
             //the height of the document.
             if ($("body").hasClass("fixed")) {
                 $(".content-wrapper, .right-side")
-                        .css('min-height', window_height - $('.main-footer')
-                                .outerHeight());
+                    .css('min-height', window_height - $('.main-footer')
+                        .outerHeight());
             }
             else {
                 var postSetWidth;
                 if (window_height >= sidebar_height) {
                     $(".content-wrapper, .right-side")
-                            .css('min-height', window_height - neg);
+                        .css('min-height', window_height - neg);
                     postSetWidth = window_height - neg;
                 }
                 else {
                     $(".content-wrapper, .right-side")
-                            .css('min-height', sidebar_height);
+                        .css('min-height', sidebar_height);
                     postSetWidth = sidebar_height;
                 }
 
@@ -670,7 +693,7 @@ function _init() {
                 if (typeof controlSidebar !== "undefined") {
                     if (controlSidebar.height() > postSetWidth)
                         $(".content-wrapper, .right-side")
-                                .css('min-height', controlSidebar.height());
+                            .css('min-height', controlSidebar.height());
                 }
 
             }
@@ -682,7 +705,7 @@ function _init() {
                     $(".sidebar").slimScroll({
                         destroy: true
                     })
-                            .height("auto");
+                        .height("auto");
                 }
                 return;
             }
@@ -696,11 +719,11 @@ function _init() {
                     $(".sidebar").slimScroll({
                         destroy: true
                     })
-                            .height("auto");
+                        .height("auto");
                     //Add slimscroll
                     $(".sidebar").slimscroll({
                         height: ($(window).height() - $(".main-header")
-                                .height()) + "px",
+                            .height()) + "px",
                         color: "rgba(0,0,0,0.2)",
                         size: "3px"
                     });
@@ -729,23 +752,23 @@ function _init() {
                 if ($(window).width() > (screenSizes.sm - 1)) {
                     if ($("body").hasClass('sidebar-collapse')) {
                         $("body").removeClass('sidebar-collapse')
-                                .trigger('expanded.pushMenu');
+                            .trigger('expanded.pushMenu');
                     }
                     else {
                         $("body").addClass('sidebar-collapse')
-                                .trigger('collapsed.pushMenu');
+                            .trigger('collapsed.pushMenu');
                     }
                 }
                 //Handle sidebar push menu for small screens
                 else {
                     if ($("body").hasClass('sidebar-open')) {
                         $("body").removeClass('sidebar-open')
-                                .removeClass('sidebar-collapse')
-                                .trigger('collapsed.pushMenu');
+                            .removeClass('sidebar-collapse')
+                            .trigger('collapsed.pushMenu');
                     }
                     else {
                         $("body").addClass('sidebar-open')
-                                .trigger('expanded.pushMenu');
+                            .trigger('expanded.pushMenu');
                     }
                 }
             });
@@ -753,15 +776,15 @@ function _init() {
             $(".content-wrapper").click(function () {
                 //Enable hide menu when clicking on the content-wrapper on small screens
                 if ($(window).width() <= (screenSizes.sm - 1) && $("body")
-                        .hasClass("sidebar-open")) {
+                    .hasClass("sidebar-open")) {
                     $("body").removeClass('sidebar-open');
                 }
             });
 
             //Enable expand on hover for sidebar mini
             if ($.AdminLTE.options.sidebarExpandOnHover
-                    || ($('body').hasClass('fixed')
-                            && $('body').hasClass('sidebar-mini'))) {
+                || ($('body').hasClass('fixed')
+                    && $('body').hasClass('sidebar-mini'))) {
                 this.expandOnHover();
             }
         },
@@ -771,26 +794,26 @@ function _init() {
             //Expand sidebar on hover
             $('.main-sidebar').hover(function () {
                 if ($('body').hasClass('sidebar-mini')
-                        && $("body").hasClass('sidebar-collapse')
-                        && $(window).width() > screenWidth) {
+                    && $("body").hasClass('sidebar-collapse')
+                    && $(window).width() > screenWidth) {
                     _this.expand();
                 }
             }, function () {
                 if ($('body').hasClass('sidebar-mini')
-                        && $('body').hasClass('sidebar-expanded-on-hover')
-                        && $(window).width() > screenWidth) {
+                    && $('body').hasClass('sidebar-expanded-on-hover')
+                    && $(window).width() > screenWidth) {
                     _this.collapse();
                 }
             });
         },
         expand: function () {
             $("body").removeClass('sidebar-collapse')
-                    .addClass('sidebar-expanded-on-hover');
+                .addClass('sidebar-expanded-on-hover');
         },
         collapse: function () {
             if ($('body').hasClass('sidebar-expanded-on-hover')) {
                 $('body').removeClass('sidebar-expanded-on-hover')
-                        .addClass('sidebar-collapse');
+                    .addClass('sidebar-collapse');
             }
         }
     };
@@ -807,49 +830,49 @@ function _init() {
         var _this = this;
         var animationSpeed = $.AdminLTE.options.animationSpeed;
         $(document).off('click', menu + ' li a')
-                .on('click', menu + ' li a', function (e) {
-                    //Get the clicked link and the next element
-                    var $this = $(this);
-                    var checkElement = $this.next();
+            .on('click', menu + ' li a', function (e) {
+                //Get the clicked link and the next element
+                var $this = $(this);
+                var checkElement = $this.next();
 
-                    //Check if the next element is a menu and is visible
-                    if ((checkElement.is('.treeview-menu')) && (checkElement.is(':visible')) && (!$('body')
-                            .hasClass('sidebar-collapse'))) {
-                        //Close the menu
-                        checkElement.slideUp(animationSpeed, function () {
-                            checkElement.removeClass('menu-open');
-                            //Fix the layout in case the sidebar stretches over the height of the window
-                            //_this.layout.fix();
-                        });
-                        checkElement.parent("li").removeClass("active");
-                    }
-                    //If the menu is not visible
-                    else if ((checkElement.is('.treeview-menu')) && (!checkElement.is(':visible'))) {
-                        //Get the parent menu
-                        var parent = $this.parents('ul').first();
-                        //Close all open menus within the parent
-                        var ul = parent.find('ul:visible')
-                                .slideUp(animationSpeed);
-                        //Remove the menu-open class from the parent
-                        ul.removeClass('menu-open');
-                        //Get the parent li
-                        var parent_li = $this.parent("li");
+                //Check if the next element is a menu and is visible
+                if ((checkElement.is('.treeview-menu')) && (checkElement.is(':visible')) && (!$('body')
+                    .hasClass('sidebar-collapse'))) {
+                    //Close the menu
+                    checkElement.slideUp(animationSpeed, function () {
+                        checkElement.removeClass('menu-open');
+                        //Fix the layout in case the sidebar stretches over the height of the window
+                        //_this.layout.fix();
+                    });
+                    checkElement.parent("li").removeClass("active");
+                }
+                //If the menu is not visible
+                else if ((checkElement.is('.treeview-menu')) && (!checkElement.is(':visible'))) {
+                    //Get the parent menu
+                    var parent = $this.parents('ul').first();
+                    //Close all open menus within the parent
+                    var ul = parent.find('ul:visible')
+                        .slideUp(animationSpeed);
+                    //Remove the menu-open class from the parent
+                    ul.removeClass('menu-open');
+                    //Get the parent li
+                    var parent_li = $this.parent("li");
 
-                        //Open the target menu and add the menu-open class
-                        checkElement.slideDown(animationSpeed, function () {
-                            //Add the class active to the parent li
-                            checkElement.addClass('menu-open');
-                            parent.find('li.active').removeClass('active');
-                            parent_li.addClass('active');
-                            //Fix the layout in case the sidebar stretches over the height of the window
-                            _this.layout.fix();
-                        });
-                    }
-                    //if this isn't a link, prevent the page from being redirected
-                    if (checkElement.is('.treeview-menu')) {
-                        e.preventDefault();
-                    }
-                });
+                    //Open the target menu and add the menu-open class
+                    checkElement.slideDown(animationSpeed, function () {
+                        //Add the class active to the parent li
+                        checkElement.addClass('menu-open');
+                        parent.find('li.active').removeClass('active');
+                        parent_li.addClass('active');
+                        //Fix the layout in case the sidebar stretches over the height of the window
+                        _this.layout.fix();
+                    });
+                }
+                //if this isn't a link, prevent the page from being redirected
+                if (checkElement.is('.treeview-menu')) {
+                    e.preventDefault();
+                }
+            });
     };
 
     /* ControlSidebar
@@ -876,7 +899,7 @@ function _init() {
                 e.preventDefault();
                 //If the sidebar is not open
                 if (!sidebar.hasClass('control-sidebar-open')
-                        && !$('body').hasClass('control-sidebar-open')) {
+                    && !$('body').hasClass('control-sidebar-open')) {
                     //Open the sidebar
                     _this.open(sidebar, o.slide);
                 }
@@ -896,7 +919,7 @@ function _init() {
             else {
                 //If the content height is less than the sidebar's height, force max height
                 if ($('.content-wrapper, .right-side')
-                        .height() < sidebar.height()) {
+                    .height() < sidebar.height()) {
                     _this._fixForContent(sidebar);
                 }
             }
@@ -952,7 +975,7 @@ function _init() {
         },
         _fixForContent: function (sidebar) {
             $(".content-wrapper, .right-side")
-                    .css('min-height', sidebar.height());
+                .css('min-height', sidebar.height());
         }
     };
 
@@ -995,8 +1018,8 @@ function _init() {
             if (!box.hasClass("collapsed-box")) {
                 //Convert minus into plus
                 element.children(":first")
-                        .removeClass(_this.icons.collapse)
-                        .addClass(_this.icons.open);
+                    .removeClass(_this.icons.collapse)
+                    .addClass(_this.icons.open);
                 //Hide the content
                 box_content.slideUp(_this.animationSpeed, function () {
                     box.addClass("collapsed-box");
@@ -1005,8 +1028,8 @@ function _init() {
             else {
                 //Convert plus into minus
                 element.children(":first")
-                        .removeClass(_this.icons.open)
-                        .addClass(_this.icons.collapse);
+                    .removeClass(_this.icons.open)
+                    .addClass(_this.icons.collapse);
                 //Show the content
                 box_content.slideDown(_this.animationSpeed, function () {
                     box.removeClass("collapsed-box");
