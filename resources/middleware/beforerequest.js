@@ -87,7 +87,7 @@ Context.prototype.appConfig = require('../../package.json');
  * @var {object}
  */
 Context.prototype.resourceConfig = resource && dpd[resource] ?
-        dpd[resource].getResource().config : {};
+    dpd[resource].getResource().config : {};
 /**
  * Fetches the value of the given path from the config
  * @param string path The path to the desired value. Children paths should be joined by dot (.)
@@ -104,7 +104,7 @@ Context.prototype.getConfig = function (path, def, appConfig) {
     if (typeof appConfig === 'string')
         // appConfig is string, therefore a resource name: load config for it.
         result = dpd[appConfig] ? dpd[appConfig].getResource().config :
-                null;
+            null;
     else // appConfig is boolean
         result = appConfig ? this.appConfig : this.resourceConfig;
     while (parts.length && result) {
@@ -143,7 +143,7 @@ if (recaptchaConfig) {
 }
 // set super user status
 Context.prototype.isSuperUser = ALLOW_SUPER_USER ?
-        (ctx.req.headers['dpd-ssh-key'] || false) : false;
+    (ctx.req.headers['dpd-ssh-key'] || false) : false;
 
 // Utility methods
 Context.prototype.utils = {
@@ -162,10 +162,10 @@ Context.prototype.utils = {
     sendmail: function (options, config) {
         config = config || SPARKPOST || ctx.getConfig('middleware.sparkpost', {}, true);
         options.bodyVariables = options.bodyVariables || {};
-        options.callback = options.callback || function () {};
+        options.callback = options.callback || function () { };
         var SP = require('sparkpost'),
-                sparkpost = new SP(config.key),
-                utils = this;
+            sparkpost = new SP(config.key),
+            utils = this;
         console.log('Send email [' + options.subject + ']:');
         return sparkpost.transmissions.send({
             options: {
@@ -178,21 +178,19 @@ Context.prototype.utils = {
             },
             recipients: options.recipients
         })
-                .then(data =>
-                {
-                    console.log('Success!', data);
-                    options.callback(null);
-                })
-                .catch(err =>
-                {
-                    // recreate err object with only the necessary details
-                    err = {
-                        statusCode: err.statusCode,
-                        errors: err.errors
-                    };
-                    console.error('Error!', err);
-                    options.callback(null, err);
-                });
+            .then(data => {
+                console.log('Success!', data);
+                options.callback(null);
+            })
+            .catch(err => {
+                // recreate err object with only the necessary details
+                err = {
+                    statusCode: err.statusCode,
+                    errors: err.errors
+                };
+                console.error('Error!', err);
+                options.callback(null, err);
+            });
     },
     /**
      * Fetches the mongodb's collection object
@@ -293,9 +291,9 @@ if (!ctx.user) {
     Context.prototype.done = function (err, res) {
         // res exists and status isn't 200 and not called internally
         if (res && res.status !== 200 && !this.req.internal
-                // and not called for swagger
-                && this.req.url.indexOf('swagger') === -1
-                && !this.req.headers['dpd-ssh-key']) {
+            // and not called for swagger
+            && this.req.url.indexOf('swagger') === -1
+            && !this.req.headers['dpd-ssh-key']) {
             res = {
                 status: 200,
                 data: res
@@ -315,15 +313,34 @@ Context.prototype.validator = require('validator');
  */
 Context.prototype.me = function (callback) {
     return this.user.id ? dpd.users.get(this.user.id, callback) :
-            callback(null, 'User not found!');
+        callback(null, 'User not found!');
 };
+
+/**
+ * Emits notification to the web and mobile hooks
+ * @param {string | array} webHooks
+ * @param {object} data
+ * @param {string | array} mobileHooks
+ */
+Context.prototype.notify = function (webHooks, data, mobileHooks) {
+    if (!Array.isArray(webHooks)) webHooks = [webHooks];
+    mobileHooks = (mobileHooks && !Array.isArray(mobileHooks)) ? [mobileHooks] : [];
+
+    webHooks.forEach(function(hook){
+        emit(hook, data);
+    });
+
+    mobileHooks.forEach(function(hook) {
+        // @todo: use dpd to notify mobile events
+    });
+}
 
 // Set ctx.user
 if (ctx.jwt.token || !ctx.user) {
-// Set current user
+    // Set current user
     Context.prototype.user = ctx.jwt.token ?
-            // verify token
-            ctx.jwt.verify() : {};
+        // verify token
+        ctx.jwt.verify() : {};
 }
 
 // update query for user=me

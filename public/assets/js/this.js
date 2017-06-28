@@ -350,11 +350,20 @@
         return analysis;
     }
     function when(event, target, callback) {
+        var selector = parseSelector(target);
+        return this.on(event, selector, callback);
+    }
+    /**
+     * Parses when selectors to usable selectors
+     * @param {string} str 
+     * @returns {str}
+    */
+    function parseSelector(str) {
         var selector = "", getId = function (str) {
             var parts = str.replace(/[^a-z\_\-]/i, '-->').split('-->');
             return parts.length > 1 ? parts[0] : '';
         };
-        __.forEach(target.split(','), function (i, v) {
+        __.forEach(str.split(','), function (i, v) {
             if (selector) selector += ', ';
             var exp = v.split('#'), id, type, others;
             if (exp.length > 1 && exp[0]) {
@@ -384,34 +393,7 @@
                 selector += ',' + id + others;
             }
         });
-        return this.on(event, selector, callback);
-    }
-    // @todo: Why this function?
-    function parseSelector(selector) {
-        // @todo: parse attributes as well na
-        var obj = {
-            tag: null,
-            id: null,
-            classes: []
-        },
-            parts = selector.split('#'),
-            part1 = parts[0].split('.');
-        // selector has id; deal with the first part
-        if (parts.length > 1) {
-            obj.tag = part1.shift();
-            // The rest are classes, if available
-            obj.classes = part1;
-            // set up id part
-            parts = parts[1].split('.');
-            obj.id = parts.shift();
-        }
-        else {
-            // nothing before the id
-            obj.tag = parts.shift();
-        }
-        obj.classes = obj.classes.concat(parts);
-
-        return obj;
+        return selector;
     }
     /**
      * @param {_} elem
@@ -504,10 +486,11 @@
                     }
                     connector = 'delete';
                 }
-
-                href += '/' + crudConnectors[connector] + '/' +
-                    (_a.this('model') || _model.this('model') ||
-                        _model.this('id') || ' ') + '/' + (hrf || '');
+                if (connector) {
+                    href += '/' + crudConnectors[connector] + '/' +
+                        (_a.this('model') || _model.this('model') ||
+                            _model.this('id') || ' ') + '/' + (hrf || '');
+                }
                 _a.attr('href', encodeURI(href));
             });
     }
@@ -530,6 +513,52 @@
     }
     function findElem(selector) {
         return Array.from(this.querySelectorAll(selector));
+    }
+    function prep4Tmpl(elem) {
+        var content = ext.removeComments.call(app, elem.html());
+        elem.html(content);
+        elem.find('[this-type="collection"]:not([this-model]),'
+            + 'collection:not([this-model])')
+            .each(function () {
+                app._(this)
+                    .this('model', app._(this)
+                        .this('id'));
+            });
+        elem.find('[this-autocomplete][this-list]')
+            .each(function () {
+                var __this = app._(this),
+                    _scope = elem;
+                if (__this.hasThis('scoped')) {
+                    _scope = __this.this('scoped')
+                        ? __this.closest(parseSelector(__this.this('scoped')))
+                        : __this.parent();
+                    _scope.this('is-scope', '');
+                }
+                var _dropDownList = _scope.find('list[this-id="'
+                    + __this.this('list')
+                    + '"],[this-type="list"][this-id="' + __this.this('list')
+                    + '"]')
+                    .this('autocompleting', __this.this('id')),
+                    _selectedList = _scope.find('list[this-id="'
+                        + _dropDownList.this('selection-list')
+                        + '"],[this-type="list"][this-id="'
+                        + _dropDownList.this('selection-list')
+                        + '"]')
+                        .this('parent-list', _dropDownList.this('id'));
+                if (__this.hasThis('scoped')) {
+                    _dropDownList.this('scoped', __this.this('scoped') || '');
+                    _selectedList.this('scoped', __this.this('scoped') || '');
+                }
+            });
+        elem.find('img[src]')
+            .each(function () {
+                var __this = app._(this);
+                if (!__this.attr('src'))
+                    return;
+                __this.attr('this-src', __this.attr('src'))
+                    .removeAttr('src');
+            });
+        return elem;
     }
     var Form = function (form) {
         // Ensures Form is called as an object not a function
@@ -675,127 +704,127 @@
         this.getForm = function () {
             return form;
         };
-    };
-    /**
-     * Creates an AJAX connection
-     * @param {object} config
-     * @param {_} app
-     * @returns ajax object
-     */
-    var Ajax = function (config, app) {
-        config = __.extend({
-            type: 'get',
-            url: location.href,
-            data: null,
-            dataType: 'json',
-            headers: {},
-            success: function () {
-            },
-            error: function () {
-            },
-            progress: function (e, loaded, total) {
-            },
-            async: true,
-            clearCache: false
-        }, config);
-        config.type = config.type.toLowerCase();
-        var httpRequest = new XMLHttpRequest(),
-            contentType = config.headers['Content-Type'] || config.headers['Content-type']
-                || config.headers['content-type'] || config.headers['CONTENT-TYPE'];
-        // call secureAPI
-        if (app && config.api) {
-            var secureAPI = ext.record.call(app, 'secureAPI'),
-                headers = {},
-                options = {},
-                data = {};
-            if (false === __.callable(secureAPI || app.secap)
-                .call(app, headers, data, options)) {
-                return __.callable(config.error).call(httpRequest);
-            }
-            // update config
-            if (__.isObject(options))
-                config = __.extend(config, options);
-            // update headers
-            if (__.isObject(headers))
-                config.headers = __.extend(config.headers, headers);
-            // update data
-            if (__.isObject(data)) {
-                if (config.data instanceof Form || config.data instanceof FormData)
-                    config.data.fromObject(data);
-                else if (__.isObject(config.data))
-                    config.data = __.extend(config.data, data);
-                else if (__.isString(config.data))
-                    config.data += '&' + objToQStr(data);
-            }
-        }
-        httpRequest.onreadystatechange = function () {
-            if (httpRequest.readyState === XMLHttpRequest.DONE) {
-                if (httpRequest.status >= 200 && httpRequest.status < 400) {
-                    __.callable(config.success)
-                        .call(httpRequest, httpRequest.response);
+    },
+        /**
+         * Creates an AJAX connection
+         * @param {object} config
+         * @param {_} app
+         * @returns ajax object
+         */
+        Ajax = function (config, app) {
+            config = __.extend({
+                type: 'get',
+                url: location.href,
+                data: null,
+                dataType: 'json',
+                headers: {},
+                success: function () {
+                },
+                error: function () {
+                },
+                progress: function (e, loaded, total) {
+                },
+                async: true,
+                clearCache: false
+            }, config);
+            config.type = config.type.toLowerCase();
+            var httpRequest = new XMLHttpRequest(),
+                contentType = config.headers['Content-Type'] || config.headers['Content-type']
+                    || config.headers['content-type'] || config.headers['CONTENT-TYPE'];
+            // call secureAPI
+            if (app && config.api) {
+                var secureAPI = ext.record.call(app, 'secureAPI'),
+                    headers = {},
+                    options = {},
+                    data = {};
+                if (false === __.callable(secureAPI || app.secap)
+                    .call(app, headers, data, options)) {
+                    return __.callable(config.error).call(httpRequest);
                 }
-                else {
-                    __.callable(config.error)
-                        .call(httpRequest, httpRequest.response);
+                // update config
+                if (__.isObject(options))
+                    config = __.extend(config, options);
+                // update headers
+                if (__.isObject(headers))
+                    config.headers = __.extend(config.headers, headers);
+                // update data
+                if (__.isObject(data)) {
+                    if (config.data instanceof Form || config.data instanceof FormData)
+                        config.data.fromObject(data);
+                    else if (__.isObject(config.data))
+                        config.data = __.extend(config.data, data);
+                    else if (__.isString(config.data))
+                        config.data += '&' + objToQStr(data);
                 }
             }
-        };
-        // add time query to string to make it ignore cache
-        if (config.ignoreCache)
-            config.url += ((/\?/).test(config.url) ? "&" : "?") +
-                (new Date()).getTime();
-
-
-        // leave data alone if content type is set
-        if (!contentType && __.isObject(config.data)
-            && !(config.data instanceof FormData)) {
-            // load plain object into Form Object
-            if (!(config.data instanceof Form))
-                config.data = (new Form()).fromObject(config.data);
-            // set config data to best format base on the type of request this is
-            var form = config.data.forRequest(config.type.toLowerCase());
-            contentType = form.contentType;
-            config.data = form.data;
-        }
-        // GET Request with string or object data
-        if (config.type === 'get' && (__.isString(config.data)
-            || __.isObject(config.data, true))) {
-            // convert data to string if not already string
-            config.data = __.isString(config.data) ? config.data :
-                objToQStr(config.data);
-            // append data string to url
-            config.url += ((/\?/).test(config.url) ? "&" : "?") + config.data;
-            // unset config data
-            config.data = null;
-        }
-        // data is string but no content type has been set
-        else if (config.type !== 'get' && __.isString(config.data) && !contentType)
-            contentType = 'application/x-www-form-urlencoded';
-
-        httpRequest.open(config.type, config.url, config.async);
-        httpRequest.responseType = config.dataType;
-        httpRequest.withCredentials = config.withCredentials;
-        if (__.isObject(config.headers)) {
-            __.forEach(config.headers, function (key, value) {
-                httpRequest.setRequestHeader(key, value);
-                if (key.toLowerCase() === 'content-type') {
-                    contentType = null;
-                }
-            });
-        }
-        if (contentType)
-            httpRequest.setRequestHeader('Content-Type', contentType);
-        __.tryCatch(function () {
-            httpRequest.upload.onprogress = function (e) {
-                if (e.lengthComputable) {
-                    __.callable(config.progress)
-                        .call(httpRequest, e, e.loaded, e.total);
+            httpRequest.onreadystatechange = function () {
+                if (httpRequest.readyState === XMLHttpRequest.DONE) {
+                    if (httpRequest.status >= 200 && httpRequest.status < 400) {
+                        __.callable(config.success)
+                            .call(httpRequest, httpRequest.response);
+                    }
+                    else {
+                        __.callable(config.error)
+                            .call(httpRequest, httpRequest.response);
+                    }
                 }
             };
-        });
-        httpRequest.send(config.data);
-        return httpRequest;
-    },
+            // add time query to string to make it ignore cache
+            if (config.ignoreCache)
+                config.url += ((/\?/).test(config.url) ? "&" : "?") +
+                    (new Date()).getTime();
+
+
+            // leave data alone if content type is set
+            if (!contentType && __.isObject(config.data)
+                && !(config.data instanceof FormData)) {
+                // load plain object into Form Object
+                if (!(config.data instanceof Form))
+                    config.data = (new Form()).fromObject(config.data);
+                // set config data to best format base on the type of request this is
+                var form = config.data.forRequest(config.type.toLowerCase());
+                contentType = form.contentType;
+                config.data = form.data;
+            }
+            // GET Request with string or object data
+            if (config.type === 'get' && (__.isString(config.data)
+                || __.isObject(config.data, true))) {
+                // convert data to string if not already string
+                config.data = __.isString(config.data) ? config.data :
+                    objToQStr(config.data);
+                // append data string to url
+                config.url += ((/\?/).test(config.url) ? "&" : "?") + config.data;
+                // unset config data
+                config.data = null;
+            }
+            // data is string but no content type has been set
+            else if (config.type !== 'get' && __.isString(config.data) && !contentType)
+                contentType = 'application/x-www-form-urlencoded';
+
+            httpRequest.open(config.type, config.url, config.async);
+            httpRequest.responseType = config.dataType;
+            httpRequest.withCredentials = config.withCredentials;
+            if (__.isObject(config.headers)) {
+                __.forEach(config.headers, function (key, value) {
+                    httpRequest.setRequestHeader(key, value);
+                    if (key.toLowerCase() === 'content-type') {
+                        contentType = null;
+                    }
+                });
+            }
+            if (contentType)
+                httpRequest.setRequestHeader('Content-Type', contentType);
+            __.tryCatch(function () {
+                httpRequest.upload.onprogress = function (e) {
+                    if (e.lengthComputable) {
+                        __.callable(config.progress)
+                            .call(httpRequest, e, e.loaded, e.total);
+                    }
+                };
+            });
+            httpRequest.send(config.data);
+            return httpRequest;
+        },
         __ = Object.create({
             debug: true,
             index: 0,
@@ -817,7 +846,7 @@
             /**
              * Adds an element after the current elements or fetches the sibling after current
              * items
-             * @param {_}|{HTMLElement}|{String} elem
+             * @param {_ | HTMLElement | String} elem
              * @returns {_}
              */
             after: function (elem) {
@@ -884,7 +913,7 @@
             },
             /**
              * Sets or gets the attr of the elements
-             * @param {string}|{object} attr
+             * @param {string | object} attr
              * @param {mixed} val
              * @returns __|string
              */
@@ -914,7 +943,7 @@
             /**
              * Adds an element before the current elements or fetches the sibling before current
              * items
-             * @param {_}|{HTMLElement}|{String} elem
+             * @param {_ | HTMLElement | String} elem
              * @returns {_}
              */
             before: function (elem) {
@@ -1104,7 +1133,7 @@
             },
             /**
              * Sets/Gets a value into/from the dataset
-             * @param {string}|{object} key
+             * @param {string | object} key
              * @param {mixed} value
              * @returns {mixed}
              */
@@ -1426,7 +1455,7 @@
             /**
              * Checks if the given item exists in the given object
              * @param {mixed} item
-             * @param {object}|{array} object
+             * @param {object | array} object
              * @returns {Boolean}
              */
             inObject: function (item, object) {
@@ -1441,8 +1470,8 @@
             },
             /**
              * Checks if the given key exists in the given object
-             * @param {integer}|{string} key
-             * @param {object}|{array} object
+             * @param {integer | string} key
+             * @param {object | array} object
              * @returns {Boolean}
              */
             keyExists: function (key, object) {
@@ -1647,7 +1676,7 @@
             },
             /**
              * Removes the given attr(s) from elements
-             * @param {string}|{array} attr
+             * @param {string | array} attr
              * @returns ThisApp
              */
             removeAttr: function (attr) {
@@ -1906,7 +1935,7 @@
             },
             /**
              * Wraps the current elements with the given element
-             * @param {_}|{HTMLElement elem
+             * @param {_ | HTMLElement elem
              * @returns {_}
              */
             wrap: function (elem) {
@@ -1920,7 +1949,7 @@
         }),
         /**
          * Creates a wrapper for traversing the DOM
-         * @param {string}|{array}|{HTMLCollection}|{object} selector
+         * @param {string | array | HTMLCollection | object} selector
          * If as string, selector contains tags, they are created unattached to the DOM
          * @param {boolean} debug
          * @returns {_}
@@ -1977,8 +2006,8 @@
             records: {},
             /**
              * Binds the target to the model of the given element
-             * @param {_}|{string} _target
-             * @param {_}|{string} _elem
+             * @param {_ | string} _target
+             * @param {_ | string} _elem
              * @param {string} childKey The child key to bind on the target
              * @returns {Promise}
              */
@@ -2037,9 +2066,9 @@
             /**
              * Binds an elem to a fresh copy of the given object. Callee must
              * decide what to do with the bound elem (copy) in the callback.
-             * @param {_}|{HTMLElement} elem
+             * @param {_ | HTMLElement} elem
              * @param {Object} object
-             * @param {string}|{integer} key The unique identifier of the object, if coming
+             * @param {string | integer} key The unique identifier of the object, if coming
              * from a list
              * @returns {_}
              */
@@ -2079,6 +2108,7 @@
                 }
                 // check common callback only if page callback didn't return false or doesn't exist
                 if (response !== false && this.beforeCallbacks['___common']) {
+                    if (action === 'page.leave') ext.saveState.call(this, true);
                     response = __.callable(this.beforeCallbacks['___common'][action])
                         .apply(context || this, params);
                 }
@@ -2087,7 +2117,7 @@
             /**
              * Check if container is a table's descendant tag
              * and properly parses it.
-             * @param {_}|{string} container
+             * @param {_ | string} container
              * @returns {array}
              */
             checkTableContent: function (container) {
@@ -2166,7 +2196,7 @@
             },
             /**
              * Does the loading
-             * @param {HTMLElement}|{_} container
+             * @param {HTMLElement | _} container
              * @param object data
              * @param string content
              * @param {boolean} isModel Indicates whether loading a model or not
@@ -2363,7 +2393,7 @@
              * Empty lists, models and collections in the given elem.
              * When these are being loaded, their content is gotten from the
              * templates.
-             * @param {_}|{HTMLElement} elem
+             * @param {_ | HTMLElement} elem
              * @param {boolean} emptyLoaded Indicates whether to empty loaded features as well
              * @returns {ThisApp}
              */
@@ -2488,8 +2518,7 @@
                     _dropdownList, selected = '';
                 if (options.dropdownList) {
                     _dropdownList = options.dropdownList;
-                    var selected = _dropdownList
-                        .this('selected') || '';
+                    var selected = _dropdownList.this('selected') || '';
                 }
                 // loop through data
                 __.forEach(options.data, function (i, v) {
@@ -2697,40 +2726,6 @@
                 })
                     .then(function (data) {
                         var elem = __.createElement(data),
-                            prep4Tmpl = function (elem) {
-                                var content = ext.removeComments.call(app, elem.html());
-                                elem.html(content);
-                                elem.find('[this-type="collection"]:not([this-model]),'
-                                    + 'collection:not([this-model])')
-                                    .each(function () {
-                                        app._(this)
-                                            .this('model', app._(this)
-                                                .this('id'));
-                                    });
-                                elem.find('[this-autocomplete][this-list]')
-                                    .each(function () {
-                                        var __this = app._(this),
-                                            _dropdownList = elem.find('list[this-id="'
-                                                + __this.this('list')
-                                                + '"],[this-type="list"][this-id="' + __this.this('list')
-                                                + '"]')
-                                                .this('autocompleting', __this.this('id')),
-                                            _selectedList = elem.find('list[this-id="'
-                                                + _dropdownList.this('selection-list')
-                                                + '"],[this-type="list"][this-id="'
-                                                + _dropdownList.this('selection-list')
-                                                + '"]')
-                                                .this('parent-list', _dropdownList.this('id'));
-                                    });
-                                elem.find('img[src]')
-                                    .each(function () {
-                                        var __this = app._(this);
-                                        if (!__this.attr('src'))
-                                            return;
-                                        __this.attr('this-src', __this.attr('src'))
-                                            .removeAttr('src');
-                                    });
-                            },
                             done = function () {
                                 __.callable(success)
                                     .call(this, elem.clone());
@@ -3051,7 +3046,7 @@
                 name = name.trim();
                 var pathConfig = ext.config.call(this).paths[type],
                     url = (name.indexOf('://') !== -1 || name.startsWith('//')) ?
-                    name : pathConfig.dir + name,
+                        name : pathConfig.dir + name,
                     app = this,
                     load = function (url) {
                         if (type === 'js') {
@@ -3167,7 +3162,7 @@
             },
             /**
              * Loads a collection
-             * @param {_}|{HTMLElement} __this
+             * @param {_ | HTMLElement} __this
              * @param {Function} callback
              * @param {Object} data The data to load into the collection. If available and a url
              * exists on __this, it is monitored for changes to the data.
@@ -3778,7 +3773,7 @@
                         if (__this.attr('type') === 'radio' || __this.attr('type') === 'checkbox') {
                             // using attribute so that redumping content
                             // would still work fine
-                            if (__this.attr('value') == data || data == on)
+                            if (__this.attr('value') == data)
                                 __this.attr('checked', 'checked');
                         }
                         else if (__this.is('select')) {
@@ -3801,12 +3796,13 @@
                             __this.html(data);
                         }
                         else if (__this.hasThis('autocomplete')) {
-                            var _dropDownList = app.container
-                                .find('list[this-id="' + __this.this('list')
+                            var _scope = app.container;
+                            if (__this.hasThis('scoped'))
+                                _scope = __this.closest('[this-is-scope]');
+                            var _dropDownList = _scope.find('list[this-id="' + __this.this('list')
                                 + '"],[this-type="list"][this-id="'
                                 + __this.this('list') + '"]'),
-                                _selectedList = app.container
-                                    .find('list[this-id="'
+                                _selectedList = _scope.find('list[this-id="'
                                     + _dropDownList.this('selection-list')
                                     + '"],[this-type="list"][this-id="'
                                     + _dropDownList.this('selection-list')
@@ -3896,8 +3892,12 @@
                     var __this = app._(this);
                     if (__this.is('form')) {
                         // pass form action type from page to form if not exist on form
-                        if (!__this.hasThis('do') && app.page.this('do'))
+                        if (!__this.hasThis('do') && app.page.this('do')) {
                             __this.this('do', app.page.this('do'));
+                            // set form method if page has method
+                            if (app.page.this('method'))
+                                __this.this('method', app.page.this('method'));
+                        }
                         // is search form. no need loading except for search field
                         if ((__this.this('do') === 'search' ||
                             app.page.this('do') === 'search') &&
@@ -4016,7 +4016,7 @@
             },
             /**
              * Loads a model on the current page
-             * @param {HTMLElement}|{_} target
+             * @param {HTMLElement | _} target
              * @param {Function} callback
              * @param boolean binding Indicates whether to currently binding model to a collection
              * @param boolean replaceState Indicates whether to overwrite current state
@@ -4280,7 +4280,7 @@
             /**
              * The function called when logging a message
              * @param {string} method
-             * @param {string}|{array} param
+             * @param {string | array} param
              * @returns {ThisApp}
              */
             log: function (method, param) {
@@ -4745,6 +4745,7 @@
                     // get next closess layout
                     _layout = _layout.closest('layout,[this-type="layout"]');
                 }
+                prep4Tmpl(this.container);
                 // load templates from store if other pages already exist in history
                 var templates = ext.store.call(this, '___cache')
                     .find(ext.getTemplatePath.call(this));
@@ -4896,7 +4897,7 @@
             },
             /**
              * Decides which transporter to run
-             * @param {_}|{HTMLElement} Element on which the request is being
+             * @param {_ | HTMLElement} Element on which the request is being
              * made
              * @param {function} custom Function to get the config for the
              * custom transporter
@@ -5071,12 +5072,8 @@
                 this.tryCatch(function () {
                     var app = this;
                     // save page state before leaving
-                    this.before('page.leave', function () {
-                        ext.saveState.call(app, true);
-                    });
-                    // save page state before leaving
                     this._(window).on('beforeunload', function () {
-                        ext.saveState.call(app, true);
+                        ext.canContinue.call(app, 'page.leave', [], app.page.get(0));
                     });
                     // ensure paths end with /
                     if (this.config.paths) {
@@ -5163,10 +5160,33 @@
 
                     var autocomplete_timeout;
                     this.container
+                        /**
+                         * Disables click for all a tags with # as href value
+                         */
                         .on('click', 'a', function (e) {
-                            if (_(this).attr('href')
-                                .startsWith('#'))
+                            if (_(this).hasAttr('href') 
+                                && _(this).attr('href').startsWith('#'))
                                 e.preventDefault();
+                        })
+                        /**
+                         * Trigger an event from a dom event
+                         */
+                        .on('click', '[this-trigger]', function () {
+                            var trigger = app._(this).this('trigger');
+                            // trigget value must exist to continue
+                            if (!trigger) return;
+
+                            trigger.split(';')
+                                .forEach(function (part) {
+                                    var parts = part.split(':');
+                                    if (parts.length < 2) return;
+                                    // get usable selector
+                                    var selector = parseSelector(parts[1]);
+                                    // get element in container
+                                    app.container.find(selector)
+                                        // trigger event
+                                        .trigger(parts[0]);
+                                });
                         })
                         /* reload current page or loaded collection|model */
                         .on('click', '[this-reload],[this-reload-page],[this-reload-layouts]',
@@ -5252,11 +5272,12 @@
                             app.tar['page#' + pageId] = {
                                 reading: '',
                                 url: url,
-                                model: model_name
+                                model: model_name,
+                                mid: model_id
                             };
-                            app.tar['page#' + pageId]['mid'] = model_id;
-                            __this.this('goto', goto + '/#/' + model_name
-                                + '/' + url);
+                            if (__this.this('method'))
+                                app.tar['page#' + pageId]['method'] = __this.this('method');
+                            __this.this('goto', goto + '/#/' + model_name + '/' + url);
                         })
                         /*
                          * UPDATE event
@@ -5287,6 +5308,8 @@
                                 action: url,
                                 model: model_name
                             };
+                            if (__this.this('method'))
+                                app.tar['page#' + pageId]['method'] = __this.this('method');
                             if (__this.this('model-id-key'))
                                 app.tar['page#'
                                     + pageId]['model-id-key'] = __this.this('model-id-key');
@@ -5317,6 +5340,8 @@
                                 action: url,
                                 model: __this.this('model')
                             };
+                            if (__this.this('method'))
+                                app.tar['page#' + pageId]['method'] = __this.this('method');
                             if (__this.this('model-id-key'))
                                 app.tar['page#' + pageId]['model-id-key'] = __this
                                     .this('model-id-key');
@@ -5355,6 +5380,8 @@
                                 }).show();
                                 ext.resetForm.call(this, _target.get(0));
                                 _target.trigger('create.form.cleared');
+                                if (__this.this('method'))
+                                    _target.this('method', __this.this('method'));
                             }.bind(app));
                         })
                         /*
@@ -5388,6 +5415,8 @@
                                 __this.this('goto', goto + '/#/' +
                                     (_model.this('mid') || __this.this('model-id')));
                             }
+                            if (__this.this('method'))
+                                app.tar['page#' + pageId]['method'] = __this.this('method');
                             __this.this('goto', __this.attr('href'));
                         })
                         /*
@@ -5425,40 +5454,45 @@
                                 bind = __this.this('bind-to'),
                                 _model = __this.closest('model,'
                                     + '[this-type="model"],'
-                                    + '[this-model]');
-                            if (!bind || !_model.length)
-                                return;
+                                    + '[this-model]'),
+                                model_name = __this.this('model') || _model.this('model')
+                                    || _model.this('id'),
+                                model_id = __this.this('model-id') || _model.this('mid');
+                            if (!bind) return;
                             var _target = app.container.find(ext.selector
                                 .call(app, bind, ':not([this-in-collection])'));
                             if (!_target.length)
                                 return;
-                            _target.this('model', _model.this('model')
-                                || _model.this('id'))
+                            _target.this('model', model_name)
                                 .this('binding', '')
-                                .this('id-key', _model.this('id-key') || '')
+                                .this('id-key', __this.this('id-key') || _model.this('id-key') || '')
                                 .this('url', _model.this('url') || '')
+                                .this('mid', model_id)
                                 .removeThis('action');
-                            var tar = _model.this('url') ?
-                                'url:' + _model.this('url') :
-                                '';
+                            var tar = _model.this('url') ? 'url:' + _model.this('url') : '';
+                            if (__this.this('method'))
+                                tar += ';method:' + __this.this('method');
                             if (__this.hasThis('read')) {
-                                if (__this.this('read'))
+                                if (__this.this('read')) {
                                     tar = 'url:' + __this.this('read');
+                                    _target.this(url, __this.this('read'));
+                                }
                                 app.container.find('[this-model="'
-                                    + (_model.this('model')
-                                        || _model.this('id'))
-                                    + '"][this-binding]')
-                                    .hide();
+                                    + model_name + '"][this-binding]').hide();
                                 _target.removeThis('do');
                             }
                             else if (__this.hasThis('update')) {
-                                if (__this.this('update'))
+                                if (__this.this('update')) {
                                     tar = 'url:' + __this.this('update');
+                                    _target.this(url, __this.this('update'));
+                                }
                                 tar += ';do:update';
                             }
                             else if (__this.hasThis('delete')) {
-                                if (__this.this('delete'))
+                                if (__this.this('delete')) {
                                     tar = 'url:' + __this.this('delete');
+                                    _target.this(url, __this.this('delete'));
+                                }
                                 tar += ';do:delete';
                                 __this.this('treated', '');
                                 setTimeout(function () {
@@ -5466,8 +5500,47 @@
                                 });
                             }
                             _target.this('tar', tar);
-                            ext.bindToElementModel
-                                .call(app, _target, _model, __this.this('bind'));
+
+                            new Collection({
+                                app: app,
+                                name: model_name
+                            })
+                                .then(function (collection) {
+                                    return collection.model(model_id, {
+                                        url: _target.this('url'),
+                                        method: __this.hasThis('read') ? __this.this('method')
+                                            : ''
+                                    });
+                                })
+                                .then(function (model) {
+                                    if (__this.this('bind')) {
+                                        var data = ext.getVariableValue
+                                            .call(app, __this.this('bind'), model.attributes);
+                                        ext.bindToObject
+                                            .call(app, _target, data,
+                                            function (elem) {
+                                                _target.replaceWith(elem)
+                                                    .trigger('model.binded', {
+                                                        model: model
+                                                    });
+                                            });
+                                    }
+                                    else {
+                                        model.bind(_target.this('model', model_name))
+                                            .then(function () {
+                                                _target.replaceWith(elem)
+                                                    .trigger('model.binded', {
+                                                        model: model
+                                                    });
+                                            })
+                                            .catch(function () {
+                                                _target.replaceWith(elem)
+                                                    .trigger('model.bind.failed', {
+                                                        model: model
+                                                    });
+                                            });
+                                    }
+                                });
                         })
                         /*
                          * DELETE event
@@ -5487,14 +5560,14 @@
                             var __this = app._(this);
                             if (__this.hasThis('treated'))
                                 return;
-                            var _model = __this.closest('model,[this-type="model"],'
-                                + '[this-model]'),
+                            var _model = __this.closest('model,[this-type="model"], [this-model]'),
                                 _do = __this.closest('[this-do="delete"]'),
                                 model_url = __this.this('delete') ||
                                     _model.this('url') ||
                                     _do.this('action'),
                                 model_id = _model.this('mid') ||
                                     _do.this('mid'),
+                                method = __this.this('method') || _do.this('method'),
                                 model;
                             if (!ext.canContinue
                                 .call(app, 'model.delete',
@@ -5519,7 +5592,9 @@
                                 // got model
                                 .then(function (model_) {
                                     model = model_;
-                                    return model.remove();
+                                    return model.remove({
+                                        method: method
+                                    });
                                 })
                                 // removed
                                 .then(function (data) {
@@ -5638,16 +5713,26 @@
                                 min_chars = __this.this('min-chars') || 3,
                                 url = __this.this('autocomplete')
                                     || __this.this('url'),
-                                _list = app.container
-                                    .find('[this-type="list"][this-id="'
-                                    + __this.this('list')
-                                    + '"],list[this-id="'
-                                    + __this.this('list')
-                                    + '"]');
+                                _scope;
+                            // process autocompleting scope
+                            if (__this.hasThis('scoped')) {
+                                _scope = __this.closest('[this-is-scope]');
+                            }
+                            // no scope: use container.
+                            else _scope = app.container;
+                            if (!_scope.length) {
+                                app.error('Autocomplete scope not found!');
+                                return;
+                            }
+                            var _list = _scope
+                                .find('[this-type="list"][this-id="'
+                                + __this.this('list')
+                                + '"],list[this-id="'
+                                + __this.this('list')
+                                + '"]');
                             // list element must exist
                             if (!_list.length) {
-                                app.error('List #' + __this.this('list')
-                                    + ' not found');
+                                app.error('List #' + __this.this('list') + ' not found');
                                 return;
                             }
 
@@ -5731,12 +5816,23 @@
                                 id = __this.this('id'),
                                 index = __this.this('index'),
                                 _dropDownList = __this.parent(),
-                                _input = app.container
-                                    .find('[this-autocomplete][this-id="'
-                                    + _dropDownList
-                                        .this('autocompleting') +
-                                    '"]'),
                                 selectionList = _dropDownList.this('selection-list'),
+                                selectedListSelector = '[this-type="list"][this-id="'
+                                    + selectionList + '"],list[this-id="'
+                                    + selectionList + '"]',
+                                // no scope: use container.
+                                _scope = app.container;
+                            // process dropdownList scope
+                            if (_dropDownList.hasThis('scoped')) {
+                                _scope = _dropDownList.closest('[this-is-scope]');
+                            }
+                            if (!_scope.length) {
+                                app.error('Autocomplete scope not found!');
+                                return;
+                            }
+                            var _input = _scope
+                                .find('[this-autocomplete][this-id="'
+                                + _dropDownList.this('autocompleting') + '"]'),
                                 valueKey = _input.this('value-key'),
                                 // get the saved data from the autcompletion
                                 list = ext.record.call(app).store.find('autocompleting')
@@ -5762,18 +5858,11 @@
                                 // don't process
                                 return;
                             }
-                            var selectedListSelector = '[this-type="list"][this-id="'
-                                + selectionList + '"],list[this-id="'
-                                + selectionList + '"]',
-                                _selectedList = app.container
-                                    .find(selectedListSelector),
-                                elem = app.getCached(selectedListSelector)
-                                    .children();
+                            var _selectedList = _scope.find(selectedListSelector),
+                                elem = app.getCached(selectedListSelector).children();
                             // empty selected list if nothing had
                             // been selected
-                            if (!_dropDownList.this('selected')) {
-                                _selectedList.html('');
-                            }
+                            if (!_dropDownList.this('selected')) _selectedList.html('');
                             ext.bindToObject
                                 .call(app, elem, data, function (elem) {
                                     elem.this('type', 'listing')
@@ -5800,23 +5889,31 @@
                                     }
                                 });
                         })
-                        .on('click', 'list [this-remove],'
-                        + '[this-type="list"] [this-remove]',
+                        .on('click', 'list [this-remove],[this-type="list"] [this-remove]',
                         function () {
                             var __this = app._(this)
                                 .closest('[this-type="listing"]'),
                                 _list = __this.parent(),
-                                _dropDownList = app.container
-                                    .find('[this-type="list"][this-selection-list="'
-                                    + _list.this('id')
-                                    + '"],list[this-selection-list="'
-                                    + _list.this('id') + '"]');
+                                _scope;
+                            // process autocompleting scope
+                            if (_list.hasThis('scoped')) {
+                                _scope = _list.closest('[this-is-scope]');
+                            }
+                            // no scope: use container.
+                            else _scope = app.container;
+                            if (!_scope.length) {
+                                app.error('Autocomplete scope not found!');
+                                return;
+                            }
+                            var _dropDownList = _scope
+                                .find('[this-type="list"][this-selection-list="'
+                                + _list.this('id') + '"],list[this-selection-list="'
+                                + _list.this('id') + '"]');
                             _dropDownList.this('selected',
                                 _dropDownList.this('selected')
-                                    .replace(__this.this('id')
-                                    + ',', ''))
+                                    .replace(__this.this('id') + ',', ''))
                                 .show();
-                            var _input = app.container
+                            var _input = _scope
                                 .find('[this-autocomplete][this-id="'
                                 + _dropDownList
                                     .this('autocompleting') +
@@ -5844,10 +5941,7 @@
                             var __this = app._(this),
                                 creating = __this.this('do')
                                     === 'create',
-                                method = __this.this('method')
-                                    || (creating ?
-                                        'post' :
-                                        'put');
+                                method = __this.this('method') || '';
                             if (!this.reportValidity()) {
                                 __this.trigger('form.invalid.submission');
                                 return;
@@ -6546,11 +6640,11 @@
         Filters = Object.create({
             /**
              * Helper function to check array or str and call function only on str
-             * @param {string}|{array} str
+             * @param {string | array} str
              * @param {string} options
              * @param {function} funcA Try this function
              * @param {function} funcB Do this if first failed
-             * @returns {string}|{array}
+             * @returns {string | array}
              */
             __factory: function (str, options, funcA, funcB) {
                 if (__.isArray(str)) {
@@ -6784,7 +6878,7 @@
             },
             /**
              * Joins the array into a string with the given separator
-             * @param {object}|{array} obj
+             * @param {object | array} obj
              * @param {string} separator
              * @returns {Array}
              */
@@ -6857,9 +6951,9 @@
             },
             /**
              * Performs a replace operation on the given string
-             * @param {string}|{array} str
+             * @param {string | array} str
              * @param {string} options search:replacement;search2:replacement2;...
-             * @returns {String}|{array}
+             * @returns {String | array}
              */
             replace: function (str, options) {
                 return this.__factory(str, options,
@@ -6909,7 +7003,7 @@
             },
             /**
              * Splits the str into an array by the given separator
-             * @param {string}|{array} str
+             * @param {string | array} str
              * @param {string} separator
              * @returns {Array}                  */
             split: function (str, separator) {
@@ -6921,8 +7015,8 @@
             },
             /**
              * Trims the given string or array of strings
-             * @param {Array}|{String} str
-             * @returns {Array}|{String}
+             * @param {Array | String} str
+             * @returns {Array | String}
              */
             trim: function (str) {
                 return this.__factory(str, null, function (str) {
@@ -7030,7 +7124,7 @@
                 url: props && props.url ? props.url : null,
                 /**
                  * Binds the model to the given element
-                 * @param {string}|{HTMLElement}|{_} elem
+                 * @param {string | HTMLElement | _} elem
                  * @returns {Promise}
                  */
                 bind: function (elem) {
@@ -7303,9 +7397,7 @@
                         config = __.extend({}, config);
                         var data = config.data || {},
                             _data = ext.canContinue
-                                .call(this.app, this.id
-                                    ? 'model.update'
-                                    : 'model.create',
+                                .call(this.app, this.id ? 'model.update' : 'model.create',
                                 [data], config.form);
                         if (false === _data) {
                             return reject('Canceled by a before event');
@@ -7327,10 +7419,8 @@
                         var finalizeSave = function (config, data, removeUploaded) {
                             var _this = this,
                                 method = this.id
-                                    ?
-                                    ext.config.call(app).crud.methods.update
-                                    :
-                                    ext.config.call(app).crud.methods.create,
+                                    ? ext.config.call(app).crud.methods.update
+                                    : ext.config.call(app).crud.methods.create,
                                 form = new Form(config.form);
                             form.fromObject(data);
                             if (this.method)
@@ -7426,13 +7516,13 @@
                                 _this.app.error('Cannot save model to server: No URL supplied.');
                                 return reject('Cannot save model to server: No URL supplied.');
                             }
-                        };
+                        },
+                            // get files
+                            files = this.app._(config.form)
+                                .find('input[type="file"]');
                         // saving form while there's an uploader for the app
                         if (config.form &&
                             ext.record.call(this.app, 'uploader')) {
-                            // get files
-                            var files = this.app._(config.form)
-                                .find('input[type="file"]');
                             if (files.length) {
                                 data = data || {};
                                 var _this = this;
@@ -7457,6 +7547,9 @@
                                     });
                                 return this;
                             }
+                        }
+                        else if (files.length && config.form) {
+                            data = new FormData(config.form);
                         }
                         finalizeSave.call(this, config, data);
                     }.bind(this));
@@ -7531,7 +7624,7 @@
                 },
                 /**
                  * Binds the collection to the given element
-                 * @param {string}|{HTMLElement}|{_} elem
+                 * @param {string | HTMLElement | _} elem
                  * @returns {Promise}
                  */
                 bind: function (elem) {
@@ -7666,16 +7759,17 @@
                 },
                 /**
                  * Fetches a model from the collection
-                 * @param {integer}|{string} model_id
+                 * @param {integer | string} model_id
                  * @param {Object} Keys include url (string), success (function),
-                 * error (function), ignoreCache (boolean)
+                 * error (function), ignoreCache (boolean), method (string)
                  * @returns {Promise}
                  */
                 model: function (model_id, options) {
                     var _this = this, url,
                         options = __.extend({
                             success: function () { },
-                            error: function (e) { }
+                            error: function (e) { },
+                            method: 'GET'
                         }, options);
                     if (model_id) {
                         if (options.url) {
@@ -7708,7 +7802,10 @@
                         }
                         else if (url) {
                             return this.app.promise(function (resolve, reject) {
-                                this.app.request(url)
+                                this.app.request({
+                                    url: url,
+                                    type: options.method
+                                })
                                     .then(function (data) {
                                         data = getRealData.call(this.app, data);
                                         if (data && __.isObject(data))
@@ -7753,7 +7850,7 @@
                 },
                 /**
                  * Removes a model
-                 * @param {integer}|{string} model_id
+                 * @param {integer | string} model_id
                  * @param {Object} options @see Model.remove()
                  * @returns {Promise}
                  */
@@ -7888,9 +7985,14 @@
                      * @returns {array}
                      */
                     properties: function () {
+                        var custom = Object.keys(target),
+                            initial = Object.keys(target.__proto__);
+                        __.removeArrayValue(custom, 'parent');
+                        __.removeArrayValue(initial, '__factory');
+                        __.removeArrayValue(initial, '__opts');
                         return {
-                            custom: Object.keys(target),
-                            initial: Object.keys(target.__proto__)
+                            custom: custom,
+                            initial: initial
                         };
                     },
                     /**
@@ -8139,7 +8241,7 @@
         },
         /**
          * Adds an element to the cache collection for later reuse
-         * @param {_}|{HTMLElement} elem
+         * @param {_ | HTMLElement} elem
          * @returns {ThisApp}
          */
         addToCache: function (elem) {
@@ -8223,7 +8325,7 @@
         },
         /**
          * Binds an element to an object
-         * @param {_}|{HTMLElement} elem
+         * @param {_ | HTMLElement} elem
          * @param {Object} object
          * @param {Funtion} callback
          * @returns {Promise}
@@ -8321,7 +8423,7 @@
         },
         /**
          * Fills an autocomplete list with the data given
-         * @param {_}|{string} list
+         * @param {_ | string} list
          * @param {object} data
          * @param {string} idKey
          * @param {string} filter
@@ -8335,13 +8437,19 @@
             list = __.isString(list) ?
                 this.container.find('[this-id="' + list + '"]') :
                 this._(list);
-            var _dropdownList = list.this('autocompleting') ?
-                list :
-                this.container.find('list[this-id="'
+            var _dropdownList;
+            if (list.this('autocompleting'))
+                _dropdownList = list;
+            else {
+                var _scope = this.container;
+                if (list.hasThis('scoped')) {
+                    _scope = list.closest('[this-is-scope]');
+                }
+                _dropdownList = _scope.find('list[this-id="'
                     + list.this('parent-list') +
                     '"],[this-type="list"][this-id="'
-                    + list.this('parent-list') +
-                    '"]');
+                    + list.this('parent-list') + '"]');
+            }
             return ext.fillAutocompleteList.call(this, {
                 list: list,
                 data: data,
@@ -8372,7 +8480,7 @@
         },
         /**
          * Fetches a clone of the required elements from the cache collection
-         * @param {string}|{_} selector
+         * @param {string | _} selector
          * @param {string} type The type of element to get. This is the value of
          * the `this-type` of the target element. The attribute is created and
          * appended to the selector.
@@ -8391,7 +8499,7 @@
                     // don't check `this-model` for bounded non-page element
                     if (selector.hasThis('binding')
                         && selector.this('type') !== 'page') {
-                        __.arrayRemoveIndex(2);
+                        __.removeArrayIndex(2);
                     }
                     selector = elemToSelector(selector, {
                         attrs: attrs,
@@ -8429,7 +8537,7 @@
                     });
                     elem = this.templates.find(selectr);
                     if (!elem.length)
-                        elem = this.templates.children('[this-type="component"]')
+                        elem = this.templates.children('component,[this-type="component"]')
                             .find(selector);
                     if (!elem.length) {
                         var _layout = this.page.closest('layout,[this-type="layout"]');
@@ -8496,7 +8604,7 @@
         },
         /**
          * Loads an element (collection, model, component, or layout)
-         * @param {HTMLElement}|{_}|{string} elem
+         * @param {HTMLElement | _ | string} elem
          * @param {Object} data
          * @param {Function} callback
          * @returns {Promise}
@@ -8640,7 +8748,7 @@
         },
         /**
          * Sets up the function to call when a page is not found
-         * @param {function}|{string} callback or id of page to load
+         * @param {function | string} callback or id of page to load
          * @returns {ThisApp}
          */
         pageNotFound: function (callback) {
@@ -8691,7 +8799,7 @@
         /**
          * Replaces cached elements with the given elem
          * @param {String} selector
-         * @param {_}|{HTMLElement| elem
+         * @param {_ | HTMLElement| elem
          * @returns {ThisApp}
          */
         replaceCached: function (selector, elem) {
@@ -8705,7 +8813,7 @@
         },
         /**
          * Sends an AJAX request
-         * @param {string}|{object} config
+         * @param {string | object} config
          * Keys include:
          * type (string): GET | POST | PATCH | PUT | DELETE
          * url (string): The url to connect to. Default is current url
