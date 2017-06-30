@@ -1,7 +1,7 @@
 // only show user(s) if any of the following is true
 // 1. requested by an internal module
 // 2. logged and is an admin or is owner of account
-cancelUnless((ctx.user.admin || ctx.user.id === this.id), 'Not Allowed', 403);
+cancelUnless(internal || ctx.user.admin || ctx.user.id === this.id, 'Not Allowed', 403);
 // hide tokens unless getting user by username or verification token
 if (!query.username && !query.verificationToken) {
     hide('passwordToken');

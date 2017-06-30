@@ -575,7 +575,7 @@
                         return;
                     data.push({
                         name: _elem.attr('name'),
-                        value: _elem.val()
+                        value: _elem.is('button') ? _elem.html() : _elem.val()
                     });
                 },
                 additionalData = {};
@@ -586,12 +586,21 @@
                     // ensure name exists
                     if (!_elem.attr('name')) return;
                     // handle checkboxes and radios
-                    else if ((_elem.attr('type') === 'checkbox' || _elem.attr('type') === 'radio')
-                            && _elem.is(':checked')) {
-                        elemToData(_elem);
+                    else if ((this.type === 'checkbox' || this.type === 'radio')) {
+                        if (_elem.is(':checked')) elemToData(_elem);
+                    }
+                    // handle submit input buttons
+                    else if (_elem.is('input') && _elem.attr('type') === 'submit') {
+                        // ignore if one's already used
+                        if ((!Object.keys(additionalData).length ||
+                                // or this is the clicked one
+                                _elem.hasThis('clicked'))) {
+                            additionalData[this.name] = this.value;
+                            _elem.removeThis('clicked');
+                        }
                     }
                     // handle others
-                    else if (_elem.val().trim()) {
+                    else if (_elem.val().trim() || _elem.is('button')) {
                         elemToData(_elem);
                     }
                 });
@@ -1384,18 +1393,16 @@
                 /**
                  * Checks if the items are of the given selector
                  * @param string selector
-                 * @param {Boolean} checkIdOnly Indicates to check the this-id of element
                  * @returns Boolean
                  */
-                is: function (selector, checkIdOnly) {
+                is: function (selector) {
                     if (!this.items.length)
                         return false;
-                    if (checkIdOnly && this.items[0].getAttribute('this-id') === selector)
-                        return true;
                     var el = this.items[0];
-                    return (el.matches || el.matchesSelector || el.msMatchesSelector
-                            || el.mozMatchesSelector || el.webkitMatchesSelector
-                            || el.oMatchesSelector).call(el, selector);
+                    return this.this('type') === selector ||
+                            (el.matches || el.matchesSelector || el.msMatchesSelector
+                                    || el.mozMatchesSelector || el.webkitMatchesSelector
+                                    || el.oMatchesSelector).call(el, selector);
                 },
                 /**
                  * Checks if the given value exists in the given array
@@ -1911,16 +1918,20 @@
                  * @returns __|string
                  */
                 val: function (value) {
-                    var val;
-                    this.each(function () {
-                        if (value !== undefined) {
+                    if (value !== undefined) {
+                        return this.each(function () {
+                            if (_(this).is('textarea'))
+                                _(this).html(value);
+                            else if (_(this).is('select')) {
+                                _(this).find('[selected]').remove('selected');
+                                _(this).find('[value="' + value + '"]')
+                                        .attr('selected', 'selected');
+                            }
                             this.value = value;
                             _(this).attr('value', value);
-                            return;
-                        }
-                        val = this.value;
-                    });
-                    return value !== undefined ? this : val;
+                        });
+                    }
+                    return this.items.length ? this.items[0].value : '';
                 },
                 /**
                  * A shortcut to method on()
@@ -3020,9 +3031,7 @@
                  * @returns booean
                  */
                 is: function (type, container) {
-                    return this._(container)
-                            .this('type') === type || this._(container)
-                            .is(type);
+                    return this._(container).is(type);
                 },
                 /**
                  * Check if an app is running
@@ -3112,7 +3121,24 @@
                             }.bind(this);
                     if (elem.this('load-css') && !elem.hasThis('with-css')) {
                         loading++;
-                        var csses = elem.this('load-css').split(',');
+                        var csses = elem.this('load-css').split(','),
+                                nextIndex = 0,
+                                loadNextCSS = function () {
+                                    if (!csses[nextIndex]) {
+                                        loading--;
+                                        return done();
+                                    }
+                                    ext.loadAsset.call(app, 'css', csses[nextIndex], elem,
+                                            function () {
+                                                nextIndex++;
+                                                loadNextCSS();
+                                            });
+                                };
+                        loadNextCSS();
+                    }
+                    if (elem.this('load-css-async') && !elem.hasThis('with-css')) {
+                        loading++;
+                        var csses = elem.this('load-css-async').split(',');
                         // load comma-separated css files
                         __.forEach(csses,
                                 function (i, css) {
@@ -3123,8 +3149,9 @@
                                         }
                                     });
                                 });
-                        elem.this('with-css', '').removeThis('load-css');
                     }
+                    // mark elem has been loaded with css
+                    elem.this('with-css', '').removeThis('load-css');
 
                     // mark all scripts as old by removing attribute `this-loaded`
                     if (!Object.keys(this.removedAssets).length)
@@ -3134,6 +3161,34 @@
                         leaveUnrequired = true;
                         loading++;
                         var jses = elem.this('load-js-first').split(','),
+                                removedAssets = this.removedAssets[elemType],
+                                nextIndex = 0,
+                                loadNextJS = function () {
+                                    // loaded all
+                                    if (!jses[nextIndex]) {
+                                        // remove elem-type css and js files that don't belong to
+                                        // the elem type
+                                        if (!removedAssets)
+                                            app._('script[this-app="' + app.container.this('id')
+                                                    + '"][this-for="' + elemType + '"]:not([this-loaded])')
+                                                    .remove();
+                                        loading--;
+                                        return done();
+                                    }
+                                    // load comma-separated css files
+                                    ext.loadAsset.call(app, 'js', jses[nextIndex], elem, function () {
+                                        // load next
+                                        nextIndex++;
+                                        loadNextJS();
+                                    });
+                                };
+                        loadNextJS();
+                        loadedPageJS.first[this.page.this('id')] = true;
+                    }
+                    if (elem.this('load-js-first-async') && !loadedPageJS.first[this.page.this('id')]) {
+                        leaveUnrequired = true;
+                        loading++;
+                        var jses = elem.this('load-js-first-async').split(','),
                                 removedAssets = this.removedAssets[elemType];
                         // load comma-separated css files
                         __.forEach(jses, function (i, js) {
@@ -3281,6 +3336,8 @@
                                                             __this.append(ext.processExpressions.call(app, lastChild));
                                                             __.callable(callback)
                                                                     .call(this, data);
+                                                            if (__this.this('value'))
+                                                                __this.val(__this.this('value'));
                                                         }.bind(app));
                                     }
                                 },
@@ -3389,8 +3446,7 @@
                         return ext;
                     }
                     component = this._(component).clone();
-                    if (component.is('component') || component.this('type') === 'component')
-                        component.removeThis('url');
+                    if (component.is('component')) component.removeThis('url');
                     // load component
                     __this.replaceWith(component.show())
                             .trigger('component.loaded');
@@ -3773,7 +3829,6 @@
                                     __.isObject(data)) {
                                 data = ext.getUIDValue.call(app, data);
                             }
-                            __this.removeThis('is');
                             if (__this.attr('type') === 'radio' || __this.attr('type') === 'checkbox') {
                                 // using attribute so that redumping content
                                 // would still work fine
@@ -3781,20 +3836,17 @@
                                     __this.attr('checked', 'checked');
                             }
                             else if (__this.is('select')) {
-                                __this.children().each(function () {
-                                    var val = app._(this)
-                                            .attr('value') || app._(this)
-                                            .html().trim();
-                                    if (val == data)
-                                        app._(this)
-                                                .attr('selected', 'selected');
-                                    else
-                                        app._(this).removeAttr('selected');
-                                });
-                                // using attribute so that redumping content
-                                // would still work fine
-                                __this.find('[value="' + data + '"]')
-                                        .attr('selected', 'selected');
+                                // add value attribute if collection isn't
+                                // loaded yet
+                                if (__this.is('collection') &&
+                                        !__this.hasThis('loaded')) {
+                                    __this.this('value', data);
+                                    return;
+                                }
+
+                                __this.children('[selected]')
+                                        .remove('selected');
+                                __this.val(data);
                             }
                             else if (__this.is('textarea')) {
                                 __this.html(data);
@@ -3842,17 +3894,17 @@
                                         });
                                     }
                                 }.bind(app);
-                                // refill list from provided function
-                                if (_selectedList.this('refill')) {
-                                    return __.callable(_selectedList.this('refill'))
+                                // fill list from provided function
+                                if (_selectedList.this('fill')) {
+                                    return __.callable(_selectedList.this('fill'))
                                             .call(this, data, gotData);
                                 }
-                                // refill list from
-                                else if (_selectedList.this('refill-url')) {
+                                // fill list from url
+                                else if (_selectedList.this('fill-url')) {
                                     return app.request({
                                         dataType: 'json',
                                         type: 'POST',
-                                        url: _selectedList.this('refill-url'),
+                                        url: _selectedList.this('fill-url'),
                                         data: {
                                             ids: data
                                         }
@@ -3866,14 +3918,14 @@
                                 }
                                 gotData(data);
                             }
-                            else if (__this.get(0).tagName.toLowerCase() ===
-                                    'img')
+                            else if (__this.is('img'))
                                 __this.attr('src', data);
                             else {
                                 // using attribute so that redumping content
                                 // would still work fine
                                 __this.attr('value', data);
                             }
+                            __this.removeThis('is');
                         });
                     }
                     return this;
@@ -4555,8 +4607,24 @@
                     // load required js if not already loaded
                     if (this.page.this('load-js')
                             && !loadedPageJS.last[this.page.this('id')]) {
-                        var jses = this.page.this('load-js')
-                                .split(',');
+                        var jses = this.page.this('load-js').split(','),
+                                nextIndex = 0,
+                                loadNextJS = function () {
+                                    if (!jses[nextIndex]) {
+                                        return;
+                                    }
+                                    ext.loadAsset.call(app, 'js', jses[nextIndex], app.page,
+                                            function () {
+                                                nextIndex++;
+                                                loadNextJS();
+                                            });
+                                };
+                        loadNextJS();
+                        loadedPageJS.last[this.page.this('id')] = true;
+                    }
+                    if (this.page.this('load-js-async')
+                            && !loadedPageJS.last[this.page.this('id')]) {
+                        var jses = this.page.this('load-js-async').split(',');
                         // load comma-separated css files
                         __.forEach(jses, function (i, js) {
                             ext.loadAsset.call(app, 'js', js, app.page);
@@ -5217,6 +5285,16 @@
                                 };
                         this.container
                                 /**
+                                 * Mark clicked input submit button as so.
+                                 * to identify it in Form
+                                 */
+                                .on('click', 'input[type="submit"]', function () {
+                                    app._(this).closest('form')
+                                            .find('input[type="submit"]')
+                                            .removeThis('clicked');
+                                    app._(this).this('clicked', '');
+                                })
+                                /**
                                  * Disables click for all a tags with # as href value
                                  */
                                 .on('click', 'a', function (e) {
@@ -5670,7 +5748,7 @@
                                                         data[crudStatus.key] === crudStatus.successValue)
                                                         || !crudStatus) {
                                                     if (app.page.this('do') === 'delete'
-                                                            || _model.this('type') === 'page')
+                                                            || _model.is('page'))
                                                         app.back();
                                                     else {
                                                         app.container.find('[this-model="'
@@ -6072,66 +6150,67 @@
                                                                 });
                                                     });
                                         })
-                                .on('submit', 'form[this-handle-submit]:not([this-do])', function (e) {
-                                    e.preventDefault();
-                                    var _form = app._(this);
-                                    if (!this.reportValidity()) {
-                                        _form.trigger('form.invalid.submission');
-                                        return;
-                                    }
-                                    _form.trigger('form.valid.submission');
-                                    var fd = new Form(this),
-                                            headers = {};
-                                    var data = ext.canContinue
-                                            .call(app, 'form.send', [headers], this);
-                                    if (!data) {
-                                        return;
-                                    }
-                                    else if (__.isObject(data))
-                                        fd.fromObject(data);
-                                    var success = function (data) {
-                                        _form.trigger('form.submission.success', {
-                                            response: this,
-                                            responseData: data
-                                        });
-                                        _form.trigger('form.submission.complete', {
-                                            response: this
-                                        });
-                                    },
-                                            error = function (data) {
-                                                _form.trigger('form.submission.error', {
+                                .on('submit', 'form[this-handle-submit]:not([this-do])',
+                                        function (e) {
+                                            e.preventDefault();
+                                            var _form = app._(this);
+                                            if (!this.reportValidity()) {
+                                                _form.trigger('form.invalid.submission');
+                                                return;
+                                            }
+                                            _form.trigger('form.valid.submission');
+                                            var fd = new Form(this),
+                                                    headers = {};
+                                            var data = ext.canContinue
+                                                    .call(app, 'form.send', [headers], this);
+                                            if (!data) {
+                                                return;
+                                            }
+                                            else if (__.isObject(data))
+                                                fd.fromObject(data);
+                                            var success = function (data) {
+                                                _form.trigger('form.submission.success', {
                                                     response: this,
                                                     responseData: data
                                                 });
                                                 _form.trigger('form.submission.complete', {
                                                     response: this
                                                 });
-                                            };
-                                    ext.request.call(app, _form,
-                                            function () {
-                                                return {
-                                                    action: 'handled-submit',
-                                                    type: _form.attr('method'),
-                                                    url: _form.attr('action'),
-                                                    data: fd,
-                                                    success: success,
-                                                    error: error,
-                                                    headers: headers,
-                                                    form: _form.get(0)
-                                                };
                                             },
-                                            function () {
-                                                return {
-                                                    url: _form.attr('action'),
-                                                    type: _form.attr('method'),
-                                                    dataType: _form.this('response-type'),
-                                                    data: fd,
-                                                    success: success,
-                                                    error: error,
-                                                    headers: headers
-                                                };
-                                            });
-                                })
+                                                    error = function (data) {
+                                                        _form.trigger('form.submission.error', {
+                                                            response: this,
+                                                            responseData: data
+                                                        });
+                                                        _form.trigger('form.submission.complete', {
+                                                            response: this
+                                                        });
+                                                    };
+                                            ext.request.call(app, _form,
+                                                    function () {
+                                                        return {
+                                                            action: 'handled-submit',
+                                                            type: _form.attr('method'),
+                                                            url: _form.attr('action'),
+                                                            data: fd,
+                                                            success: success,
+                                                            error: error,
+                                                            headers: headers,
+                                                            form: _form.get(0)
+                                                        };
+                                                    },
+                                                    function () {
+                                                        return {
+                                                            url: _form.attr('action'),
+                                                            type: _form.attr('method'),
+                                                            dataType: _form.this('response-type'),
+                                                            data: fd,
+                                                            success: success,
+                                                            error: error,
+                                                            headers: headers
+                                                        };
+                                                    });
+                                        })
                                 /*
                                  * Search Event
                                  * Form submissiom
@@ -6149,8 +6228,7 @@
                                             selector = 'collection[this-id="' + exp[0]
                                             + '"],[this-type="collection"][this-id="' + exp[0] + '"]',
                                             keys = exp[1],
-                                            page = _form.this('type') === 'page' ?
-                                            _form :
+                                            page = _form.is('page') ? _form :
                                             _form.closest('page,[this-type="page"]'),
                                             goto = _form.attr('goto') || page.this('id'),
                                             filter = '', _collection,
@@ -6158,8 +6236,7 @@
                                             replaceState = app.page.this('id') === goto &&
                                             app.page.this('query') === _search.val()
                                             .trim();
-                                    if (keys)
-                                        keys = keys.split(',');
+                                    if (keys) keys = keys.split(',');
                                     __.forEach(keys, function (i, key) {
                                         if (filter)
                                             filter += ' || ';
@@ -7142,17 +7219,13 @@
             Model = function (id, attributes, props) {
                 var _Model = Object.create({
                     app: props && props.app ? props.app : null,
-                    attributes: __.isObject(attributes) ?
-                            attributes : {},
+                    attributes: __.isObject(attributes) ? attributes : {},
                     id: id,
                     collection: props && props.collection ?
                             props.collection : null,
-                    method: props && props.method ?
-                            props.method : null,
-                    name: props && props.name ? props.name :
-                            null,
-                    idKey: props && props.idKey ? props.idKey :
-                            '',
+                    method: props && props.method ? props.method : null,
+                    name: props && props.name ? props.name : null,
+                    idKey: props && props.idKey ? props.idKey : '',
                     url: props && props.url ? props.url : null,
                     /**
                      * Binds the model to the given element
@@ -7205,6 +7278,14 @@
                         }.bind(this));
                     },
                     /**
+                     * Fetches the value of an attribute of the model
+                     * @param {string} key Chaining is allowed e.g. `name.first`
+                     * @returns {any}
+                     */
+                    get: function (key) {
+                        return ext.getVariableValue.call(this.app, key, this.attributes) || null;
+                    },
+                    /**
                      * Checks if the given key exists in the model
                      * @param {string} key
                      * @returns boolean
@@ -7253,6 +7334,16 @@
                             this.attributes[attr] = val;
                             return this;
                         };
+                    },
+                    /**
+                     * Checks that the value of the attribute is equal to the
+                     * given value
+                     * @param {string} key
+                     * @param {any} value
+                     * @returns {boolean}
+                     */
+                    is: function (key, value) {
+                        return this.attributes[key] == value;
                     },
                     /**
                      * Removes the model
@@ -7413,7 +7504,8 @@
                     /**
                      * Persists the model. If not exists, it is created.
                      * @param {Object} config Keys may include cacheOnly (default: FALSE),
-                     * url, data, form, method (default: PUT|POST), success, error, complete
+                     * url, data, form, method (default: PUT|POST), success, error, complete,
+                     * ignoreDOM (boolean)
                      * @returns {Promise}
                      */
                     save: function (config) {
@@ -7467,7 +7559,7 @@
                                         modelId: this.id,
                                         model: form.toObject(),
                                         isNew: !this.id,
-                                        ignoreDom: !(!config.ignoreDOM)
+                                        ignoreDOM: config.ignoreDOM
                                     });
                                     return resolve(model);
                                 }
@@ -7496,7 +7588,7 @@
                                                                                 + _this.name + '"]')
                                                                         .hasThis('paginate'),
                                                                 isNew: !_this.id,
-                                                                ignoreDom: !(!config.ignoreDOM)
+                                                                ignoreDOM: config.ignoreDOM
                                                             });
                                                 }
                                                 // update model's collection
@@ -8075,7 +8167,8 @@
      */
     ThisApp.Transitions = Extender(Transitions);
     /**
-     * Filters are applied to variables before rendering      */
+     * Filters are applied to variables before rendering
+     */
     ThisApp.Filters = Extender(Filters);
     /**
      * Extends the engine
@@ -8293,7 +8386,7 @@
                 this._(elem).each(function () {
                     var _elem = _this._(this).clone()
                             .removeThis('loaded');
-                    if (_elem.this('type') === 'layout')
+                    if (_elem.is('layout'))
                         _elem.find('[this-content]').html('');
                     _elem.find('style').each(function () {
                         _this._(this)
@@ -8412,7 +8505,7 @@
                         var __this = app._(this),
                                 name = __this.this('model') || __this.this('id');
                         ext.store.call(app, name).drop();
-                        if (__this.this('type') === 'page') {
+                        if (__this.is('page')) {
                             did_page = true;
                             return;
                         }
@@ -8604,8 +8697,7 @@
                         return this._();
                 }
                 elem = elem.clone();
-                if (elem.this('type') === 'template')
-                    elem.removeThis('type');
+                if (elem.is('template')) elem.removeThis('type');
                 elem.find('[this-src]')
                         .each(function () {
                             var _img = _this._(this);
