@@ -244,21 +244,16 @@ Context.prototype.jwt = {
     token: ctx.req.headers[JWT_HEADER_NAME.toLowerCase()],
     /**
      * Creates a token from the given user
-     * @param {Object} user The user object from which the payload would be created
+     * @param {Object} payload The payload
      * @param {Function} callback Parameters are (string) err and (Object) payload
      * @returns {Promise}
      */
-    create: function (user, callback) {
+    create: function (payload, callback) {
         var jwt = require('jsonwebtoken');
         if (!JWT_OPTIONS.expiresIn && this.expires)
             JWT_OPTIONS.expiresIn = this.expires.string;
         try {
-            return jwt.sign({
-                id: user.id,
-                admin: user.admin,
-                isAdmin: user.isAdmin,
-                roles: user.roles
-            }, this.secret, JWT_OPTIONS, callback);
+            return jwt.sign(payload, this.secret, JWT_OPTIONS, callback);
         }
         catch (e) {
             if (callback) callback(e);
@@ -326,13 +321,71 @@ Context.prototype.notify = function (webHooks, data, mobileHooks) {
     if (!Array.isArray(webHooks)) webHooks = [webHooks];
     mobileHooks = (mobileHooks && !Array.isArray(mobileHooks)) ? [mobileHooks] : [];
 
-    webHooks.forEach(function(hook){
+    webHooks.forEach(function (hook) {
         emit(hook, data);
     });
 
-    mobileHooks.forEach(function(hook) {
+    mobileHooks.forEach(function (hook) {
         // @todo: use dpd to notify mobile events
     });
+}
+
+/**
+ * Create a pagination query from the current request query
+ * 
+ * @param {array} parts The parts available in the events. Indicates that querying 
+ * should be done
+ * @param {boolean} verifyResourceQuerying Check if target resource allows querying
+ */
+Context.prototype.paginationQuery = function (parts, verifyResourceQuerying) {
+    // update query limit for db
+    query.$limit = query.limit || 20;
+    // update query page number
+    query.page = query.page || 1;
+    // create query skip
+    query.$skip = query.$limit * (query.page - 1);
+    // remove unneeded query keys
+    delete query.limit;
+    delete query.page;
+    // check if should parse query
+    if (query.query && parts && parts.length) {
+        var queried = false,
+            queryKeys = ctx.getConfig('queryKeys', null, parts[0]);
+        if (queryKeys) {
+            // check for EventResource parts
+            if (parts[1] && queryKeys[parts[1]]) queryKeys = queryKeys[parts[1]];
+            // queryKeys must be an array
+            if (Array.isArray(queryKeys) && queryKeys.length) {
+                query.$or = [];
+                var process = function (key, search) {
+                    var obj = {};
+                    // set the query for key with regex
+                    obj[key] = {
+                        $regex: search,
+                        $options: "i"
+                    };
+                    // add to the or query key
+                    query.$or.push(obj);
+                };
+                // loop over each key
+                queryKeys.forEach(function (key) {
+                    // split query by pipe and process each item
+                    query.query.split('|')
+                        .forEach(function (q) {
+                            // only process if query is not empty
+                            if (q.trim()) process(key, q);
+                        });
+                    // mark as queried
+                    queried = true;
+                });
+                // delete query key if already used
+                if (queried) delete query.query;
+            }
+        }
+        // return false if query keys are not specified
+        else if (verifyResourceQuerying) return false;
+    }
+    return query;
 }
 
 // Set ctx.user

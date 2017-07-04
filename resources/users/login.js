@@ -4,20 +4,25 @@ this.lastLogin = Date.now();
 this.passwordToken = null;
 var hash = require('string-hash');
 // create jwt token
-var token = ctx.jwt.create(this);
+var token = ctx.jwt.create({
+    id: this.id,
+    admin: this.admin,
+    isAdmin: this.isAdmin,
+    roles: this.roles
+});
+
 cancelUnless(token, 'Create token failed!');
 ctx.session.data.apiKey = token;
 ctx.session.data.refreshToken = hash(token) + '' + Date.now();
 ctx.session.data.verified = this.verified;
 ctx.session.data.path = this.path;
 
-if (this.socialAccount)
-    ctx.session.data.socialAccount = true;
+if (this.socialAccount) ctx.session.data.socialAccount = true;
 
 // create expired tokens
 dpd.accesstokens.del({
-    id: {$ne: null},
-    expirationDate: {$lt: Date.now()}
+    id: { $ne: null },
+    expirationDate: { $lt: Date.now() }
 });
 // create new token
 dpd.accesstokens.post({
