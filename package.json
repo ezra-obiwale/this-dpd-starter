@@ -7,14 +7,17 @@
         "deployd": "^0.8.9",
         "dpd-acl-roles-permissions": "^1.2.7",
         "dpd-dashboard": "^0.0.1",
+        "dpd-dotenv": "^1.0.0",
+        "dpd-emitter": "^1.0.0",
         "dpd-event-callback": "0.0.2",
         "dpd-event-extension": "0.0.3",
         "dpd-feeder": "^0.1.2",
         "dpd-fileupload": "next",
+        "dpd-method-actions": "https://github.com/ezra-obiwale/dpd-method-actions.git",
         "dpd-notify": "^1.0.3",
         "dpd-passport": "http://github.com/ezra-obiwale/dpd-passport.git",
         "dpd-push-dashboard": "^1.1.0",
-        "dpd-router-event": "^1.0.7",
+        "dpd-router-event": "^1.0.5",
         "dpd-router-middleware": "^1.0.0",
         "dpd-swagger-doc": "http://github.com/ezra-obiwale/dpd-swagger-doc.git",
         "dpd-template": "^0.0.5",
@@ -35,38 +38,5 @@
     "author": "Ezra Obiwale",
     "license": "MIT",
     "homepage": "https://github.com/ezra-obiwale/this-dpd-starter#readme",
-    "readme": "https://github.com/ezra-obiwale/this-dpd-starter#readme",
-    "middleware": {
-        "allowSuperUser": "true",
-        "jwt": {
-            "secret": "0422c39409a2bf2f7d298d480b0fa05550184d6f9d9d2d3c909cf02cd27da8370fa27dc97a64f2077c9e7efd89d420ab3f7bc82ebfe944f38b7853d8e0ab51c2d2c4e41960c23008db46a08c21e7108efcc674bff1b0757177489f7dec7d6c3248827a5ac606ab7cf9cc5178307f12bfa92fa243c7d5fbdece522ea6379f7f6e4db6073be478379abbce4744705dff9d18ebb30c1d65b01a9f22143b8f6a9fb6417db9f0b36d48c1ee48044883fc106081d264de8d2e4e77ca7a717edbd621c383218a802c90f31893b58b1d783a3e795213078b94f95a08087d805f9e68d53ccf37219ad6f480bd82b05b0dcf0232702a621404b56fe22651e50d246a9c2e37",
-            "expires": {
-                "string": "1h",
-                "numeric": "60 * 60 * 1000"
-            },
-            "options": {
-                "issuer": "http://localhost"
-            },
-            "headerName": "X-API-TOKEN"
-        },
-        "urls": {
-            "development": {
-                "client": "http://localhost:2403/#/home",
-                "server": "http://localhost:2403",
-                "resetPassword": "?rpswd=true",
-                "verifyEmailFailed": "?ev=0",
-                "verifiedEmailAlready": "?ev=1",
-                "verifyEmailSuccess": "?ev=2"
-            }
-        },
-        "sparkpost": {
-            "sandbox": true,
-            "key": "YOUR-SPARKPOST-API-KEY-HERE",
-            "fromAddress": "starter@sparkpostmail.com"
-        },
-        "recaptcha": {
-            "siteKey": "KEY-GOES-HERE",
-            "secretKey": "KEY-GOES-HERE"
-        }
-    }
+    "readme": "https://github.com/ezra-obiwale/this-dpd-starter#readme"
 }
