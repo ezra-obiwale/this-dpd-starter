@@ -3,10 +3,10 @@ require('dpd-router-middleware')(require('deployd/lib/router'), 'middleware');
 var deployd = require('deployd');
 
 var server = deployd({
-    port: 2403,
+    port: 8000,
     env: 'development',
     db: {
-        host: 'localhost',
+        host: 'mongo',
         port: 27017,
         name: 'dpdstarter' // change this to desired database name
     }
@@ -21,7 +21,8 @@ server.on('listening', function () {
 server.on('error', function (err) {
     console.error(err);
     process.nextTick(
-            function () { // Give the server a chance to return an error
-                process.exit();
-            });
+        function () { // Give the server a chance to return an error
+            process.exit();
+        }
+    );
 });
